@@ -3,7 +3,7 @@ THIS PLAN FILE: AI_PROGRESS/LouieAI_Bootstrap/plan-phase-1b.md
 Created: 2025-07-25 21:01:56 PST
 Current Phase: 1B - Tests, Documentation & CI Setup
 Previous Plan: [Phase 1A - Repository Setup](plan-phase-1a.md)
-Next Phase: [Phase 2 - Core Functionality](plan-phase-2.md)
+Next Phase: [Phase 2A - Core Implementation](plan-phase-2a.md)
 Overview: [Plan Overview](plan-overview.md)
 
 CRITICAL META-GOALS OF THIS PLAN
@@ -622,4 +622,4 @@ After completing Step 1.8.0, Phase 1 is complete. The repository now has:
 
 The package is ready for Phase 2 development where we will implement core functionality.
 
-Next: Continue to [Phase 2 - Core Functionality](plan-phase-2.md)
+Next: Continue to [Phase 2A - Core Implementation](plan-phase-2a.md)

@@ -15,7 +15,8 @@ This multi-phase plan guides the bootstrapping of the LouieAI open-source Python
 
 - **[Phase 1a - Initial Repository Setup](plan-phase-1a.md)** - Repository structure, packaging configuration, initial setup
 - **[Phase 1b - Implementation & CI/CD](plan-phase-1b.md)** - Stub implementation, tests, documentation, CI/CD setup
-- **[Phase 2 - Core Functionality](plan-phase-2.md)** - Implement LouieClient functionality, expand documentation, add developer tools
+- **[Phase 2a - Core Implementation](plan-phase-2a.md)** - Research API, implement enhanced LouieClient functionality
+- **[Phase 2b - Documentation & Dev Tools](plan-phase-2b.md)** - Expand documentation, add developer tools, prepare for release
 - **[Phase 3 - Polish & Release](plan-phase-3.md)** - Code quality improvements, coverage, final polish, and PyPI release
 
 ## Project Goals
@@ -55,17 +56,27 @@ Create a Python client library for Louie.ai that:
 
 **Success Criteria**: Package is installable, importable, and passes all CI checks
 
-### Phase 2: Core Functionality ✅
-**Goal**: Implement working LouieClient and expand documentation
+### Phase 2a: Core Implementation ⏳
+**Goal**: Research API and implement enhanced LouieClient functionality
 
 **Key Deliverables**:
-- Full LouieClient.ask() implementation with error handling
-- Expanded test suite with mocked HTTP responses
-- Enhanced documentation with usage examples
+- Research Louie.ai API patterns and endpoints
+- Enhanced LouieClient.ask() implementation with robust error handling
+- Expanded test suite with error scenario coverage
+- HTTP and network error handling
+
+**Success Criteria**: Client has robust error handling and comprehensive test coverage
+
+### Phase 2b: Documentation & Dev Tools ⏳
+**Goal**: Expand documentation and add developer experience improvements
+
+**Key Deliverables**:
+- Enhanced documentation with usage examples and architecture details
 - Pre-commit hooks and Black formatting
 - CHANGELOG.md and project URLs
+- Release preparation and packaging verification
 
-**Success Criteria**: Client can communicate with Louie.ai API, documentation is user-ready
+**Success Criteria**: Documentation is user-ready and project is prepared for release
 
 ### Phase 3: Polish & Release ✅
 **Goal**: Final polish and PyPI release preparation

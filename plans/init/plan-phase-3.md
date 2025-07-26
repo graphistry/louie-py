@@ -2,7 +2,7 @@ LouieAI_Bootstrap Plan - Phase 3
 THIS PLAN FILE: AI_PROGRESS/LouieAI_Bootstrap/plan-phase-3.md
 Created: 2025-07-25 21:01:56 PST
 Current Phase: 3 - Polish & Release
-Previous Phase: [Phase 2 - Core Functionality](plan-phase-2.md) (preceded by [Phase 1b](plan-phase-1b.md) and [Phase 1a](plan-phase-1a.md))
+Previous Phase: [Phase 2B - Documentation & Dev Tools](plan-phase-2b.md) (preceded by [Phase 2A](plan-phase-2a.md), [Phase 1b](plan-phase-1b.md) and [Phase 1a](plan-phase-1a.md))
 Overview: [Plan Overview](plan-overview.md)
 
 CRITICAL META-GOALS OF THIS PLAN
