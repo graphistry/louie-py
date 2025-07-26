@@ -123,3 +123,38 @@ def test_network_error_handling(monkeypatch: pytest.MonkeyPatch) -> None:
     # The error message should contain network error details
     err = str(exc.value)
     assert "Failed to connect to LouieAI" in err
+
+
+def test_http_error_with_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Test case where API returns HTTP error but response body is not valid JSON
+    import httpx
+
+    def mock_post(*args: Any, **kwargs: Any) -> Any:
+        class MockResponse:
+            def __init__(self) -> None:
+                self.status_code = 400
+                self.text = "Bad Request - Invalid parameters"
+
+            def raise_for_status(self) -> None:
+                request = httpx.Request("POST", "http://test.com")
+                response = httpx.Response(400, request=request)
+                # Set invalid JSON content that will cause response.json() to fail
+                response._content = b"Bad Request - Invalid parameters"
+                raise httpx.HTTPStatusError(
+                    "HTTP 400", request=request, response=response
+                )
+
+            def json(self) -> dict[str, Any]:
+                # This will be called and should raise an exception
+                raise ValueError("Invalid JSON")
+
+        return MockResponse()
+
+    monkeypatch.setattr(httpx, "post", mock_post)
+    monkeypatch.setattr(graphistry, "api_token", lambda: "token")
+    client = louieai.LouieClient()
+    with pytest.raises(RuntimeError) as exc:
+        client.ask("test")
+    # The error should fall back to using response.text when JSON parsing fails
+    err = str(exc.value)
+    assert "400" in err and "Bad Request - Invalid parameters" in err
