@@ -242,14 +242,51 @@ We use **setuptools_scm** for automatic version management:
 - Development builds show commit hash: `0.1.1.dev0+g130bd33`
 - Tagged releases show clean version: `0.1.0`
 
+### Changelog Management
+We use **dual changelog approach** for maximum compatibility:
+- **CHANGELOG.md**: Portable format following [keepachangelog.com](https://keepachangelog.com/)
+- **GitHub Releases**: Rich formatting with API accessibility
+
+#### Updating CHANGELOG.md
+```bash
+# Add new version section (copy from [Unreleased])
+## [0.2.0] - 2025-07-27
+
+### Added
+- New feature description
+
+### Changed  
+- Modified functionality
+
+### Fixed
+- Bug fix description
+```
+
 ### Creating Releases
-1. **Update CHANGELOG.md** with changes for new version
+1. **Update CHANGELOG.md**:
+   - Move changes from `[Unreleased]` to new version section
+   - Use format: `## [X.Y.Z] - YYYY-MM-DD`
+   - Organize by: Added, Changed, Deprecated, Removed, Fixed, Security
+
 2. **Test locally**: `ruff check . && mypy . && pytest`
-3. **Commit changes**: `git commit -m "docs: update CHANGELOG for v0.1.0"`
-4. **Create tag**: `git tag v0.1.0`
-5. **Push tag**: `git push origin v0.1.0`
-6. **CI**: GitHub Actions automatically builds and publishes to PyPI
-7. **Verify**: Check PyPI and test `uv pip install louieai==0.1.0`
+
+3. **Commit changes**: `git commit -m "docs: update CHANGELOG for vX.Y.Z"`
+
+4. **Create tag**: `git tag vX.Y.Z`
+
+5. **Push tag**: `git push origin vX.Y.Z`
+
+6. **Create GitHub Release**:
+   ```bash
+   # Using GitHub CLI
+   gh release create vX.Y.Z --title "vX.Y.Z" --notes-from-tag
+   
+   # Or manually: copy CHANGELOG.md section to GitHub release notes
+   ```
+
+7. **CI**: GitHub Actions automatically builds and publishes to PyPI
+
+8. **Verify**: Check PyPI and test `uv pip install louieai==X.Y.Z`
 
 ### Version Detection
 ```bash
