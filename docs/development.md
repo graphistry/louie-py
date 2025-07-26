@@ -236,23 +236,35 @@ pre-commit run --all-files
 
 ## Release Process
 
-### Version Bumping
-1. Update version in `pyproject.toml`
-2. Update `CHANGELOG.md` with changes
-3. Test locally: `ruff check . && mypy . && pytest`
-4. Commit: `git commit -m "chore: bump version to X.Y.Z"`
+### Dynamic Versioning
+We use **setuptools_scm** for automatic version management:
+- Version is determined by git tags (no manual version files)
+- Development builds show commit hash: `0.1.1.dev0+g130bd33`
+- Tagged releases show clean version: `0.1.0`
 
 ### Creating Releases
-1. **Tag**: `git tag vX.Y.Z`
-2. **Push**: `git push origin vX.Y.Z`  
-3. **CI**: GitHub Actions will automatically build and publish to PyPI
-4. **Verify**: Check PyPI and test `uv pip install louieai==X.Y.Z`
+1. **Update CHANGELOG.md** with changes for new version
+2. **Test locally**: `ruff check . && mypy . && pytest`
+3. **Commit changes**: `git commit -m "docs: update CHANGELOG for v0.1.0"`
+4. **Create tag**: `git tag v0.1.0`
+5. **Push tag**: `git push origin v0.1.0`
+6. **CI**: GitHub Actions automatically builds and publishes to PyPI
+7. **Verify**: Check PyPI and test `uv pip install louieai==0.1.0`
+
+### Version Detection
+```bash
+# Check current version (includes git info if after tag)
+python -c "import louieai; print(louieai.__version__)"
+
+# Check what setuptools_scm would generate
+python -c "from setuptools_scm import get_version; print(get_version())"
+```
 
 ### Pre-release Checklist
 - [ ] All tests pass locally and in CI
 - [ ] Documentation is up to date
-- [ ] CHANGELOG.md includes all changes
-- [ ] Version number follows semver
+- [ ] CHANGELOG.md includes all changes for this version
+- [ ] Tag follows semantic versioning (vX.Y.Z format)
 - [ ] PyPI credentials are configured in GitHub secrets
 
 ---
