@@ -27,3 +27,61 @@ jobs:
         run: mypy .
       - name: Run Tests
         run: pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85
+  
+  install-test:
+    runs-on: ubuntu-latest
+    needs: build-test
+    strategy:
+      matrix:
+        installer: ["pip", "uv"]
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install build tools
+        run: |
+          pip install --upgrade pip
+          pip install build
+      - name: Build package
+        run: python -m build
+      - name: Install uv (if needed)
+        if: matrix.installer == 'uv'
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Test pip installation
+        if: matrix.installer == 'pip'
+        run: |
+          python -m venv test_env
+          source test_env/bin/activate
+          pip install dist/*.whl
+          python -c "import louieai; print(f'✅ louieai {louieai.__version__} installed')"
+          python -c "from louieai import LouieClient; print('✅ LouieClient imported')"
+          python -c "from louieai import LouieClient; client = LouieClient(); print('✅ LouieClient instantiated')"
+      - name: Test uv installation
+        if: matrix.installer == 'uv'
+        run: |
+          uv venv test_env
+          source test_env/bin/activate
+          uv pip install dist/*.whl
+          python -c "import louieai; print(f'✅ louieai {louieai.__version__} installed')"
+          python -c "from louieai import LouieClient; print('✅ LouieClient imported')"
+          python -c "from louieai import LouieClient; client = LouieClient(); print('✅ LouieClient instantiated')"
+  
+  docs-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies
+        run: uv pip install -e ".[docs]"
+      - name: Build documentation
+        run: uv run mkdocs build --strict
+      - name: Verify logo included
+        run: |
+          test -f site/assets/louie-logo.png || (echo "❌ Logo not found in built docs" && exit 1)
+          echo "✅ Logo included in documentation"

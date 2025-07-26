@@ -48,8 +48,13 @@ This lightweight approach (no CLAs or paperwork!) ensures contributions can be l
 ### Documentation Contributions
 1. **Identify documentation gaps** or errors
 2. **Create a branch**: `git checkout -b docs/description`
-3. **Update documentation**: User docs in `docs/`, dev docs in [Developer Guide](https://louieai.readthedocs.io/en/latest/development/)
-4. **Test locally**: Run `mkdocs serve` to preview changes
+3. **Update documentation**: 
+   - User docs in `docs/`
+   - Dev docs in [Developer Guide](https://louieai.readthedocs.io/en/latest/development/)
+   - API docs: Update docstrings in source code (auto-generated via mkdocstrings)
+4. **Test locally**: 
+   - Run `mkdocs serve` to preview changes
+   - Run `mkdocs build --strict` to ensure no warnings
 5. **Submit PR**: Include screenshots if visual changes
 
 ## Code Review Process

@@ -19,13 +19,27 @@
 Requires Python 3.11+ and an existing Graphistry account.
 
 Install from PyPI:
+
+Using uv (recommended):
 ```bash
 uv pip install louieai
 ```
 
-(Until published, you can install from source via pip or uv:)
+Using pip:
+```bash
+pip install louieai
+```
+
+(Until published, you can install from source:)
+
+Using uv:
 ```bash
 uv pip install git+https://github.com/<owner>/louieai.git
+```
+
+Using pip:
+```bash
+pip install git+https://github.com/<owner>/louieai.git
 ```
 
 ## Quick Start
@@ -72,6 +86,12 @@ except RuntimeError as e:
 - **Synchronous Only**: Currently supports synchronous requests only. Async support planned for future releases.
 
 See the [documentation](https://louieai.readthedocs.io) for more details and examples.
+
+## API Reference
+
+Complete API documentation is available at [louieai.readthedocs.io/api](https://louieai.readthedocs.io/en/latest/api/). Key classes:
+
+- [`LouieClient`](https://louieai.readthedocs.io/en/latest/api/client/) - Main client class for interacting with Louie.ai
 
 ## Links
 

@@ -324,3 +324,267 @@ The project is now self-sustaining with established patterns:
 - Community-standard open source project structure
 
 The project meets or exceeds all typical standards for open-source Python libraries and is ready for production use and community contributions.
+
+Step 3.2.0: Create local CI simulation scripts
+Status: ✅ COMPLETED
+Started: 2025-07-26 20:30:00 PST
+Action: Add scripts to simulate CI workflows locally for faster development feedback. Claude should:
+Create scripts/ci-local.sh script:
+Add executable shell script that runs the exact same commands as CI locally
+Include all CI steps: ruff check, ruff format --check, mypy, pytest with coverage threshold
+Add proper error handling and exit codes
+Make it match CI environment as closely as possible
+Include header comment explaining purpose and usage
+Add scripts/ci-quick.sh for faster feedback:
+Lighter version that skips some slower checks for rapid iteration
+Maybe skip coverage reporting for speed, but still run tests
+Include only essential checks: ruff check --select=F,E (errors only), pytest -x (fail fast)
+Good for pre-commit quick validation
+Document common uv commands:
+Instead of outdated Makefile, document modern uv commands in development guide
+Include shortcuts like: uv run pytest, uv run ruff check, uv run mypy
+Focus on uv-native workflow which is more appropriate for 2025 Python development
+Success Criteria:
+Developers can run scripts/ci-local.sh to replicate CI exactly
+scripts/ci-quick.sh provides fast feedback for development iteration
+Scripts have proper error handling and informative output
+Commands are documented in development guide
+Result:
+LOCAL CI SIMULATION SCRIPTS SUCCESSFULLY CREATED:
+
+1. **Smart Wrapper Scripts Created**:
+   - `scripts/ruff.sh`: Smart wrapper for ruff (default: check all files)
+   - `scripts/mypy.sh`: Smart wrapper for mypy (default: check all files)  
+   - `scripts/pytest.sh`: Smart wrapper for pytest (default: coverage + threshold)
+   - `scripts/format.sh`: Smart wrapper for ruff format (default: format all files)
+
+2. **Smart Defaults Implementation**:
+   - No arguments: Use sensible production-ready defaults
+   - With arguments: Pass through to underlying tools with smart additions
+   - Example: `./scripts/pytest.sh` runs with coverage + 85% threshold
+   - Example: `./scripts/pytest.sh -v` adds coverage to user's verbose flag
+
+3. **CI Orchestration Scripts Updated**:
+   - `scripts/ci-local.sh`: Full CI pipeline using smart wrappers
+   - `scripts/ci-quick.sh`: Fast feedback loop using smart wrappers
+   - Both scripts now use modular wrapper approach for maintainability
+
+4. **Modern uv Integration**:
+   - All wrappers use `uv run` for automatic environment handling
+   - No need to activate virtual environments manually
+   - Consistent with modern Python 2025 development patterns
+
+5. **Developer Experience**:
+   - Simple commands: `./scripts/pytest.sh` for most common use case
+   - Full flexibility: `./scripts/pytest.sh --no-cov -k specific_test`
+   - Informative output with emojis and clear messaging
+   - Error handling with proper exit codes
+
+6. **Verification Completed**:
+   - All individual wrappers tested and working
+   - Full CI simulation matches actual CI pipeline exactly
+   - Smart defaults provide immediate productivity
+   - Argument pass-through preserves full tool flexibility
+
+The script approach provides excellent developer experience with both convenience and power.
+
+Step 3.2.1: Update development documentation for CI simulation and coverage
+Status: ✅ COMPLETED
+Started: 2025-07-26 20:45:00 PST
+Action: Update docs/development.md to document new CI simulation capabilities and coverage threshold. Claude should:
+Add Local CI Simulation section:
+Document both scripts/ci-local.sh and scripts/ci-quick.sh
+Explain when to use each script (full CI vs quick feedback)
+Include example usage and expected output
+Add troubleshooting tips for common CI failures locally
+Update Testing Guide section:
+Document the new 85% coverage threshold requirement
+Explain how to check coverage locally: pytest --cov=louieai --cov-report=term
+Add guidance on writing tests to improve coverage
+Document coverage threshold bypass for development (if needed)
+Update CI Integration section:
+Explain how local scripts match CI exactly
+Document the five quality gates: lint, format, type, test, coverage
+Add section on debugging CI failures using local scripts
+Ensure file stays under 500 lines:
+Keep additions concise and practical
+Remove or condense less important sections if needed
+Focus on actionable developer guidance
+Success Criteria:
+Development guide documents local CI simulation workflow
+Coverage threshold and testing improvements are well explained
+File remains under 500 lines while covering all essential workflows
+Developers have clear guidance for both quick iteration and full CI validation
+Result:
+DEVELOPMENT DOCUMENTATION SUCCESSFULLY UPDATED:
+
+1. **Quick Start Enhanced**:
+   - Updated to use `./scripts/ci-quick.sh` for verification
+   - Streamlined setup process with modern approach
+   - 30-second setup to productive development
+
+2. **Local CI Simulation Section Added**:
+   - Complete documentation of smart wrapper scripts
+   - Clear explanation of default vs custom argument behavior
+   - Development workflow examples (quick iteration vs pre-push)
+   - Coverage requirements and bypass options
+
+3. **Tool Usage Modernized**:
+   - Added `uv run` command examples for 2025 Python development
+   - Updated package manager section with modern uv patterns
+   - Maintained compatibility with manual approach
+
+4. **CI Integration Enhanced**:
+   - Recommended modern approach using scripts vs manual commands
+   - Updated debugging section to use smart scripts
+   - Added coverage threshold documentation (85% requirement)
+   - XML coverage reports explained
+
+5. **Developer Experience Improvements**:
+   - Clear distinction between quick feedback and full validation
+   - Specific examples for common debugging scenarios
+   - Performance timing guidance (5s quick vs 30s full)
+   - Smart defaults reduce cognitive load
+
+6. **Documentation Quality**:
+   - File stays at 382 lines (well under 500-line AI limit)
+   - Comprehensive coverage of new workflows
+   - Practical examples throughout
+   - Clear progression from basic to advanced usage
+
+The development guide now provides complete guidance for modern Python development with uv and intelligent CI simulation.
+
+Step 3.3.0: Add mkdocstrings dependency and configuration
+Status: ⏳ PENDING
+Started: [timestamp]
+Action: Install and configure mkdocstrings for automatic API documentation generation. Claude should:
+Research and add correct dependencies:
+Check latest mkdocstrings version and Python handler
+Add to pyproject.toml docs extra: mkdocstrings[python]>=0.24.0
+Verify compatibility with current MkDocs and Material theme versions
+Install dependencies locally with uv pip install -e ".[docs]"
+Configure mkdocstrings in mkdocs.yml:
+Add mkdocstrings plugin to plugins section
+Configure Python handler with appropriate options
+Set up cross-references and inventory locations
+Configure Google-style docstring parser (matches our existing docstrings)
+Test basic functionality:
+Run mkdocs serve locally
+Verify no errors or warnings from mkdocstrings
+Check that configuration loads properly
+Document any issues encountered for troubleshooting
+Success Criteria:
+mkdocstrings installed and configured correctly
+No conflicts with existing MkDocs setup
+Local docs build successfully with mkdocstrings enabled
+Ready to add API reference pages
+Result:
+[Fill this in with commands, output, decisions, errors, etc.]
+
+Step 3.3.1: Create API reference documentation structure
+Status: ⏳ PENDING
+Started: [timestamp]
+Action: Create the API documentation pages and structure following modern Python practices. Claude should:
+Create API reference landing page:
+Create docs/api/index.md with overview of API modules
+Explain the library structure (louieai package, LouieClient class)
+Include usage note about importing and basic example
+Link to detailed class/module documentation
+Create module documentation pages:
+docs/api/client.md for LouieClient class documentation
+Use mkdocstrings syntax: ::: louieai.LouieClient
+Add contextual information around the auto-generated docs
+Include practical examples beyond what's in docstrings
+Update navigation in mkdocs.yml:
+Add API Reference section to nav
+Structure: API Reference → Overview, LouieClient
+Ensure logical flow from user guide to API reference
+Position after user guides but before developer docs
+Enhance existing docstrings if needed:
+Review LouieClient docstrings for completeness
+Add type information to Returns sections
+Add Raises sections for all exceptions
+Ensure Examples sections where helpful
+Success Criteria:
+Clean API reference structure created
+Auto-generated docs render properly
+Navigation flows logically
+All public APIs documented
+Result:
+[Fill this in with commands, output, decisions, errors, etc.]
+
+Step 3.3.2: Add cross-references and advanced features
+Status: ⏳ PENDING
+Started: [timestamp]
+Action: Enhance API documentation with cross-references, type links, and community-friendly features. Claude should:
+Configure cross-references:
+Link to Graphistry docs where relevant
+Set up intersphinx-style inventories for httpx, pandas types
+Configure proper linking for type annotations
+Add hover tooltips for better UX
+Add code examples section:
+Create docs/api/examples.md with practical use cases
+Show error handling patterns
+Demonstrate authentication setup
+Include async patterns (for future async support)
+Configure search and navigation:
+Ensure API docs are searchable
+Add type signatures to search index
+Configure mkdocstrings to show inherited members appropriately
+Set up proper anchor links for deep linking
+Community-friendly additions:
+Add "View source" links to GitHub
+Configure line numbers for source references
+Add "Copy" buttons to code examples
+Include parameter tables for quick reference
+Success Criteria:
+Rich, interactive API documentation
+All types and exceptions properly linked
+Examples complement the auto-generated docs
+Community can easily navigate and understand APIs
+Result:
+[Fill this in with commands, output, decisions, errors, etc.]
+
+Step 3.3.3: Test and polish API documentation
+Status: ⏳ PENDING
+Started: [timestamp]
+Action: Ensure API documentation meets community standards and renders correctly everywhere. Claude should:
+Test rendering across platforms:
+Build docs locally: mkdocs build --strict
+Check for any warnings or errors
+Verify all cross-references resolve
+Test that examples render with proper syntax highlighting
+Verify responsive design:
+Check mobile rendering of API docs
+Ensure tables and signatures are readable
+Test navigation on different screen sizes
+Verify print CSS works properly
+Add API versioning notes:
+Document that this is v0.1.x API
+Add stability markers (alpha/beta/stable) to methods
+Include migration notes section (for future)
+Note which APIs might change
+Final polish:
+Add API changelog section
+Ensure consistent formatting throughout
+Add links from README to API docs
+Update CONTRIBUTING.md with API doc guidelines
+Success Criteria:
+Zero warnings in strict build mode
+Professional appearance matching FastAPI/Pydantic quality
+Mobile-friendly and accessible
+Ready for community use
+Result:
+CUTOVER TO NEW PLAN FORMAT:
+
+Due to the addition of significant new work (API documentation with mkdocstrings), we are transitioning to a new plan file using the updated template format:
+
+**Continued in**: `plans/init/plan-phase-3b.md`
+
+This new plan (Phase 3B) will:
+- Implement mkdocstrings for automatic API documentation
+- Follow the structured PLAN.md template format
+- Include proper CI integration and validation steps
+- Complete the API documentation goals from Steps 3.3.0-3.3.3
+
+The work continues with the same goals but using the more rigorous planning format for better tracking and resumability.
