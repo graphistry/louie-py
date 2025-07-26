@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "louieai"
+version = "0.1.0"
+description = "Python client for Louie.ai (Graphistry's AI investigation platform)"
+authors = [
+  { name = "Graphistry, Inc.", email = "support@graphistry.com" }
+]
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.8"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Scientific/Engineering :: Information Analysis"
+]
+keywords = ["Louie.ai", "Graphistry", "AI", "client", "investigation"]
+dependencies = [
+  "graphistry>=0.34",
+  "httpx>=0.28",
+  "pandas>=1.0",
+  "pyarrow>=8.0"
+]
+# Note: graphistry on PyPI is named 'graphistry'. We ensure a minimal version that likely includes Louie support.
+
+[project.optional-dependencies]
+dev = [
+  "ruff==0.12.0",
+  "mypy==1.5.0",
+  "pytest==7.4.0",
+  "black==25.1.0",
+  "mkdocs==1.4.3",
+  "mkdocs-material==8.5.10",
+  "types-requests"  # (if needed for httpx, but httpx is typed; this could be omitted)
+]
+docs = [
+  "mkdocs==1.4.3",
+  "mkdocs-material==8.5.10"
+]
+# We define a separate "docs" extra in case readthedocs needs to install just docs requirements.
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["louieai*"]
