@@ -4,7 +4,38 @@ site_url: https://louieai.readthedocs.io
 nav:
   - Home: index.md
   - Architecture: architecture.md
+  - API Reference:
+    - Overview: api/index.md
+    - LouieClient: api/client.md
   - Developer Guide: development.md
 theme:
   name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.expand
+  logo: assets/louie-logo.png
+  favicon: assets/louie-logo.png
 docs_dir: docs
+repo_url: https://github.com/graphistry/louieai
+repo_name: graphistry/louieai
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_if_no_docstring: false
+            show_signature_annotations: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            docstring_style: google
+            merge_init_into_class: true
+            separate_signature: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_object_full_path: false
+            show_category_heading: true
+            members_order: source

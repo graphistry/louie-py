@@ -1,0 +1,35 @@
+FROM python:3.11-slim
+
+# Install build dependencies and curl for uv
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Set working directory
+WORKDIR /test
+
+# Copy the built wheel (will be provided at build time)
+ARG WHEEL_FILE
+COPY ${WHEEL_FILE} /test/
+
+# Create virtual environment with uv
+RUN uv venv /test/venv
+
+# Install the package using uv
+RUN uv pip install --python /test/venv/bin/python /test/*.whl
+
+# Test the installation
+RUN /test/venv/bin/python -c "import louieai; print(f'✅ louieai {louieai.__version__} installed successfully')"
+RUN /test/venv/bin/python -c "from louieai import LouieClient; print('✅ LouieClient imported successfully')"
+RUN /test/venv/bin/python -c "from louieai import LouieClient; client = LouieClient(); print('✅ LouieClient instantiated successfully')"
+
+# Verify dependencies
+RUN uv pip list --python /test/venv/bin/python | grep -E "(louieai|graphistry|httpx|pandas|pyarrow)"
+
+# Final test script
+CMD ["/test/venv/bin/python", "-c", "import louieai; print(f'louieai {louieai.__version__} is working in Docker with uv!')"]

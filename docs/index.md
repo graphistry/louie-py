@@ -6,11 +6,26 @@ Welcome to the **LouieAI** Python client library documentation.
 
 ## Installation
 
-You can install the package via pip:
+Requires Python 3.11+ and an existing Graphistry account.
+
+Using uv (recommended):
 ```bash
 uv pip install louieai
 ```
-(Note: The package may not be on PyPI yet if you're reading early.)
+
+Using pip:
+```bash
+pip install louieai
+```
+
+For development or latest features:
+```bash
+# With uv
+uv pip install git+https://github.com/<owner>/louieai.git
+
+# With pip  
+pip install git+https://github.com/<owner>/louieai.git
+```
 
 ## Usage Example
 

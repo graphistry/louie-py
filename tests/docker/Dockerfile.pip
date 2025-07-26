@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /test
+
+# Copy the built wheel (will be provided at build time)
+ARG WHEEL_FILE
+COPY ${WHEEL_FILE} /test/
+
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Install the package
+RUN pip install /test/*.whl
+
+# Test the installation
+RUN python -c "import louieai; print(f'✅ louieai {louieai.__version__} installed successfully')"
+RUN python -c "from louieai import LouieClient; print('✅ LouieClient imported successfully')"
+RUN python -c "from louieai import LouieClient; client = LouieClient(); print('✅ LouieClient instantiated successfully')"
+
+# Verify dependencies
+RUN pip list | grep -E "(louieai|graphistry|httpx|pandas|pyarrow)"
+
+# Final test script
+CMD ["python", "-c", "import louieai; print(f'louieai {louieai.__version__} is working in Docker!')"]
