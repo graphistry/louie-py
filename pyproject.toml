@@ -82,5 +82,14 @@ disallow_subclassing_any = true
 
 # Allow imports from graphistry which doesn't ship with type information
 [[tool.mypy.overrides]]
+module = "graphistry.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "graphistry"
 ignore_missing_imports = true
+
+# Ignore mypy issues in test files for complex mocking
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true

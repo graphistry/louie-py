@@ -38,15 +38,29 @@ class LouieClient:
             )
         # Prepare the request
         headers = {"Authorization": f"Bearer {token}"}
-        # Assuming an endpoint; this may change when actual API is known
+        # TODO: confirm correct Louie endpoint and response format when official
+        # docs are available
         url = f"{self.server_url}/api/ask"
         try:
             response = httpx.post(
                 url, json={"prompt": prompt}, headers=headers, timeout=30.0
             )
             response.raise_for_status()
-        except httpx.HTTPError as e:
-            # For now, raise an error if request fails
-            raise RuntimeError(f"Request to Louie.ai failed: {e}") from e
+        except httpx.HTTPStatusError as e:
+            # Include response text or json in error
+            error_text = ""
+            try:
+                error_data = response.json()
+                error_text = (
+                    error_data.get("error", "") or error_data.get("message", "")
+                )
+            except Exception:
+                error_text = response.text
+            raise RuntimeError(
+                f"LouieAI API returned error {response.status_code}: {error_text}"
+            ) from e
+        except httpx.RequestError as e:
+            # Network or other request issue
+            raise RuntimeError(f"Failed to connect to LouieAI: {e}") from e
         # Assuming the API returns JSON
         return response.json()
