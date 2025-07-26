@@ -106,8 +106,8 @@ python -m build .
 
 Steps
 Step 2.2.0: Expand documentation (usage & architecture)
-Status: ⏳ PENDING
-Started: [timestamp]
+Status: ✅ COMPLETED
+Started: 2025-07-26 17:00:00 PST
 Action: Improve the documentation content now that functionality is fleshed out. Claude should:
 README updates: If any new info or best practices emerged (not much new, but we can:
 Emphasize that multiple types of outcomes can come from Louie (maybe mention if prompt triggers a graph, Louie might return a URL to Graphistry visualization, etc.).
@@ -177,7 +177,31 @@ The commit for doc changes is made.
 Optionally, build docs locally to confirm (if significant changes).
 The documentation now would be user-friendly for an initial release.
 Result:
-[Fill this in with commands, output, decisions, errors, etc.]
+DOCUMENTATION UPDATES COMPLETED:
+1. **README.md Enhancements**:
+   - Added comprehensive Error Handling section with code examples
+   - Added Current Limitations section documenting /api/ask endpoint assumption
+   - Enhanced Features section to highlight robust error handling
+   - All error types documented: HTTP, network, authentication
+
+2. **docs/index.md Updates**:
+   - Added Error Handling section with detailed error type explanations
+   - Added Current Status section noting Alpha development stage
+   - Documented API endpoint assumption and future confirmation needs
+
+3. **docs/architecture.md Complete Rewrite**:
+   - Added detailed "Under the Hood" flow explanation (5-step process)
+   - Documented Design Principles: stateless, thread-safe, error transparency
+   - Added Response Types section covering all expected response formats
+   - Added Current Limitations and Future Enhancements sections
+   - Comprehensive technical documentation for developers
+
+4. **Quality Verification**:
+   - MkDocs build successful: Documentation built in 0.15 seconds
+   - No broken links or formatting issues detected
+   - All enhanced error handling from Phase 2A properly documented
+
+Enhanced documentation now provides clear guidance for users and comprehensive technical details for developers.
 
 Step 2.3.0: Dev experience improvements (pre-commit hooks, Black formatting)
 Status: ⏳ PENDING

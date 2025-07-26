@@ -1,13 +1,14 @@
-from typing import Any, Dict, Optional
+from typing import Any
 
 import graphistry
-import louieai
 import pytest
+
+import louieai
 
 
 class DummyResponse:
     def __init__(
-        self, status_code: int = 200, data: Optional[Dict[str, Any]] = None
+        self, status_code: int = 200, data: dict[str, Any] | None = None
     ) -> None:
         self.status_code = status_code
         self._data = data or {}
@@ -15,15 +16,16 @@ class DummyResponse:
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
             import httpx
+
             # For testing purposes, we'll create a simple HTTPStatusError
             # The production code will catch this and extract error info
             raise httpx.HTTPStatusError(
                 f"Error: status {self.status_code}",
                 request=httpx.Request("POST", "http://test.com"),
-                response=httpx.Response(self.status_code)
+                response=httpx.Response(self.status_code),
             )
 
-    def json(self) -> Dict[str, Any]:
+    def json(self) -> dict[str, Any]:
         return self._data
 
     @property
@@ -31,6 +33,7 @@ class DummyResponse:
         """Return text representation of the response data."""
         if self._data:
             import json
+
             return json.dumps(self._data)
         return f"HTTP {self.status_code} response"
 
@@ -40,6 +43,7 @@ def test_client_uses_graphistry_token(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(graphistry, "api_token", lambda: "fake-token")
     # Monkeypatch httpx.post to simulate a successful response
     import httpx
+
     monkeypatch.setattr(
         httpx,
         "post",
@@ -68,7 +72,7 @@ def test_http_error_handling(monkeypatch: pytest.MonkeyPatch) -> None:
     import httpx
 
     # Create a response that will trigger HTTPStatusError with our error data
-    def mock_post(*args, **kwargs) -> Any:
+    def mock_post(*args: Any, **kwargs: Any) -> Any:
         # Create a mock response that raises HTTPStatusError with error details
         class MockResponse:
             def __init__(self) -> None:
@@ -77,19 +81,19 @@ def test_http_error_handling(monkeypatch: pytest.MonkeyPatch) -> None:
 
             def raise_for_status(self) -> None:
                 import httpx
+
                 # Create HTTPStatusError with this response attached
                 request = httpx.Request("POST", "http://test.com")
                 # The HTTPStatusError needs a real Response object
                 response = httpx.Response(500, request=request)
-                # Monkey patch the json method to return our data
-                def json_with_error() -> Dict[str, Any]:
-                    return self._json_data
-                response.json = json_with_error
+
+                # Set up response to return our error data
+                response._content = b'{"error": "Internal Server Error"}'
                 raise httpx.HTTPStatusError(
                     "HTTP 500", request=request, response=response
                 )
 
-            def json(self) -> Dict[str, Any]:
+            def json(self) -> dict[str, Any]:
                 return self._json_data
 
         return MockResponse()
@@ -107,8 +111,10 @@ def test_http_error_handling(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_network_error_handling(monkeypatch: pytest.MonkeyPatch) -> None:
     # Monkeypatch httpx.post to simulate a network error
     import httpx
-    def raise_network_error(*args, **kwargs) -> None:
+
+    def raise_network_error(*args: Any, **kwargs: Any) -> None:
         raise httpx.RequestError("Connection failed")
+
     monkeypatch.setattr(httpx, "post", raise_network_error)
     monkeypatch.setattr(graphistry, "api_token", lambda: "token")
     client = louieai.LouieClient()
