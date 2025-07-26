@@ -28,4 +28,26 @@ print(response)
 
 This will send the prompt to LouieAI and return a response (e.g., an answer or a visualization link).
 
+## Error Handling
+
+The LouieClient provides comprehensive error handling with detailed messages:
+
+```python
+try:
+    client = LouieClient()
+    response = client.ask("Your query here")
+    print(response)
+except RuntimeError as e:
+    print(f"Error occurred: {e}")
+```
+
+The client distinguishes between different error types:
+- **HTTP Errors (4xx/5xx)**: Extracts error messages from API responses
+- **Network Errors**: Provides connection failure details
+- **Authentication Errors**: Clear guidance when Graphistry token is missing
+
+## Current Status
+
+This library is in active development (Alpha). The `/api/ask` endpoint is based on common REST patterns and is subject to confirmation when official API documentation becomes available.
+
 See the [Architecture](architecture.md) page for more details on how LouieAI and Graphistry integrate.
