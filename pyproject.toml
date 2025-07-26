@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "louieai"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Python client for Louie.ai (Graphistry's AI investigation platform)"
 authors = [
   { name = "Graphistry, Inc.", email = "support@graphistry.com" }
@@ -35,6 +35,7 @@ dev = [
   "ruff>=0.12.0",
   "mypy>=1.17.0",
   "pytest>=8.4.0",
+  "pytest-xdist>=3.6.0",
   "pre-commit>=4.2.0",
   "mkdocs>=1.6.0",
   "mkdocs-material>=9.6.0"
@@ -51,6 +52,9 @@ include = ["louieai*"]
 
 [tool.setuptools.package-data]
 louieai = ["py.typed"]
+
+[tool.setuptools_scm]
+version_file = "src/louieai/_version.py"
 
 [tool.ruff]
 line-length = 88
