@@ -35,10 +35,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "ruff==0.12.0",
+  "ruff==0.0.292",  # Compatible with Python 3.8
   "mypy==1.5.0",
   "pytest==7.4.0",
-  "black==25.1.0",
+  "black==22.10.0",  # Compatible with Python 3.8
   "mkdocs==1.4.3",
   "mkdocs-material==8.5.10",
   "types-requests"  # (if needed for httpx, but httpx is typed; this could be omitted)
