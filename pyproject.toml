@@ -53,6 +53,9 @@ docs = [
 where = ["src"]
 include = ["louieai*"]
 
+[tool.setuptools.package-data]
+louieai = ["py.typed"]
+
 [tool.ruff]
 line-length = 88
 select = ["E", "F", "W", "I", "B", "C4", "UP", "PYI", "SIM", "RUF"]

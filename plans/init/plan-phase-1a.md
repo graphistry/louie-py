@@ -92,6 +92,7 @@ Key Decisions Made
   - Type casts or Any workarounds
   - File-specific lint/type check exceptions
   All code must pass strict ruff and mypy checks. Dependencies without type information must be handled properly in mypy config, not with ignore comments.
+[Type Export Decision]: Include py.typed marker file to ensure our type hints are available to library consumers. This enables downstream users to benefit from our strict typing when they use mypy or other type checkers.
 
 Lessons Learned
 <!-- Document what failed and why to avoid repeating -->
