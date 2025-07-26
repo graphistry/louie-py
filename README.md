@@ -16,7 +16,7 @@
 
 ## Installation
 
-Requires Python 3.8+ and an existing Graphistry account.
+Requires Python 3.11+ and an existing Graphistry account.
 
 Install from PyPI:
 ```bash

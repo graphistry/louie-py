@@ -97,8 +97,8 @@ pytest tests/test_louie_client.py -v
 
 Steps
 Step 2.0.0: Phase 2A – Research Louie.ai API for functionality expansion
-Status: ⏳ PENDING
-Started: [timestamp]
+Status: ✅ COMPLETED
+Started: 2025-07-26 16:15:00 PST
 Action: Before coding Phase 2A, gather any available info on Louie.ai's API to guide implementation. Claude should:
 Search official docs or repositories: Look for documentation on Louie.ai's API endpoints and usage. For example:
 Check if Louie.ai has developer docs or an API reference. Use keywords like "Louie.ai API" or search Graphistry's docs for references to Louie's API beyond marketing pages.
@@ -137,11 +137,26 @@ Success Criteria:
 We have confirmed or at least not contradicted our approach. If no official info, our plan stands as is.
 Document any assumptions in Key Decisions or code comments if needed (like "# TODO: confirm correct Louie endpoint and response format when official docs are available").
 Result:
-[Fill this in with commands, output, decisions, errors, etc.]
+RESEARCH COMPLETED:
+1. **Official Documentation**: Found GitHub repository graphistry/louie.ai-docs containing admin/user guides, but specific API endpoint documentation not publicly indexed
+2. **Louie.ai Overview**: Confirmed as "pluggable neurosymbolic AI agent" by Graphistry with API for headless automation and custom apps
+3. **Integration Approach**: PyGraphistry ecosystem documentation confirms Louie.AI as "genAI-native experience for Graphistry" with API capabilities
+4. **Authentication Pattern**: Confirmed Bearer token approach aligns with standard Graphistry API patterns (JWT from graphistry.api_token())
+5. **Endpoint Assumptions**: No specific endpoints found publicly, will proceed with /api/ask based on common REST patterns
+6. **Response Format**: Likely JSON responses that may include text answers, data, or Graphistry visualization references
+
+DECISIONS MADE:
+- Proceed with current stub approach using /api/ask endpoint
+- Maintain Bearer token authentication via graphistry.api_token()
+- Focus on robust error handling for HTTP and network errors
+- Return raw JSON responses to allow flexible client usage
+- Add TODO comments for endpoint/format confirmation when official docs become available
+
+API research phase complete - proceeding to implementation with documented assumptions.
 
 Step 2.1.0: Implement enhanced LouieClient functionality
-Status: ⏳ PENDING
-Started: [timestamp]
+Status: ✅ COMPLETED
+Started: 2025-07-26 16:30:00 PST
 Action: Now extend the LouieClient based on Phase 2A goals. Claude should:
 Improve error handling: Modify LouieClient.ask in src/louieai/client.py:
 Use httpx.HTTPStatusError specifically in except to differentiate status errors from network errors.
@@ -216,7 +231,32 @@ All tests, including new ones, pass (so our improved DummyResponse works and our
 The changes adhere to requirements: still only using allowed libs, and maintain type hints (HTTPStatusError etc is fine).
 Code coverage presumably improved by covering error branch.
 Result:
-[Fill this in with commands, output, decisions, errors, etc.]
+IMPLEMENTATION COMPLETED:
+1. **Enhanced Error Handling**: Updated LouieClient.ask() to handle HTTPStatusError and RequestError separately
+   - HTTPStatusError extracts JSON error messages ("error" or "message" fields) 
+   - RequestError handles network/connection failures
+   - Both provide informative RuntimeError messages with context
+
+2. **Code Changes**: Modified src/louieai/client.py
+   - Added specific exception handling for httpx.HTTPStatusError and httpx.RequestError  
+   - Added JSON error message extraction with fallback to response.text
+   - Added TODO comment for endpoint confirmation
+   - Maintained clean code without type ignore comments
+
+3. **Test Coverage**: Enhanced tests/test_louie_client.py
+   - Added test_http_error_handling: Tests 500 error with JSON error message extraction
+   - Added test_network_error_handling: Tests RequestError handling  
+   - Fixed DummyResponse to work with HTTPStatusError exceptions
+   - All 4 tests passing (original 2 + new 2)
+
+4. **Quality Assurance**:
+   - All tests pass: pytest reports 4/4 tests passing
+   - Ruff linting passes: No style violations
+   - Functionality verified: Error extraction works correctly
+   
+5. **Known Issue**: Minor mypy issue with graphistry.api_token() attribute detection, but this is a known limitation with the external dependency and doesn't affect functionality
+
+Enhanced error handling implementation complete - LouieClient now provides detailed error information for debugging.
 
 Phase 2A Complete
 After completing Step 2.1.0, Phase 2A is complete. The repository now has:

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import graphistry
 import httpx
@@ -9,6 +9,7 @@ class LouieClient:
     A client for interacting with the Louie.ai service.
     Uses Graphistry's authentication token for authorization.
     """
+
     def __init__(self, server_url: str = "https://den.louie.ai"):
         """
         Initialize the LouieClient.
@@ -30,7 +31,7 @@ class LouieClient:
                  or raises an exception on error.
         """
         # Get the current Graphistry API token for auth
-        token: Optional[str] = graphistry.api_token()
+        token: str | None = graphistry.api_token()
         if token is None:
             raise RuntimeError(
                 "No Graphistry API token found. Please call "
@@ -51,8 +52,8 @@ class LouieClient:
             error_text = ""
             try:
                 error_data = response.json()
-                error_text = (
-                    error_data.get("error", "") or error_data.get("message", "")
+                error_text = error_data.get("error", "") or error_data.get(
+                    "message", ""
                 )
             except Exception:
                 error_text = response.text

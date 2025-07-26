@@ -22,10 +22,11 @@ This lightweight approach (no CLAs or paperwork!) ensures contributions can be l
 
 ## Development Setup
 
-- **Prerequisites**: Python 3.8+ and pip. You'll also need an account on Graphistry's platform to test against LouieAI.
+- **Prerequisites**: Python 3.11+ and pip. You'll also need an account on Graphistry's platform to test against LouieAI.
 - **Fork & Clone** this repository.
 - **Install in dev mode**: `uv pip install -e ".[dev]"` to get all dependencies and tools.
-- We use **pre-commit** hooks (to be set up in a later phase) for linting and formatting, and CI will run tests, linters (ruff), and mypy.
+- **Set up pre-commit hooks**: After installing, run `pre-commit install` to set up Git hooks for linting/formatting.
+- We use **pre-commit** hooks for automatic linting and formatting, and CI will run tests, linters (ruff), and mypy.
 
 ## Branching and GitFlow
 
