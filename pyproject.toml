@@ -52,3 +52,32 @@ docs = [
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["louieai*"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "I", "B", "C4", "UP", "PYI", "SIM", "RUF"]
+# Enforce no ignore comments
+extend-select = ["RUF100"]  # Detects unnecessary # noqa comments
+ignore = []
+# Ban specific patterns
+[tool.ruff.per-file-ignores]
+# No file-specific ignores allowed
+
+[tool.mypy]
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+no_implicit_reexport = true
+# Disallow all forms of ignoring type errors
+warn_unused_ignores = true
+disallow_any_unimported = false  # Cannot be true when using untyped dependencies
+disallow_any_expr = false  # Would be too restrictive
+disallow_any_decorated = false  # Would be too restrictive
+disallow_any_explicit = false  # Would be too restrictive
+disallow_any_generics = true
+disallow_subclassing_any = true
+
+# Allow imports from graphistry which doesn't ship with type information
+[[tool.mypy.overrides]]
+module = "graphistry"
+ignore_missing_imports = true
