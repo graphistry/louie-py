@@ -112,12 +112,14 @@ Action: Improve the documentation content now that functionality is fleshed out.
 README updates: If any new info or best practices emerged (not much new, but we can:
 Emphasize that multiple types of outcomes can come from Louie (maybe mention if prompt triggers a graph, Louie might return a URL to Graphistry visualization, etc.).
 If we have any known limitations or next steps, note them (maybe in an "About" or "Roadmap" section).
+IMPORTANT: Mention the TODO comment about endpoint confirmation - documentation should note that the /api/ask endpoint is based on common REST patterns and subject to confirmation when official API docs become available.
 Possibly add a badge or note about documentation link explicitly (we have link in usage).
 Check if the placeholder <owner> can now be replaced if known (assuming by Phase 2B we know where the repo lives. If Graphistry, put "graphistry", if user personal, put that).
 If not known, leave it.
 Minor corrections if any issues (like ensure code fences closed properly, etc.).
 Add any example output snippet if available? Hard without real calls.
-We'll primarily verify consistency.
+IMPORTANT: Include error handling examples in documentation showing users how to catch and handle RuntimeError exceptions.
+We'll primarily verify consistency and ensure error handling is well documented.
 Docs index.md: Expand maybe the usage example with expected output or a more narrative:
 Possibly add a section like "How it works" or "Next Steps" referencing architecture page or Graphistry docs.
 We already have usage and example in README which mirrored in docs.
@@ -125,7 +127,11 @@ Could add one more example of handling a result:
 e.g., if Louie returns a chart link, how to handle it (just speculation).
 But without official info, maybe skip specifics.
 Ensure index and architecture pages reflect the improved error handling:
-Possibly mention that the client will raise exceptions if something goes wrong, which should be caught by the application.
+IMPORTANT: Phase 2A implemented enhanced error handling with specific HTTPStatusError and RequestError handling. Documentation must reflect:
+- LouieClient.ask() now provides detailed error messages with status codes
+- JSON error extraction from API responses ("error" or "message" fields)  
+- Separate handling for network errors vs HTTP errors
+- All errors raise RuntimeError with descriptive messages for debugging
 Architecture.md: Expand it with details:
 Now we know exactly how we implemented, describe:
 That LouieClient.ask issues an HTTP POST to {server}/api/ask sending the prompt and uses Graphistry's JWT for auth.
@@ -141,7 +147,10 @@ When you call `LouieClient.ask(prompt)`, the library:
 2. Makes an HTTP POST request to Louie.ai's REST API (default `https://den.louie.ai/api/ask`) with your prompt.
 3. Includes the auth token in the request headers (`Authorization: Bearer <token>`).
 4. On success, returns the response parsed from JSON. This could be a direct answer (text or data) or instructions/results (e.g., a link to a Graphistry visualization or a summarized dataset).
-5. On failure (HTTP error or no token), it raises a `RuntimeError` with details.
+5. On failure, raises detailed `RuntimeError` exceptions:
+   - For HTTP errors (4xx/5xx): Extracts JSON error messages from API response
+   - For network errors: Provides network-specific error details  
+   - For missing authentication: Clear message about calling graphistry.register()
 
 The client itself does not maintain any session state. Each call is independent (Louie.ai may maintain context on the server side).
 
