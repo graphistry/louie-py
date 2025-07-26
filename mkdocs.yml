@@ -1,0 +1,9 @@
+site_name: LouieAI Client
+site_description: Documentation for the LouieAI Python client library.
+site_url: https://louieai.readthedocs.io
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+theme:
+  name: material
+docs_dir: docs
