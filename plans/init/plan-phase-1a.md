@@ -86,6 +86,12 @@ Key Decisions Made
 <!-- Document WHY things were done certain ways -->
 [Packaging Backend Decision]: Chose Setuptools (PEP 621) because it's standard and easy to configure for both pip and uv, and allows direct control over packaging specifics (like specifying src layout). This avoids introducing another tool like Poetry/Hatch which might impose stricter dependency locking by default.
 [Auth Integration Decision]: Decided to rely on PyGraphistry's api_token() for authentication rather than building a separate auth mechanism. This leverages existing infrastructure and reduces complexity for the user (they only authenticate once).
+[Code Quality Decision]: Enforce strict code quality with NO tolerance for:
+  - Type ignore comments (# type: ignore)
+  - Noqa comments (# noqa)
+  - Type casts or Any workarounds
+  - File-specific lint/type check exceptions
+  All code must pass strict ruff and mypy checks. Dependencies without type information must be handled properly in mypy config, not with ignore comments.
 
 Lessons Learned
 <!-- Document what failed and why to avoid repeating -->
@@ -221,6 +227,12 @@ pyarrow>=8.0 (to cover current versions).
 We did not pin upper bounds to keep them relaxed (these libs follow semver decently; if breaking changes occur, we'll address then).
 The requires-python is ">=3.8" to reflect compatibility (Graphistry likely needs 3.8+, and 3.7 is probably EOL).
 Classifiers cover license, supported Python versions, and an "Alpha" development status since this is initial.
+IMPORTANT: Configure strict ruff and mypy rules in pyproject.toml:
+  - No type: ignore comments allowed
+  - No noqa comments allowed  
+  - No file-specific ignores
+  - Strict mypy mode with all checks enabled
+  - Handle untyped dependencies properly in config, not code
 In [project.optional-dependencies]:
 We define dev extra to include all tools needed for development (linter, type checker, test runner, formatter, docs generator). These are pinned to specific versions to ensure consistency in dev and CI.
 Using ruff==0.12.0 (placeholder for latest Ruff in 2025),
