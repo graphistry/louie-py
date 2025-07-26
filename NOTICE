@@ -1,0 +1,11 @@
+LouieAI Python Client
+Copyright 2025 Graphistry, Inc.
+
+This product includes software developed by Graphistry, Inc.
+(https://www.graphistry.com/).
+
+Third-party dependencies:
+- PyGraphistry (Apache-2.0)
+- httpx (BSD-3-Clause)
+- pandas (BSD-3-Clause)
+- pyarrow (Apache-2.0)
