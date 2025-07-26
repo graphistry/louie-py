@@ -15,8 +15,8 @@ source .venv/bin/activate
 uv pip install -e ".[dev]"
 pre-commit install
 
-# Verify setup
-ruff check . && ruff format --check . && mypy . && pytest -q
+# Verify setup (use smart scripts)
+./scripts/ci-quick.sh
 ```
 
 ## Local Development Environment
@@ -45,6 +45,7 @@ pre-commit install
 src/louieai/          # Main package code
 tests/               # Test suite
 docs/                # Documentation source
+scripts/             # Development scripts (CI simulation)
 .github/workflows/   # CI/CD configuration
 pyproject.toml       # Project configuration
 ```
@@ -57,12 +58,15 @@ pyproject.toml       # Project configuration
 uv pip install -e ".[dev]"        # Dev install with all tools
 uv pip install -e ".[docs]"       # Just docs dependencies
 
-# Update dependencies
-uv pip compile --upgrade          # Update lockfile
-uv pip sync requirements.txt      # Sync to lockfile
+# Run commands (modern approach)
+uv run pytest                     # Auto-manages environment
+uv run ruff check .               # No activation needed
+uv run mypy .                     # Handles dependencies automatically
 
-# Create fresh environment
-uv venv --python 3.12 .venv-clean
+# Environment management
+uv venv --python 3.12 .venv       # Create virtual environment
+uv pip compile --upgrade          # Update lockfile
+uv venv --python 3.12 .venv-clean # Fresh environment
 ```
 
 ### ruff (Linter + Formatter)
@@ -107,15 +111,79 @@ pytest tests/test_louie_client.py # Single file
 pytest -k "test_error"           # Tests matching pattern
 ```
 
+## Local CI Simulation
+
+### Smart Development Scripts
+
+We provide intelligent wrapper scripts that mirror CI exactly with sensible defaults:
+
+```bash
+# Individual tool scripts (smart defaults)
+./scripts/ruff.sh                     # Default: check all files
+./scripts/format.sh                   # Default: format all files  
+./scripts/mypy.sh                     # Default: check all files
+./scripts/pytest.sh                  # Default: coverage + 85% threshold
+
+# CI orchestration scripts
+./scripts/ci-quick.sh                 # Fast feedback (errors only + tests)
+./scripts/ci-local.sh                 # Full CI pipeline locally
+```
+
+### Smart Defaults vs Custom Arguments
+
+**No arguments = Smart defaults:**
+```bash
+./scripts/pytest.sh                  # Runs with coverage + threshold
+./scripts/ruff.sh                     # Checks all files
+```
+
+**With arguments = Full flexibility:**
+```bash
+./scripts/pytest.sh -v -k specific   # Adds coverage to your args
+./scripts/ruff.sh format --check     # Pass-through to ruff format --check
+./scripts/pytest.sh --no-cov         # User overrides, no smart defaults added
+```
+
+### Development Workflow
+
+**Quick iteration cycle:**
+```bash
+# Edit code
+./scripts/ci-quick.sh                 # Fast feedback (~5 seconds)
+# Continue development
+```
+
+**Before push/PR:**
+```bash
+./scripts/ci-local.sh                 # Full CI simulation (~30 seconds)
+# Confident push
+```
+
+### Coverage Requirements
+
+**85% threshold enforced:**
+- CI fails if total coverage drops below 85%
+- Local scripts use same threshold for consistency
+- Check coverage: `./scripts/pytest.sh` (shows percentage)
+
+**Coverage bypass for development:**
+```bash
+./scripts/pytest.sh --no-cov         # Skip coverage entirely
+./scripts/pytest.sh -x               # Fail-fast without coverage reporting
+```
+
 ## CI Workflow Integration
 
 ### Local Testing (Match CI)
 ```bash
-# Run the same checks as CI
+# Modern approach (recommended)
+./scripts/ci-local.sh                 # Exact CI replication
+
+# Manual approach (legacy)
 ruff check .
 ruff format --check .
 mypy .
-pytest -q
+pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85
 ```
 
 ### Pre-commit Hooks
@@ -127,14 +195,23 @@ Our pre-commit configuration runs:
 
 ### CI Pipeline
 - **Matrix**: Tests on Python 3.11, 3.12, 3.13
-- **Steps**: Lint → Format → Type Check → Test
+- **Steps**: Lint → Format → Type Check → Test + Coverage (85% threshold)
 - **Triggers**: PRs and pushes to main/develop/feature/*
+- **Coverage**: XML reports generated for all runs
 
 ### Debugging CI Failures
-1. **Lint failures**: Run `ruff check . --fix` locally
-2. **Format failures**: Run `ruff format .` locally  
-3. **Type failures**: Run `mypy .` locally, check overrides in pyproject.toml
-4. **Test failures**: Run `pytest -v` locally, check for environment differences
+
+**Use local CI simulation:**
+```bash
+./scripts/ci-local.sh                 # Replicate exact CI environment
+```
+
+**Individual debugging:**
+1. **Lint failures**: `./scripts/ruff.sh` then `./scripts/format.sh --fix`
+2. **Format failures**: `./scripts/format.sh` to auto-fix
+3. **Type failures**: `./scripts/mypy.sh`, check overrides in pyproject.toml
+4. **Test failures**: `./scripts/pytest.sh -v` for detailed output
+5. **Coverage failures**: `./scripts/pytest.sh` shows current percentage
 
 ## Development Conventions
 
