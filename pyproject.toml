@@ -22,12 +22,6 @@ classifiers = [
 ]
 keywords = ["Louie.ai", "Graphistry", "AI", "client", "investigation"]
 
-[project.urls]
-Documentation = "https://louieai.readthedocs.io"
-Repository = "https://github.com/<owner>/louieai"
-"Issue Tracker" = "https://github.com/<owner>/louieai/issues"
-Changelog = "https://github.com/<owner>/louieai/blob/main/CHANGELOG.md"
-
 dependencies = [
   "graphistry>=0.40.0",
   "httpx>=0.28.0",
@@ -35,6 +29,12 @@ dependencies = [
   "pyarrow>=21.0.0"
 ]
 # Note: graphistry on PyPI is named 'graphistry'. We ensure a minimal version that likely includes Louie support.
+
+[project.urls]
+Documentation = "https://louieai.readthedocs.io"
+Repository = "https://github.com/<owner>/louieai"
+"Issue Tracker" = "https://github.com/<owner>/louieai/issues"
+Changelog = "https://github.com/<owner>/louieai/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
