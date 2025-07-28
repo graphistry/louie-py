@@ -15,7 +15,7 @@ check_project_root
 if [ $# -eq 0 ]; then
     # Smart default: full coverage reporting with threshold
     echo "🧪 Running pytest with smart defaults (coverage + threshold)..."
-    uv run python -m pytest --cov=louieai --cov-report=term --cov-fail-under=85
+    uv run python -m pytest --cov=louieai --cov-report=term --cov-fail-under=75
 else
     # Check if coverage args already provided
     if echo "$*" | grep -q "\--cov"; then

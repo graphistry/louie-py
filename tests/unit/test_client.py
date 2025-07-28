@@ -17,10 +17,12 @@ class TestLouieClient:
     """Test LouieClient functionality with mocks."""
 
     @pytest.fixture
-    def mock_graphistry(self):
-        """Mock graphistry module."""
+    def mock_graphistry_client(self):
+        """Mock GraphistryClient instance."""
         mock = Mock()
         mock.api_token = Mock(return_value="fake-token-123")
+        mock.register = Mock()
+        mock.refresh = Mock()
         return mock
 
     @pytest.fixture
@@ -29,21 +31,20 @@ class TestLouieClient:
         return Mock(spec=httpx.Client)
 
     @pytest.fixture
-    def client(self, mock_graphistry):
-        """Create LouieClient with mocked dependencies."""
-        # Patch both modules that import graphistry
-        with (
-            patch("louieai.client.graphistry", mock_graphistry),
-            patch("louieai.auth.graphistry", mock_graphistry),
-        ):
-            client = LouieClient(server_url="https://test.louie.ai")
-            # Keep the patches active by yielding instead of returning
-            yield client
+    def client(self, mock_graphistry_client):
+        """Create LouieClient with mocked GraphistryClient."""
+        client = LouieClient(
+            server_url="https://test.louie.ai",
+            graphistry_client=mock_graphistry_client
+        )
+        return client
 
-    def test_client_initialization(self, mock_graphistry):
+    def test_client_initialization(self, mock_graphistry_client):
         """Test client initializes correctly."""
-        with patch("louieai.client.graphistry", mock_graphistry):
-            client = LouieClient(server_url="https://test.louie.ai")
+        client = LouieClient(
+            server_url="https://test.louie.ai",
+            graphistry_client=mock_graphistry_client
+        )
 
         assert client.server_url == "https://test.louie.ai"
         assert client.auth_manager is not None
@@ -238,7 +239,7 @@ class TestLouieClient:
         ):
             client.add_cell("D_001", "This will fail")
 
-    def test_auth_header_included(self, client, mock_httpx_client, mock_graphistry):
+    def test_auth_header_included(self, client, mock_httpx_client):
         """Test that auth header is included in requests."""
         # Mock response with JSONL format
         mock_response = Mock()
@@ -249,10 +250,7 @@ class TestLouieClient:
         mock_response.raise_for_status = Mock()
         mock_httpx_client.post.return_value = mock_response
 
-        with (
-            patch.object(client, "_client", mock_httpx_client),
-            patch("louieai.client.graphistry", mock_graphistry),
-        ):
+        with patch.object(client, "_client", mock_httpx_client):
             client.add_cell("D_001", "Test auth")
 
         # Check auth header was included

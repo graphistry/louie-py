@@ -214,19 +214,23 @@ class TestDocumentationIntegration:
             pytest.skip("No test credentials available")
 
         # Import real modules
-        import graphistry
+        from graphistry.pygraphistry import GraphistryClient
 
         from louieai import LouieClient
 
-        # Run actual example
-        graphistry.register(
+        # Create GraphistryClient and register credentials
+        graphistry_client = GraphistryClient()
+        graphistry_client.register(
             api=creds["api_version"],
             server=creds["server"],
             username=creds["username"],
             password=creds["password"],
         )
 
-        client = LouieClient(server_url="https://louie-dev.grph.xyz")
+        client = LouieClient(
+            server_url="https://louie-dev.grph.xyz",
+            graphistry_client=graphistry_client
+        )
 
         # Test thread creation
         thread = client.create_thread(name="Doc Test", initial_prompt="Say hello")

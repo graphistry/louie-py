@@ -13,28 +13,27 @@ class TestAuthManager:
     """Test AuthManager functionality."""
 
     @pytest.fixture
-    def mock_graphistry(self):
-        """Mock graphistry module."""
+    def mock_graphistry_client(self):
+        """Mock GraphistryClient instance."""
         mock = Mock()
         mock.api_token = Mock(return_value="fresh-token-456")
         mock.register = Mock()
+        mock.refresh = Mock()
         return mock
 
     @pytest.fixture
-    def auth_manager(self, mock_graphistry):
-        """Create AuthManager with mocked dependencies."""
-        with patch("louieai.auth.graphistry", mock_graphistry):
-            return AuthManager()
+    def auth_manager(self, mock_graphistry_client):
+        """Create AuthManager with mocked GraphistryClient."""
+        return AuthManager(graphistry_client=mock_graphistry_client)
 
-    def test_get_auth_header(self, auth_manager, mock_graphistry):
+    def test_get_auth_header(self, auth_manager, mock_graphistry_client):
         """Test getting authorization header."""
-        with patch("louieai.auth.graphistry", mock_graphistry):
-            header = auth_manager.get_auth_header()
+        header = auth_manager.get_auth_header()
 
         assert header == {"Authorization": "Bearer fresh-token-456"}
-        mock_graphistry.api_token.assert_called_once()
+        mock_graphistry_client.api_token.assert_called_once()
 
-    def test_handle_auth_error_jwt_expired(self, auth_manager, mock_graphistry):
+    def test_handle_auth_error_jwt_expired(self, auth_manager, mock_graphistry_client):
         """Test handling JWT expiration error."""
         # Mock JWT expiration error
         error = httpx.HTTPStatusError(
@@ -43,13 +42,12 @@ class TestAuthManager:
             response=Mock(status_code=401, text='{"detail": "JWT token has expired"}'),
         )
 
-        with patch("louieai.auth.graphistry", mock_graphistry):
-            result = auth_manager.handle_auth_error(error)
+        result = auth_manager.handle_auth_error(error)
 
         assert result is True  # Should retry
-        mock_graphistry.api_token.assert_called_with(refresh=True)
+        mock_graphistry_client.refresh.assert_called_once()
 
-    def test_handle_auth_error_jwt_invalid(self, auth_manager, mock_graphistry):
+    def test_handle_auth_error_jwt_invalid(self, auth_manager, mock_graphistry_client):
         """Test handling invalid JWT error."""
         # Mock invalid JWT error
         error = httpx.HTTPStatusError(
@@ -60,11 +58,10 @@ class TestAuthManager:
             ),
         )
 
-        with patch("louieai.auth.graphistry", mock_graphistry):
-            result = auth_manager.handle_auth_error(error)
+        result = auth_manager.handle_auth_error(error)
 
         assert result is True  # Should retry
-        mock_graphistry.api_token.assert_called_with(refresh=True)
+        mock_graphistry_client.refresh.assert_called_once()
 
     def test_handle_auth_error_other_401(self, auth_manager):
         """Test handling other 401 errors."""
@@ -99,12 +96,11 @@ class TestAuthManager:
         result = auth_manager.handle_auth_error(error)
         assert result is False  # Should not retry
 
-    def test_refresh_token(self, auth_manager, mock_graphistry):
+    def test_refresh_token(self, auth_manager, mock_graphistry_client):
         """Test token refresh."""
-        with patch("louieai.auth.graphistry", mock_graphistry):
-            auth_manager.refresh_token()
+        auth_manager.refresh_token()
 
-        mock_graphistry.api_token.assert_called_with(refresh=True)
+        mock_graphistry_client.refresh.assert_called_once()
 
     def test_is_jwt_error_various_messages(self, auth_manager):
         """Test JWT error detection with various messages."""

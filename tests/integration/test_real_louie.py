@@ -21,19 +21,23 @@ class TestRealLouieIntegration:
         if not creds:
             pytest.skip("Test credentials not available")
 
-        # Initialize graphistry connection
-        import graphistry
+        # Create GraphistryClient and register credentials
+        from graphistry.pygraphistry import GraphistryClient
 
-        graphistry.register(
+        graphistry_client = GraphistryClient()
+        graphistry_client.register(
             api=creds["api_version"],
             server=creds["server"],
             username=creds["username"],
             password=creds["password"],
         )
 
-        # Create Louie client
+        # Create Louie client with graphistry client
         # Use louie-dev.grph.xyz as mentioned in credentials
-        return LouieClient(server_url="https://louie-dev.grph.xyz")
+        return LouieClient(
+            server_url="https://louie-dev.grph.xyz",
+            graphistry_client=graphistry_client
+        )
 
     def test_basic_query(self, client):
         """Test a simple query to verify connection."""
@@ -43,12 +47,12 @@ class TestRealLouieIntegration:
 
         # Check response
         assert response is not None
-        assert hasattr(response, "type")
         assert hasattr(response, "thread_id")
-        print(f"Response type: {response.type}")
+        assert hasattr(response, "elements")
         print(f"Thread ID: {response.thread_id}")
-        if hasattr(response, "text") and response.text:
-            print(f"Text: {response.text[:100]}")
+        print(f"Elements: {len(response.elements)}")
+        if response.text_elements:
+            print(f"Text elements: {len(response.text_elements)}")
         # Verify we got a valid thread ID
         assert response.thread_id.startswith("D_")
 
@@ -69,7 +73,8 @@ class TestRealLouieIntegration:
 
         # Should get a response about the data
         assert response is not None
-        assert hasattr(response, "type")
+        assert hasattr(response, "thread_id")
+        assert hasattr(response, "elements")
 
     def test_multi_step_workflow(self, client):
         """Test a multi-step workflow."""
@@ -102,8 +107,10 @@ class TestRealLouieIntegration:
 
         # Check response (errors typically come as TextElement)
         assert response is not None
-        assert hasattr(response, "type")
+        assert hasattr(response, "thread_id")
+        assert hasattr(response, "elements")
         # In actual API, errors often come as helpful text responses
-        if response.type == "TextElement":
-            assert hasattr(response, "text")
-            print(f"Error response: {response.text[:200]}")
+        if response.text_elements:
+            text_elem = response.text_elements[0]
+            assert "text" in text_elem
+            print(f"Error response: {text_elem['text'][:200]}")
