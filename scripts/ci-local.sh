@@ -37,6 +37,25 @@ if ! command -v uv &> /dev/null; then
     print_error "uv is not installed. Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"
 fi
 
+print_step "Environment sanity check"
+# Ensure we have .venv and it's using the right Python
+if [ ! -f ".venv/bin/python" ]; then
+    print_error ".venv not found - run './bin/uv venv' first"
+fi
+
+# Check we're using venv Python, not host Python
+VENV_PYTHON_VERSION=$(./bin/uv run python --version 2>&1 | cut -d' ' -f2)
+HOST_PYTHON_VERSION=$(python --version 2>&1 | cut -d' ' -f2)
+
+if [ "$VENV_PYTHON_VERSION" == "$HOST_PYTHON_VERSION" ]; then
+    echo "⚠️  WARNING: venv Python ($VENV_PYTHON_VERSION) same as host Python ($HOST_PYTHON_VERSION)"
+    echo "This might indicate environment issues"
+fi
+
+echo "✓ Using venv Python: $VENV_PYTHON_VERSION"
+echo "✓ Host Python: $HOST_PYTHON_VERSION"
+print_success "Environment verified"
+
 print_step "Installing dependencies with uv"
 ./bin/uv pip install -e ".[dev]" || print_error "Failed to install dependencies"
 print_success "Dependencies installed"
