@@ -17,7 +17,7 @@ def create_mock_responses():
             "type": "TextElement",
             "id": "B_mock123",
             "text": "Hello from Louie!",
-            "language": "Markdown"
+            "language": "Markdown",
         }
     ]
     hello_response = Response("D_mockThread123", hello_elements)
@@ -37,7 +37,7 @@ Key insights:
 - Customer retention improved by 12%
 - Average order value up $35
 - Mobile purchases now represent 60% of total sales""",
-            "language": "Markdown"
+            "language": "Markdown",
         }
     ]
     analysis_response = Response("D_mockThread456", analysis_elements)
@@ -57,7 +57,7 @@ Key insights:
                     "status": "string",
                 },
                 "summary": {"total_purchases": {"min": 0, "max": 5000, "mean": 250.5}},
-            }
+            },
         }
     ]
     df_response = Response("D_mockThread789", df_elements)
@@ -81,7 +81,7 @@ Key insights:
             "type": "TextElement",
             "id": "B_mixed_text",
             "text": "Here's your customer data analysis:",
-            "language": "Markdown"
+            "language": "Markdown",
         },
         {
             "type": "DfElement",
@@ -94,9 +94,9 @@ Key insights:
                     "signup_date": "datetime64[ns]",
                     "total_purchases": "float64",
                     "status": "string",
-                }
-            }
-        }
+                },
+            },
+        },
     ]
     mixed_response = Response("D_mockMixed", mixed_elements)
 
@@ -115,7 +115,7 @@ def create_mock_client():
 
     # Mock the client
     mock_client = Mock(spec=LouieClient)
-    
+
     # Create mock responses
     responses = create_mock_responses()
 
@@ -152,6 +152,8 @@ def create_mock_client():
     ]
 
     # Mock get_thread
-    mock_client.get_thread.return_value = Thread(id="D_thread1", name="Analysis Session")
+    mock_client.get_thread.return_value = Thread(
+        id="D_thread1", name="Analysis Session"
+    )
 
     return mock_client

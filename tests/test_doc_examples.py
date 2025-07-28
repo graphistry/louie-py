@@ -228,8 +228,7 @@ class TestDocumentationIntegration:
         )
 
         client = LouieClient(
-            server_url="https://louie-dev.grph.xyz",
-            graphistry_client=graphistry_client
+            server_url="https://louie-dev.grph.xyz", graphistry_client=graphistry_client
         )
 
         # Test thread creation

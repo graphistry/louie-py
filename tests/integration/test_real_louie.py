@@ -35,8 +35,7 @@ class TestRealLouieIntegration:
         # Create Louie client with graphistry client
         # Use louie-dev.grph.xyz as mentioned in credentials
         return LouieClient(
-            server_url="https://louie-dev.grph.xyz",
-            graphistry_client=graphistry_client
+            server_url="https://louie-dev.grph.xyz", graphistry_client=graphistry_client
         )
 
     def test_basic_query(self, client):

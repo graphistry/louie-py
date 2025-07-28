@@ -29,7 +29,9 @@ jobs:
       - name: Type Check (mypy)
         run: uv run mypy .
       - name: Run Tests
-        run: uv run pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=75
+        # DO NOT LOWER THIS THRESHOLD - INCREASE TEST COVERAGE INSTEAD
+        # Coverage must remain at 85% or higher to maintain code quality
+        run: uv run pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85
   
   install-test:
     runs-on: ubuntu-latest
