@@ -165,6 +165,7 @@ class TestDocumentationIntegration:
         """Test error handling with invalid requests."""
         # Try to use non-existent thread
         import httpx
+
         with pytest.raises((httpx.HTTPError, RuntimeError)):
             real_client.get_thread("D_nonexistent_thread_12345")
 

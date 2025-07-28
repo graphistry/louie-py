@@ -234,7 +234,7 @@ class TestLouieClient:
 
         with (
             patch.object(client, "_client", mock_httpx_client),
-            pytest.raises(httpx.HTTPStatusError)
+            pytest.raises(httpx.HTTPStatusError),
         ):
             client.add_cell("D_001", "This will fail")
 
@@ -251,7 +251,7 @@ class TestLouieClient:
 
         with (
             patch.object(client, "_client", mock_httpx_client),
-            patch("louieai.client.graphistry", mock_graphistry)
+            patch("louieai.client.graphistry", mock_graphistry),
         ):
             client.add_cell("D_001", "Test auth")
 
