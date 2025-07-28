@@ -7,16 +7,24 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         python-version: ["3.12", "3.13"]
+      fail-fast: false  # Don't cancel all jobs if one fails
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Verify Python version
+        run: |
+          python --version
+          which python
       - name: Install dependencies
         run: |
           uv venv --python python${{ matrix.python-version }}
@@ -31,10 +39,11 @@ jobs:
       - name: Run Tests
         # DO NOT LOWER THIS THRESHOLD - INCREASE TEST COVERAGE INSTEAD
         # Coverage must remain at 85% or higher to maintain code quality
-        run: uv run pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85
+        run: uv run pytest -v --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85
   
   install-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build-test
     strategy:
       matrix:
@@ -53,7 +62,9 @@ jobs:
         run: python -m build
       - name: Install uv (if needed)
         if: matrix.installer == 'uv'
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Test pip installation
         if: matrix.installer == 'pip'
         run: |
@@ -75,13 +86,16 @@ jobs:
   
   docs-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: "3.12"
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
           uv venv --python python3.12
