@@ -27,21 +27,67 @@ uv pip install git+https://github.com/<owner>/louieai.git
 pip install git+https://github.com/<owner>/louieai.git
 ```
 
+## Authentication
+
+LouieAI supports multiple authentication methods:
+
+```python
+from louieai import LouieClient
+
+# Method 1: Use existing graphistry authentication
+import graphistry
+graphistry.register(api=3, username="your_user", password="your_pass")
+client = LouieClient()
+
+# Method 2: Pass credentials directly
+client = LouieClient(
+    username="your_user",
+    password="your_pass",
+    server="hub.graphistry.com"
+)
+
+# Method 3: Use register method
+client = LouieClient()
+client.register(username="your_user", password="your_pass")
+
+# Method 4: Use existing graphistry client
+g = graphistry.nodes(df).edges(df2)
+client = LouieClient(graphistry_client=g)
+```
+
 ## Usage Example
 
 ```python
-import graphistry
-from louieai import LouieClient
+# Create a thread with an initial query
+thread = client.create_thread(
+    name="Data Analysis",
+    initial_prompt="What insights can you find about sales trends?"
+)
 
-# First, authenticate with Graphistry (replace with your credentials or key)
-graphistry.register(api=3, username="your_user", password="your_pass")
+# Continue the conversation in the same thread
+response = client.add_cell(
+    thread.id,
+    "Can you create a visualization of the top 10 products?"
+)
 
-client = LouieClient()
-response = client.ask("What insights can you find about X dataset?")
-print(response)
+# Access response data
+if response.type == "TextElement":
+    print(response.text)
+elif response.type == "DfElement":
+    df = response.to_dataframe()
 ```
 
-This will send the prompt to LouieAI and return a response (e.g., an answer or a visualization link).
+Louie maintains conversation context within threads, allowing for sophisticated multi-step analyses.
+
+## Simple One-Shot Queries
+
+For quick queries without thread context:
+
+```python
+# Simple ask() method for backward compatibility
+response = client.ask("What are the key metrics in the dataset?")
+print(response.text)
+```
 
 ## Error Handling
 
@@ -49,9 +95,10 @@ The LouieClient provides comprehensive error handling with detailed messages:
 
 ```python
 try:
-    client = LouieClient()
-    response = client.ask("Your query here")
-    print(response)
+    thread = client.create_thread(
+        initial_prompt="Analyze customer churn patterns"
+    )
+    response = client.add_cell(thread.id, "Show me the top risk factors")
 except RuntimeError as e:
     print(f"Error occurred: {e}")
 ```
@@ -61,8 +108,13 @@ The client distinguishes between different error types:
 - **Network Errors**: Provides connection failure details
 - **Authentication Errors**: Clear guidance when Graphistry token is missing
 
-## Current Status
+## Key Features
 
-This library is in active development (Alpha). The `/api/ask` endpoint is based on common REST patterns and is subject to confirmation when official API documentation becomes available.
+- **Thread-based conversations**: Maintain context across multiple queries
+- **Multiple response types**: Handle text, DataFrames, visualizations, and more
+- **Streaming support**: Responses stream in real-time via JSONL
+- **Natural language interface**: Access all Louie capabilities through simple prompts
+- **Auto-refresh authentication**: Automatically handles JWT token expiration
+- **Multiple auth methods**: Works with existing Graphistry sessions or direct credentials
 
 See the [Architecture](architecture.md) page for more details on how LouieAI and Graphistry integrate.

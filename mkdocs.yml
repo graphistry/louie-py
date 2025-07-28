@@ -7,7 +7,14 @@ nav:
   - API Reference:
     - Overview: api/index.md
     - LouieClient: api/client.md
+    - Response Types: api/response-types.md
+  - Query Patterns: query-patterns.md
+  - Testing: testing.md
   - Developer Guide: development.md
+  - UV Best Practices: uv-best-practices.md
+  - Type Export System:
+    - Integration Guide: type-export-integration.md
+    - Testing Guide: testing-type-export.md
 theme:
   name: material
   features:
