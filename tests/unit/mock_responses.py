@@ -100,7 +100,11 @@ class MockResponseLibrary:
             "error_type": error_type,
             "message": message,
             "thread_id": thread_id,
-            "traceback": f"Traceback (most recent call last):\n  File '<stdin>', line 1\n{error_type}: {message}",
+            "traceback": (
+                f"Traceback (most recent call last):\n"
+                f"  File '<stdin>', line 1\n"
+                f"{error_type}: {message}"
+            ),
             "created_at": datetime.utcnow().isoformat(),
             "status": "error",
         }
@@ -114,7 +118,10 @@ class MockResponseLibrary:
     ) -> dict[str, Any]:
         """Create a mock Base64ImageElement response."""
         # Mock base64 image data (1x1 transparent PNG)
-        base64_data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+        base64_data = (
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+            "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+        )
 
         return {
             "id": element_id,
@@ -235,7 +242,8 @@ class ResponseScenarios:
         """Response for a simple question."""
         return [
             MockResponseLibrary.text_response(
-                "The capital of France is Paris. It's known for the Eiffel Tower, Louvre Museum, and its rich cultural heritage."
+                "The capital of France is Paris. It's known for the Eiffel Tower, "
+                "Louvre Museum, and its rich cultural heritage."
             )
         ]
 
@@ -247,7 +255,10 @@ class ResponseScenarios:
             MockResponseLibrary.call_response(
                 function_name="query_postgresql",
                 args={
-                    "query": "SELECT * FROM customers WHERE created_at > '2024-01-01' LIMIT 100"
+                    "query": (
+                        "SELECT * FROM customers WHERE created_at > '2024-01-01' "
+                        "LIMIT 100"
+                    )
                 },
             ),
             MockResponseLibrary.dataframe_response(
@@ -255,7 +266,8 @@ class ResponseScenarios:
                 columns=["customer_id", "name", "email", "created_at", "status"],
             ),
             MockResponseLibrary.text_response(
-                "Found 100 customers who joined after January 1, 2024. The data shows a mix of active and pending customers."
+                "Found 100 customers who joined after January 1, 2024. "
+                "The data shows a mix of active and pending customers."
             ),
         ]
 
@@ -270,7 +282,8 @@ class ResponseScenarios:
             ),
             MockResponseLibrary.graph_response(num_nodes=500, num_edges=1200),
             MockResponseLibrary.text_response(
-                "Created network graph with 500 nodes and 1,200 edges. Nodes are colored by risk score and sized by transaction volume."
+                "Created network graph with 500 nodes and 1,200 edges. "
+                "Nodes are colored by risk score and sized by transaction volume."
             ),
         ]
 
@@ -284,7 +297,8 @@ class ResponseScenarios:
                 message="Failed to connect to database: Connection timeout",
             ),
             MockResponseLibrary.text_response(
-                "I encountered an error connecting to the database. Please check your connection settings and try again."
+                "I encountered an error connecting to the database. "
+                "Please check your connection settings and try again."
             ),
         ]
 

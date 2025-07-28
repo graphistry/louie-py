@@ -52,7 +52,10 @@ class TestLouieClient:
         """Test thread creation with initial prompt."""
         # Mock response with JSONL format
         mock_response = Mock()
-        mock_response.text = '{"dthread_id": "D_test001"}\n{"payload": {"id": "B_001", "type": "TextElement", "text": "Hello!"}}'
+        mock_response.text = (
+            '{"dthread_id": "D_test001"}\n'
+            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Hello!"}}'
+        )
         mock_response.raise_for_status = Mock()
         mock_httpx_client.post.return_value = mock_response
 
@@ -82,7 +85,11 @@ class TestLouieClient:
         """Test adding a cell to an existing thread."""
         # Mock response with JSONL format
         mock_response = Mock()
-        mock_response.text = '{"dthread_id": "D_test001"}\n{"payload": {"id": "B_001", "type": "TextElement", "text": "Response text"}}'
+        mock_response.text = (
+            '{"dthread_id": "D_test001"}\n'
+            '{"payload": {"id": "B_001", "type": "TextElement", '
+            '"text": "Response text"}}'
+        )
         mock_response.raise_for_status = Mock()
         mock_httpx_client.post.return_value = mock_response
 
@@ -103,7 +110,11 @@ class TestLouieClient:
         """Test adding a cell without thread ID creates new thread."""
         # Mock response with JSONL format
         mock_response = Mock()
-        mock_response.text = '{"dthread_id": "D_new001"}\n{"payload": {"id": "B_001", "type": "TextElement", "text": "New thread!"}}'
+        mock_response.text = (
+            '{"dthread_id": "D_new001"}\n'
+            '{"payload": {"id": "B_001", "type": "TextElement", '
+            '"text": "New thread!"}}'
+        )
         mock_response.raise_for_status = Mock()
         mock_httpx_client.post.return_value = mock_response
 
@@ -167,7 +178,15 @@ class TestLouieClient:
         """Test parsing response with multiple elements."""
         # Mock response with multiple JSONL elements
         mock_response = Mock()
-        mock_response.text = '{"dthread_id": "D_001"}\n{"payload": {"id": "B_001", "type": "TextElement", "text": "Processing..."}}\n{"payload": {"id": "B_001", "type": "TextElement", "text": "Processing...\\nAnalyzing..."}}\n{"payload": {"id": "B_002", "type": "DfElement", "df_id": "df_123", "metadata": {"shape": [10, 3]}}}'
+        mock_response.text = (
+            '{"dthread_id": "D_001"}\n'
+            '{"payload": {"id": "B_001", "type": "TextElement", '
+            '"text": "Processing..."}}\n'
+            '{"payload": {"id": "B_001", "type": "TextElement", '
+            '"text": "Processing...\\nAnalyzing..."}}\n'
+            '{"payload": {"id": "B_002", "type": "DfElement", "df_id": "df_123", '
+            '"metadata": {"shape": [10, 3]}}}'
+        )
         mock_response.raise_for_status = Mock()
         mock_httpx_client.post.return_value = mock_response
 
@@ -191,7 +210,10 @@ class TestLouieClient:
         """Test backward-compatible ask() method."""
         # Mock response with JSONL format
         mock_response = Mock()
-        mock_response.text = '{"dthread_id": "D_new001"}\n{"payload": {"id": "B_001", "type": "TextElement", "text": "Answer"}}'
+        mock_response.text = (
+            '{"dthread_id": "D_new001"}\n'
+            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Answer"}}'
+        )
         mock_response.raise_for_status = Mock()
         mock_httpx_client.post.return_value = mock_response
 
@@ -210,18 +232,27 @@ class TestLouieClient:
             response=Mock(status_code=500, text="Internal Server Error"),
         )
 
-        with patch.object(client, "_client", mock_httpx_client), pytest.raises(httpx.HTTPStatusError):
+        with (
+            patch.object(client, "_client", mock_httpx_client),
+            pytest.raises(httpx.HTTPStatusError)
+        ):
             client.add_cell("D_001", "This will fail")
 
     def test_auth_header_included(self, client, mock_httpx_client, mock_graphistry):
         """Test that auth header is included in requests."""
         # Mock response with JSONL format
         mock_response = Mock()
-        mock_response.text = '{"dthread_id": "D_001"}\n{"payload": {"id": "B_001", "type": "TextElement", "text": "OK"}}'
+        mock_response.text = (
+            '{"dthread_id": "D_001"}\n'
+            '{"payload": {"id": "B_001", "type": "TextElement", "text": "OK"}}'
+        )
         mock_response.raise_for_status = Mock()
         mock_httpx_client.post.return_value = mock_response
 
-        with patch.object(client, "_client", mock_httpx_client), patch("louieai.client.graphistry", mock_graphistry):
+        with (
+            patch.object(client, "_client", mock_httpx_client),
+            patch("louieai.client.graphistry", mock_graphistry)
+        ):
             client.add_cell("D_001", "Test auth")
 
         # Check auth header was included

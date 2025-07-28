@@ -90,7 +90,8 @@ class TestDocumentationIntegration:
         # Query that should return data
         response = real_client.add_cell(
             thread.id,
-            "Show me a sample dataset with 5 rows of customer data including id, name, and email",
+            "Show me a sample dataset with 5 rows of customer data "
+            "including id, name, and email",
         )
 
         # Should get response
