@@ -171,7 +171,6 @@ def create_mock_client():
     # Set up client methods
     client.create_thread = Mock(side_effect=create_thread)
     client.add_cell = Mock(side_effect=add_cell)
-    client.ask = Mock(side_effect=lambda prompt: add_cell("", prompt))
     client.list_threads = Mock(side_effect=list_threads)
     client.get_thread = Mock(side_effect=get_thread)
     client.register = Mock(return_value=client)

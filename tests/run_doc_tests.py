@@ -45,7 +45,6 @@ def create_mock_client():
     # Client methods
     client.create_thread = Mock(return_value=thread)
     client.add_cell = Mock(return_value=text_response)
-    client.ask = Mock(return_value=text_response)
     client.list_threads = Mock(return_value=[thread])
     client.register = Mock(return_value=client)
 

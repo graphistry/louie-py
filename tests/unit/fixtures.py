@@ -91,7 +91,6 @@ def mock_streaming_client():
 
     # Override add_cell to use our streaming mock
     client.add_cell = Mock(side_effect=mock_add_cell)
-    client.ask = Mock(side_effect=lambda prompt: mock_add_cell("", prompt))
 
     return client
 

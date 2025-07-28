@@ -3,7 +3,7 @@
 import time
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 import httpx
 from graphistry.pygraphistry import GraphistryClient
@@ -172,10 +172,7 @@ class AuthManager:
             return False
 
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
-def auto_retry_auth(func: F) -> F:
+def auto_retry_auth[F: Callable[..., Any]](func: F) -> F:
     """Decorator to automatically retry on auth failures.
 
     This decorator will catch auth errors and attempt to refresh

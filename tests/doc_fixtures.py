@@ -119,8 +119,6 @@ def create_mock_client():
     # Create mock responses
     responses = create_mock_responses()
 
-    # Mock the ask method (backward compatibility)
-    mock_client.ask.return_value = responses["hello"]
 
     # Mock thread creation
     def mock_create_thread(name=None, initial_prompt=None):
