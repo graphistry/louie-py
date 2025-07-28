@@ -130,7 +130,7 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 - **PR comments**: For specific code review feedback
 
 ### Using AI Tools (Optional)
-This project uses an AI co-pilot approach for some development tasks. We have an AI planning template under `plans/PLAN_TEMPLATE.md`. If you'd like to use an AI assistant to help code, you can follow a similar approach. This is entirely optional but can help maintain consistency and traceability.
+This project uses an AI co-pilot approach for some development tasks. We have an AI planning template under `ai/templates/PLAN.md`. If you'd like to use an AI assistant to help code, you can follow a similar approach. This is entirely optional but can help maintain consistency and traceability.
 
 ## Getting Help
 
