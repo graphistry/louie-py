@@ -10,7 +10,8 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.12"]
+        # TODO: Add 3.13 once uv and dependencies have stable support
       fail-fast: false  # Don't cancel all jobs if one fails
     steps:
       - uses: actions/checkout@v3
@@ -29,6 +30,7 @@ jobs:
         run: |
           uv venv --python python${{ matrix.python-version }}
           source .venv/bin/activate
+          python --version  # Verify we're using the right Python
           uv pip install -e ".[dev]"
       - name: Lint (ruff)
         run: uv run ruff check .
