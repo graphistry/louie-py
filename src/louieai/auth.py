@@ -54,11 +54,10 @@ class AuthManager:
         # If using external graphistry client
         if self._graphistry_client:
             token = self._graphistry_client.api_token()
-            if not token:
+            if not token and hasattr(self._graphistry_client, "refresh"):
                 # Try to refresh using client's refresh method if available
-                if hasattr(self._graphistry_client, "refresh"):
-                    self._graphistry_client.refresh()
-                    token = self._graphistry_client.api_token()
+                self._graphistry_client.refresh()
+                token = self._graphistry_client.api_token()
             return token
 
         # Otherwise use global graphistry auth

@@ -163,7 +163,7 @@ class TestResponseScenarios:
         assert len(elements) > 5
 
         # Check for variety of element types
-        types = set(e["type"] for e in elements)
+        types = {e["type"] for e in elements}
         assert "TextElement" in types
         assert "CallElement" in types
         assert "DfElement" in types

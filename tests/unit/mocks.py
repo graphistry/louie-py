@@ -36,7 +36,7 @@ class MockDataFrame:
     def tolist(self):
         """Convert to list."""
         # Return the data for the first column
-        first_col = list(self._data.values())[0] if self._data else []
+        first_col = next(iter(self._data.values())) if self._data else []
         return first_col
 
     def describe(self):

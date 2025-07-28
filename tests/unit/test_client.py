@@ -210,9 +210,8 @@ class TestLouieClient:
             response=Mock(status_code=500, text="Internal Server Error"),
         )
 
-        with patch.object(client, "_client", mock_httpx_client):
-            with pytest.raises(httpx.HTTPStatusError):
-                client.add_cell("D_001", "This will fail")
+        with patch.object(client, "_client", mock_httpx_client), pytest.raises(httpx.HTTPStatusError):
+            client.add_cell("D_001", "This will fail")
 
     def test_auth_header_included(self, client, mock_httpx_client, mock_graphistry):
         """Test that auth header is included in requests."""
@@ -222,9 +221,8 @@ class TestLouieClient:
         mock_response.raise_for_status = Mock()
         mock_httpx_client.post.return_value = mock_response
 
-        with patch.object(client, "_client", mock_httpx_client):
-            with patch("louieai.client.graphistry", mock_graphistry):
-                client.add_cell("D_001", "Test auth")
+        with patch.object(client, "_client", mock_httpx_client), patch("louieai.client.graphistry", mock_graphistry):
+            client.add_cell("D_001", "Test auth")
 
         # Check auth header was included
         call_args = mock_httpx_client.post.call_args

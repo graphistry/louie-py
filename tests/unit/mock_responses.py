@@ -333,7 +333,7 @@ class ResponseScenarios:
 
 Found 1,000 anomalous events (10% of total) with the following breakdown:
 - High severity: 150 events
-- Medium severity: 350 events  
+- Medium severity: 350 events
 - Low severity: 500 events
 
 ### Key Findings:

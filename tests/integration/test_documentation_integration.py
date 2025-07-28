@@ -163,7 +163,8 @@ class TestDocumentationIntegration:
     def test_error_handling(self, real_client):
         """Test error handling with invalid requests."""
         # Try to use non-existent thread
-        with pytest.raises(Exception):  # Might be HTTPError or custom exception
+        import httpx
+        with pytest.raises((httpx.HTTPError, RuntimeError)):
             real_client.get_thread("D_nonexistent_thread_12345")
 
     @pytest.mark.parametrize(
@@ -196,7 +197,7 @@ class TestDocumentationIntegration:
             threads.append(thread)
 
         # Query each thread
-        for i, thread in enumerate(threads):
+        for _i, thread in enumerate(threads):
             response = real_client.add_cell(thread.id, "What thread number is this?")
             assert response.thread_id == thread.id
 

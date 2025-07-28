@@ -175,7 +175,7 @@ class TestDocumentation:
             pytest.skip("docs/index.md not found")
 
         blocks = extract_python_blocks(doc_path)
-        for code, line_num, context in blocks:
+        for code, line_num, _context in blocks:
             self._test_code_block(code, "docs/index.md", line_num)
 
     def test_client_api_examples(self):
@@ -185,7 +185,7 @@ class TestDocumentation:
             pytest.skip("docs/api/client.md not found")
 
         blocks = extract_python_blocks(doc_path)
-        for code, line_num, context in blocks:
+        for code, line_num, _context in blocks:
             self._test_code_block(code, "docs/api/client.md", line_num)
 
     def test_query_patterns_examples(self):
@@ -195,7 +195,7 @@ class TestDocumentation:
             pytest.skip("docs/query-patterns.md not found")
 
         blocks = extract_python_blocks(doc_path)
-        for code, line_num, context in blocks:
+        for code, line_num, _context in blocks:
             self._test_code_block(code, "docs/query-patterns.md", line_num)
 
 
