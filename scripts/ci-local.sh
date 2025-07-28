@@ -49,6 +49,10 @@ print_step "Format checking with ruff"
 ./scripts/format.sh --check || print_error "Format check failed"
 print_success "Format check passed"
 
+print_step "Validate ReadTheDocs config"
+./scripts/validate-readthedocs.sh || print_error "ReadTheDocs config is invalid"
+print_success "ReadTheDocs config valid"
+
 print_step "Type checking with mypy"
 ./scripts/mypy.sh || print_error "Type checking failed"
 print_success "Type checking passed"

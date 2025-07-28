@@ -19,6 +19,10 @@ print_step "Quick lint check (errors only)"
 ./scripts/ruff.sh check --select=F,E . || print_error "Critical linting errors found"
 print_success "No critical errors"
 
+print_step "Validate ReadTheDocs config"
+./scripts/validate-readthedocs.sh || print_error "ReadTheDocs config is invalid"
+print_success "ReadTheDocs config valid"
+
 print_step "Running tests (fail fast)"
 ./scripts/pytest.sh -x --tb=short || print_error "Tests failed"
 print_success "Tests passed"

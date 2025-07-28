@@ -79,6 +79,19 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install dependencies
         run: uv pip install -e ".[docs]"
+      - name: Validate ReadTheDocs config
+        run: |
+          curl -sSL https://raw.githubusercontent.com/readthedocs/readthedocs.org/main/readthedocs/rtd_tests/fixtures/spec/v2/schema.json -o rtd-schema.json
+          python -m pip install jsonschema pyyaml
+          python -c "
+          import yaml, json, jsonschema
+          with open('.readthedocs.yml') as f:
+              config = yaml.safe_load(f)
+          with open('rtd-schema.json') as f:
+              schema = json.load(f)
+          jsonschema.validate(config, schema)
+          print('✅ ReadTheDocs config is valid')
+          "
       - name: Build documentation
         run: uv run mkdocs build --strict
       - name: Verify logo included
