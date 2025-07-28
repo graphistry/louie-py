@@ -205,7 +205,6 @@ class TestLouieClient:
         assert df_elem["type"] == "DfElement"
         assert df_elem["metadata"]["shape"] == [10, 3]
 
-
     def test_error_handling(self, client, mock_httpx_client):
         """Test error handling for API failures."""
         # Mock error response
@@ -360,4 +359,3 @@ class TestLouieClient:
             assert client.server_url == "https://test.louie.ai"
 
         # __exit__ should close the HTTP client (tested by not raising exception)
-

@@ -119,7 +119,6 @@ def create_mock_client():
     # Create mock responses
     responses = create_mock_responses()
 
-
     # Mock thread creation
     def mock_create_thread(name=None, initial_prompt=None):
         thread = Thread(id="D_mockThread", name=name)

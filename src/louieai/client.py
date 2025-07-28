@@ -320,7 +320,6 @@ class LouieClient:
         data = response.json()
         return Thread(id=data.get("id", ""), name=data.get("name"))
 
-
     def __enter__(self):
         """Context manager support."""
         return self
@@ -328,5 +327,3 @@ class LouieClient:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Clean up client on exit."""
         self._client.close()
-
-
