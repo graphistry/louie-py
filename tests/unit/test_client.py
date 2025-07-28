@@ -290,7 +290,7 @@ class TestLouieClient:
         """Test LouieClient.__init__ with direct credentials (lines 128-141)."""
         # Mock register method on the client
         mock_graphistry_client.register = Mock()
-        
+
         # Test initialization with various credential combinations
         client = LouieClient(
             server_url="https://test.louie.ai",
@@ -299,53 +299,53 @@ class TestLouieClient:
             password="test_pass",
             api_key="test-key",
             api=3,
-            server="test.server.com"
+            server="test.server.com",
         )
-        
+
         # Should call register with provided credentials
         client._auth_manager._graphistry_client.register.assert_called_once_with(
             username="test_user",
-            password="test_pass", 
+            password="test_pass",
             key="test-key",  # api_key becomes 'key'
             api=3,
-            server="test.server.com"
+            server="test.server.com",
         )
 
     def test_client_init_no_credentials(self, mock_graphistry_client):
         """Test LouieClient.__init__ with no credentials."""
-        client = LouieClient(
-            server_url="https://test.louie.ai",
-            graphistry_client=mock_graphistry_client
+        LouieClient(
+            server_url="https://test.louie.ai", graphistry_client=mock_graphistry_client
         )
-        
+
         # Should not call register when no credentials provided
         mock_graphistry_client.register.assert_not_called()
 
     def test_register_method(self, mock_graphistry_client):
         """Test register method passthrough (lines 161-162)."""
         client = LouieClient(
-            server_url="https://test.louie.ai",
-            graphistry_client=mock_graphistry_client
+            server_url="https://test.louie.ai", graphistry_client=mock_graphistry_client
         )
-        
+
         # Test register method
         result = client.register(username="user", password="pass", api=3)
-        
+
         # Should call through to graphistry client
         mock_graphistry_client.register.assert_called_once_with(
             username="user", password="pass", api=3
         )
-        
+
         # Should return self for chaining
         assert result is client
 
     def test_parse_jsonl_response_malformed_json(self, client):
         """Test _parse_jsonl_response with malformed JSON (lines 183, 199-200)."""
         # Test with completely malformed JSON
-        malformed_response = '{"dthread_id": "D_test"}\n{invalid json here}\n{"payload": {"id": "B_1"}}'
-        
+        malformed_response = (
+            '{"dthread_id": "D_test"}\n{invalid json here}\n{"payload": {"id": "B_1"}}'
+        )
+
         result = client._parse_jsonl_response(malformed_response)
-        
+
         # Should handle malformed JSON gracefully
         assert result["dthread_id"] == "D_test"
         assert len(result["elements"]) == 1  # Only valid JSON should be processed
@@ -358,9 +358,9 @@ class TestLouieClient:
 {"payload": {"id": "B_1", "type": "TextElement"}}
 
 """
-        
+
         result = client._parse_jsonl_response(response_with_empty_lines)
-        
+
         # Should handle empty lines gracefully
         assert result["dthread_id"] == "D_test"
         assert len(result["elements"]) == 1
@@ -369,40 +369,42 @@ class TestLouieClient:
         """Test context manager methods (lines 337, 341)."""
         # Test __enter__ and __exit__
         with LouieClient(
-            server_url="https://test.louie.ai",
-            graphistry_client=mock_graphistry_client
+            server_url="https://test.louie.ai", graphistry_client=mock_graphistry_client
         ) as client:
             # Should return self from __enter__
             assert isinstance(client, LouieClient)
             assert client.server_url == "https://test.louie.ai"
-        
+
         # __exit__ should close the HTTP client (tested by not raising exception)
 
     def test_ask_convenience_function(self, mock_graphistry_client):
         """Test ask() convenience function (lines 355-358)."""
         from louieai.client import ask
-        
+
         # Mock the HTTP response
         mock_response = Mock()
         mock_response.text = (
             '{"dthread_id": "D_test123"}\n'
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Test response"}}'
+            '{"payload": {"id": "B_001", "type": "TextElement", '
+            '"text": "Test response"}}'
         )
         mock_response.raise_for_status = Mock()
-        
+
         # We need to patch the LouieClient creation inside ask()
-        with patch('louieai.client.LouieClient') as mock_louie_client_class:
+        with patch("louieai.client.LouieClient") as mock_louie_client_class:
             mock_louie_client = Mock()
-            mock_louie_client_class.return_value.__enter__.return_value = mock_louie_client
-            
+            mock_louie_client_class.return_value.__enter__.return_value = (
+                mock_louie_client
+            )
+
             # Mock the response from add_cell
             mock_response_obj = Mock()
             mock_response_obj.thread_id = "D_test123"
             mock_response_obj.elements = [{"id": "B_001", "type": "TextElement"}]
             mock_louie_client.add_cell.return_value = mock_response_obj
-            
+
             response = ask("Test prompt", server_url="https://test.louie.ai")
-        
+
         # Should return the response from add_cell
         assert response.thread_id == "D_test123"
         mock_louie_client.add_cell.assert_called_once_with("", "Test prompt")
@@ -410,18 +412,20 @@ class TestLouieClient:
     def test_ask_with_default_server(self, mock_graphistry_client):
         """Test ask() with default server URL."""
         from louieai.client import ask
-        
+
         # Mock the LouieClient creation
-        with patch('louieai.client.LouieClient') as mock_louie_client_class:
+        with patch("louieai.client.LouieClient") as mock_louie_client_class:
             mock_louie_client = Mock()
-            mock_louie_client_class.return_value.__enter__.return_value = mock_louie_client
-            
+            mock_louie_client_class.return_value.__enter__.return_value = (
+                mock_louie_client
+            )
+
             mock_response_obj = Mock()
             mock_response_obj.thread_id = "D_default"
             mock_louie_client.add_cell.return_value = mock_response_obj
-            
+
             response = ask("Test prompt")  # No server_url specified
-        
+
         # Should create LouieClient with default server URL
         mock_louie_client_class.assert_called_once_with("https://den.louie.ai")
         assert response.thread_id == "D_default"

@@ -136,12 +136,12 @@ class TestAuthManager:
         # Mock client that returns no token
         mock_graphistry_client.api_token.return_value = None
         mock_graphistry_client.refresh = Mock()
-        
+
         auth_manager = AuthManager(graphistry_client=mock_graphistry_client)
-        
+
         with pytest.raises(RuntimeError, match="Failed to get authentication token"):
             auth_manager.get_token()
-        
+
         # Should try refresh if available
         mock_graphistry_client.refresh.assert_called_once()
         # Should call api_token twice (before and after refresh)
@@ -152,14 +152,14 @@ class TestAuthManager:
         # Mock client that returns no token and has no refresh method
         mock_graphistry_client.api_token.return_value = None
         # Remove refresh method
-        if hasattr(mock_graphistry_client, 'refresh'):
-            delattr(mock_graphistry_client, 'refresh')
-        
+        if hasattr(mock_graphistry_client, "refresh"):
+            delattr(mock_graphistry_client, "refresh")
+
         auth_manager = AuthManager(graphistry_client=mock_graphistry_client)
-        
+
         with pytest.raises(RuntimeError, match="Failed to get authentication token"):
             auth_manager.get_token()
-        
+
         # Should only call api_token once (no refresh available)
         mock_graphistry_client.api_token.assert_called_once()
 
@@ -169,31 +169,32 @@ class TestAuthManager:
         auth_manager = AuthManager(
             graphistry_client=mock_graphistry_client,
             username="test_user",
-            password="test_pass"
+            password="test_pass",
         )
-        
+
         # Remove refresh method to force fallback
-        delattr(mock_graphistry_client, 'refresh')
-        
+        delattr(mock_graphistry_client, "refresh")
+
         # Should not raise error, should fall back to _refresh_auth
         auth_manager.refresh_token()
-        
+
         # Should call register with stored credentials
         mock_graphistry_client.register.assert_called_once()
 
     def test_should_refresh_token_logic(self, mock_graphistry_client):
         """Test _should_refresh_token timing logic (lines 87-92)."""
         auth_manager = AuthManager(graphistry_client=mock_graphistry_client)
-        
+
         # Test when never authenticated
         assert auth_manager._should_refresh_token() is False
-        
+
         # Test when recently authenticated (within 90% of lifetime)
         import time
+
         auth_manager._last_auth_time = time.time()
         auth_manager._token_lifetime = 3600  # 1 hour
         assert auth_manager._should_refresh_token() is False
-        
+
         # Test when token is old (past 90% of lifetime)
         auth_manager._last_auth_time = time.time() - 3300  # 55 minutes ago
         auth_manager._token_lifetime = 3600  # 1 hour (90% = 54 minutes)
@@ -203,7 +204,7 @@ class TestAuthManager:
         """Test _refresh_auth with no credentials (line 96-97)."""
         # Create AuthManager with explicitly no credentials (api=None to avoid default)
         auth_manager = AuthManager(graphistry_client=mock_graphistry_client, api=None)
-        
+
         # Should not call register when no credentials (including api=None)
         auth_manager._refresh_auth()
         mock_graphistry_client.register.assert_not_called()
@@ -215,44 +216,42 @@ class TestAuthManager:
             graphistry_client=mock_graphistry_client,
             username="test_user",
             password="test_pass",
-            server="test.server.com"
+            server="test.server.com",
         )
         auth_manager._refresh_auth()
         mock_graphistry_client.register.assert_called_with(
             username="test_user",
-            password="test_pass", 
+            password="test_pass",
             api=3,  # Default api value is always included
-            server="test.server.com"
+            server="test.server.com",
         )
-        
+
         mock_graphistry_client.register.reset_mock()
-        
+
         # Test with API key
         auth_manager = AuthManager(
-            graphistry_client=mock_graphistry_client,
-            api_key="test-key-123",
-            api=3
+            graphistry_client=mock_graphistry_client, api_key="test-key-123", api=3
         )
         auth_manager._refresh_auth()
         mock_graphistry_client.register.assert_called_with(
             key="test-key-123",  # Note: 'key' parameter for graphistry
-            api=3
+            api=3,
         )
 
     def test_handle_auth_error_json_parse_error(self, mock_graphistry_client):
         """Test handle_auth_error with malformed JSON (lines 161-162)."""
         auth_manager = AuthManager(graphistry_client=mock_graphistry_client)
-        
+
         # Create error with malformed JSON response but error message contains JWT
         error = httpx.HTTPStatusError(
             "JWT expired",  # Error message that contains JWT keyword
             request=Mock(),
             response=Mock(status_code=401, text="Invalid JSON {"),
         )
-        
+
         # Should handle JSON parse error gracefully and use str(error) fallback
         result = auth_manager.handle_auth_error(error)
-        
+
         # Should return True because str(error) contains "JWT"
         assert result is True
         mock_graphistry_client.refresh.assert_called_once()
@@ -260,16 +259,16 @@ class TestAuthManager:
     def test_handle_auth_error_exception_in_refresh(self, mock_graphistry_client):
         """Test handle_auth_error when refresh fails (lines 171-172)."""
         auth_manager = AuthManager(graphistry_client=mock_graphistry_client)
-        
+
         # Make refresh raise an exception
         mock_graphistry_client.refresh.side_effect = Exception("Refresh failed")
-        
+
         error = httpx.HTTPStatusError(
             "Unauthorized",
             request=Mock(),
             response=Mock(status_code=401, text='{"detail": "JWT token has expired"}'),
         )
-        
+
         # Should return False when refresh fails
         result = auth_manager.handle_auth_error(error)
         assert result is False
