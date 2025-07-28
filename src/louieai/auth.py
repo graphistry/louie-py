@@ -6,7 +6,7 @@ from functools import wraps
 from typing import Any, TypeVar, cast
 
 import httpx
-from graphistry.pygraphistry import PyGraphistry
+from graphistry.pygraphistry import GraphistryClient
 
 
 class AuthManager:
@@ -31,7 +31,8 @@ class AuthManager:
             api: API version (default: 3)
             server: Server URL for direct authentication
         """
-        self._graphistry_client = graphistry_client
+        # Create GraphistryClient instance if none provided
+        self._graphistry_client = graphistry_client or GraphistryClient()
         self._credentials = {
             "username": username,
             "password": password,
@@ -51,36 +52,17 @@ class AuthManager:
         Raises:
             RuntimeError: If authentication fails
         """
-        # If using external graphistry client
-        if self._graphistry_client:
+        # Get token from our graphistry client instance
+        token = self._graphistry_client.api_token()
+        if not token and hasattr(self._graphistry_client, "refresh"):
+            # Try to refresh using client's refresh method if available
+            self._graphistry_client.refresh()
             token = self._graphistry_client.api_token()
-            if not token and hasattr(self._graphistry_client, "refresh"):
-                # Try to refresh using client's refresh method if available
-                self._graphistry_client.refresh()
-                token = self._graphistry_client.api_token()
-            if not token:
-                raise RuntimeError(
-                    "Failed to get authentication token from graphistry client"
-                )
-            return str(token)
-
-        # Otherwise use global graphistry auth  
-        # Note: PyGraphistry is a singleton instance, equivalent to graphistry.api_token()
-        token = PyGraphistry.api_token()
-
-        # Check if we need to refresh
-        if self._should_refresh_token():
-            self._refresh_auth()
-            token = PyGraphistry.api_token()
-
         if not token:
             raise RuntimeError(
-                "No Graphistry API token found. Please call "
-                "graphistry.register() to authenticate or pass credentials to "
-                "LouieClient."
+                "Failed to get authentication token from graphistry client"
             )
-
-        return token
+        return str(token)
 
     def get_auth_header(self) -> dict[str, str]:
         """Get authorization header with current token.
@@ -93,19 +75,12 @@ class AuthManager:
 
     def refresh_token(self) -> None:
         """Force refresh the authentication token."""
-        if self._graphistry_client:
-            # If using external client, try its refresh method
-            if hasattr(self._graphistry_client, "refresh"):
-                self._graphistry_client.refresh()
-            else:
-                # Force refresh - call refresh method or re-authenticate
-                if hasattr(self._graphistry_client, "api_token"):
-                    # Just call api_token to get fresh token
-                    self._graphistry_client.api_token()
+        # Try the client's refresh method if available
+        if hasattr(self._graphistry_client, "refresh"):
+            self._graphistry_client.refresh()
         else:
-            # Use global graphistry refresh - just re-authenticate
+            # Fall back to re-authentication using stored credentials
             self._refresh_auth()
-            self._last_auth_time = time.time()
 
     def _should_refresh_token(self) -> bool:
         """Check if token should be refreshed based on age."""
@@ -136,7 +111,7 @@ class AuthManager:
             register_kwargs["server"] = self._credentials["server"]
 
         if register_kwargs:
-            PyGraphistry.register(**register_kwargs)
+            self._graphistry_client.register(**register_kwargs)
             self._last_auth_time = time.time()
 
     def _is_jwt_error(self, message: str) -> bool:

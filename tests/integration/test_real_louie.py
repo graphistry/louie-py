@@ -7,6 +7,7 @@ They will be skipped if credentials are not available.
 import pytest
 
 from louieai import LouieClient
+
 from ..utils import load_test_credentials
 
 
