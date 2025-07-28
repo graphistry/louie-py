@@ -3,7 +3,7 @@
 import time
 from collections.abc import Callable
 from functools import wraps
-from typing import Any
+from typing import Any, TypeVar
 
 import graphistry
 import httpx
@@ -39,7 +39,7 @@ class AuthManager:
             "api": api,
             "server": server,
         }
-        self._last_auth_time = 0
+        self._last_auth_time: float = 0.0
         self._token_lifetime = 3600  # Default 1 hour, will be updated from response
 
     def get_token(self) -> str:
@@ -58,7 +58,9 @@ class AuthManager:
                 # Try to refresh using client's refresh method if available
                 self._graphistry_client.refresh()
                 token = self._graphistry_client.api_token()
-            return token
+            if not token:
+                raise RuntimeError("Failed to get authentication token from graphistry client")
+            return str(token)
 
         # Otherwise use global graphistry auth
         token = graphistry.api_token()
@@ -93,11 +95,13 @@ class AuthManager:
             if hasattr(self._graphistry_client, "refresh"):
                 self._graphistry_client.refresh()
             else:
-                # Force refresh through api_token
-                self._graphistry_client.api_token(refresh=True)
+                # Force refresh - call refresh method or re-authenticate
+                if hasattr(self._graphistry_client, "api_token"):
+                    # Just call api_token to get fresh token
+                    self._graphistry_client.api_token()
         else:
-            # Use global graphistry refresh
-            graphistry.api_token(refresh=True)
+            # Use global graphistry refresh - just re-authenticate
+            self._refresh_auth()
             self._last_auth_time = time.time()
 
     def _should_refresh_token(self) -> bool:
@@ -179,7 +183,9 @@ class AuthManager:
             return False
 
 
-def auto_retry_auth(func: Callable) -> Callable:
+F = TypeVar('F', bound=Callable[..., Any])
+
+def auto_retry_auth(func: F) -> F:
     """Decorator to automatically retry on auth failures.
 
     This decorator will catch auth errors and attempt to refresh

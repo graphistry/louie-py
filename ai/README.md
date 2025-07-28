@@ -64,6 +64,13 @@ pytest
 - Test both success and error paths
 - Integration tests require real Louie instance
 
+### 6. Type Safety Standards
+
+- **NO TYPE IGNORES**: Never use `# type: ignore` comments - fix the underlying issues
+- **Proper Type Annotations**: All functions must have complete type annotations
+- **Graphistry Types**: Use graphistry 0.41.0+ which has proper type exports
+- **Strict MyPy**: Run with strict mode enabled - resolve all type errors properly
+
 ## Project Structure
 
 ```

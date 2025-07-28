@@ -95,8 +95,7 @@ disallow_any_expr = false  # Would be too restrictive
 disallow_any_decorated = false  # Would be too restrictive
 exclude = [
     "templates/",
-    "tests/",
-    "scripts/"
+    "tests/"
 ]
 disallow_any_explicit = false  # Would be too restrictive
 disallow_any_generics = true

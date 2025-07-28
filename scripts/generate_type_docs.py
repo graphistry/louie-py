@@ -14,7 +14,10 @@ from typing import Any
 def load_element_types(path: Path) -> dict[str, Any]:
     """Load element types from JSON export."""
     with open(path) as f:
-        return json.load(f)
+        data = json.load(f)
+        if not isinstance(data, dict):
+            raise ValueError(f"Expected dict from JSON file, got {type(data)}")
+        return data
 
 
 def format_json_value(value: Any, indent: int = 2) -> str:
