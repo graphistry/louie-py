@@ -148,3 +148,6 @@ Thumbs.db
 # Generated/imported data
 data/element_types.json
 docs/api/response-types-generated.md
+
+# Planning and temporary files
+plans/
