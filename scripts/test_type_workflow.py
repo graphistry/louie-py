@@ -37,9 +37,12 @@ def test_complete_workflow():
 
     # Step 4: Run import script
     try:
-        result = subprocess.run([
-            "uv", "run", "python", "scripts/generate_type_docs.py"
-        ], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["uv", "run", "python", "scripts/generate_type_docs.py"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         print("✅ Import script ran successfully")
         print(f"   Output: {result.stdout.strip()}")
     except subprocess.CalledProcessError as e:
@@ -66,7 +69,7 @@ def test_complete_workflow():
         "## Element Types",
         "### TextElement",
         "### DfElement",
-        "## Type Detection"
+        "## Type Detection",
     ]
 
     for section in required_sections:

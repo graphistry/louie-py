@@ -110,7 +110,7 @@ def get_element_examples() -> dict[str, list]:
                     text="Table 'users' not found",
                     traceback=(
                         'psycopg2.ProgrammingError: relation "users" does not exist\n'
-                        '  at execute_query...'
+                        "  at execute_query..."
                     ),
                 ).model_dump(),
             },
@@ -280,11 +280,9 @@ def export_types():
         element_types[name] = {
             "schema": element_class.model_json_schema(),
             "description": (
-                (
-                    element_class.__doc__.strip()
-                    if element_class.__doc__
-                    else f"{name} element"
-                )
+                element_class.__doc__.strip()
+                if element_class.__doc__
+                else f"{name} element"
             ),
             "examples": examples.get(name, []),
             "common_queries": queries.get(name, []),

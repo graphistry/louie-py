@@ -21,9 +21,9 @@ def format_json_value(value: Any, indent: int = 2) -> str:
     """Format a JSON value for display in markdown."""
     if isinstance(value, dict):
         # Pretty print with indentation
-        lines = json.dumps(value, indent=2).split('\n')
+        lines = json.dumps(value, indent=2).split("\n")
         # Add extra indentation for markdown
-        return '\n'.join(' ' * indent + line for line in lines)
+        return "\n".join(" " * indent + line for line in lines)
     return json.dumps(value, indent=2)
 
 
@@ -33,20 +33,20 @@ def generate_property_table(properties: dict[str, Any]) -> list[str]:
     lines.append("| Field | Type | Required | Description |")
     lines.append("|-------|------|----------|-------------|")
 
-    required = properties.get('required', [])
+    required = properties.get("required", [])
 
     for prop_name, prop_info in properties.items():
-        if prop_name == 'required':
+        if prop_name == "required":
             continue
 
-        prop_type = prop_info.get('type', 'any')
-        if 'enum' in prop_info:
+        prop_type = prop_info.get("type", "any")
+        if "enum" in prop_info:
             prop_type = f"enum: {', '.join(prop_info['enum'])}"
-        elif 'const' in prop_info:
+        elif "const" in prop_info:
             prop_type = f"const: '{prop_info['const']}'"
 
         is_required = "Yes" if prop_name in required else "No"
-        description = prop_info.get('description', '')
+        description = prop_info.get("description", "")
 
         lines.append(f"| `{prop_name}` | {prop_type} | {is_required} | {description} |")
 
@@ -77,8 +77,8 @@ def generate_markdown_docs(data: dict[str, Any]) -> str:
     md.append("")
     md.append("1. [Overview](#overview)")
     md.append("2. [Element Types](#element-types)")
-    for name in sorted(data['element_types'].keys()):
-        anchor = name.lower().replace('element', '-element')
+    for name in sorted(data["element_types"].keys()):
+        anchor = name.lower().replace("element", "-element")
         md.append(f"   - [{name}](#{anchor})")
     md.append("3. [Response Patterns](#response-patterns)")
     md.append("4. [Type Detection](#type-detection)")
@@ -106,41 +106,41 @@ def generate_markdown_docs(data: dict[str, Any]) -> str:
     md.append("## Element Types")
     md.append("")
 
-    for name in sorted(data['element_types'].keys()):
-        info = data['element_types'][name]
-        anchor = name.lower().replace('element', '-element')
+    for name in sorted(data["element_types"].keys()):
+        info = data["element_types"][name]
+        anchor = name.lower().replace("element", "-element")
 
         md.append(f"### {name}")
         md.append("")
-        md.append(info['description'])
+        md.append(info["description"])
         md.append("")
 
         # Schema details
-        schema = info['schema']
-        if 'properties' in schema:
+        schema = info["schema"]
+        if "properties" in schema:
             md.append("**Properties:**")
             md.append("")
-            md.extend(generate_property_table(schema['properties']))
+            md.extend(generate_property_table(schema["properties"]))
             md.append("")
 
         # Common queries
-        if info.get('common_queries'):
+        if info.get("common_queries"):
             md.append("**Common Queries:**")
-            for query in info['common_queries']:
+            for query in info["common_queries"]:
                 md.append(f'- "{query}"')
             md.append("")
 
         # Examples
-        if info.get('examples'):
+        if info.get("examples"):
             md.append("**Examples:**")
             md.append("")
-            for example in info['examples']:
+            for example in info["examples"]:
                 md.append(f"*{example['name']}:*")
                 md.append("```python")
                 # Show the response structure
                 md.append("response = client.add_cell(thread.id, query)")
                 md.append("# Response structure:")
-                md.append(format_json_value(example['value']))
+                md.append(format_json_value(example["value"]))
                 md.append("```")
                 md.append("")
 
@@ -185,22 +185,22 @@ def generate_markdown_docs(data: dict[str, Any]) -> str:
     md.append("## Response Patterns")
     md.append("")
 
-    if 'response_patterns' in data:
-        for pattern_name, pattern_info in data['response_patterns'].items():
+    if "response_patterns" in data:
+        for pattern_name, pattern_info in data["response_patterns"].items():
             md.append(f"### {pattern_name.replace('_', ' ').title()}")
             md.append("")
-            md.append(pattern_info['description'])
+            md.append(pattern_info["description"])
             md.append("")
 
-            if 'example' in pattern_info:
-                example = pattern_info['example']
+            if "example" in pattern_info:
+                example = pattern_info["example"]
                 md.append("**Example:**")
-                md.append(f"- Query: \"{example.get('query', 'N/A')}\"")
+                md.append(f'- Query: "{example.get("query", "N/A")}"')
 
-                if 'response_type' in example:
+                if "response_type" in example:
                     md.append(f"- Returns: `{example['response_type']}`")
-                elif 'response_types' in example:
-                    types = ', '.join(f"`{t}`" for t in example['response_types'])
+                elif "response_types" in example:
+                    types = ", ".join(f"`{t}`" for t in example["response_types"])
                     md.append(f"- Returns: {types}")
 
                 md.append("")
@@ -225,8 +225,7 @@ def generate_markdown_docs(data: dict[str, Any]) -> str:
     md.append("```python")
     md.append("# Check for DataFrame")
     md.append(
-        "if hasattr(response, 'to_dataframe') and "
-        "response.to_dataframe() is not None:"
+        "if hasattr(response, 'to_dataframe') and response.to_dataframe() is not None:"
     )
     md.append("    df = response.to_dataframe()")
     md.append("")
@@ -253,8 +252,7 @@ def generate_markdown_docs(data: dict[str, Any]) -> str:
     md.append("")
     md.append("# Query returns DfElement")
     md.append(
-        'response = client.add_cell(thread.id, '
-        '"Query PostgreSQL for user statistics")'
+        'response = client.add_cell(thread.id, "Query PostgreSQL for user statistics")'
     )
     md.append("if hasattr(response, 'to_dataframe'):")
     md.append("    df = response.to_dataframe()")

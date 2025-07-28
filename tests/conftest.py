@@ -3,8 +3,8 @@
 import os
 import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
+
 import pytest
 
 # Add src to path for imports
@@ -18,11 +18,10 @@ def pytest_configure(config):
         "markers", "unit: mark test as a unit test (no external dependencies)"
     )
     config.addinivalue_line(
-        "markers", "integration: mark test as an integration test (requires credentials)"
+        "markers",
+        "integration: mark test as an integration test (requires credentials)",
     )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow running"
-    )
+    config.addinivalue_line("markers", "slow: mark test as slow running")
 
 
 # Test mode detection
@@ -36,7 +35,7 @@ def should_run_integration_tests() -> bool:
     # Check explicit test mode
     if get_test_mode() == "integration":
         return True
-    
+
     # Check if credentials are available
     required_vars = ["GRAPHISTRY_SERVER", "GRAPHISTRY_USERNAME", "GRAPHISTRY_PASSWORD"]
     return all(os.environ.get(var) for var in required_vars)
@@ -58,6 +57,7 @@ def mock_graphistry():
 def mock_client():
     """Create a mock LouieClient for unit tests."""
     from tests.unit.mocks import create_mock_client
+
     return create_mock_client()
 
 
@@ -65,6 +65,7 @@ def mock_client():
 def test_credentials():
     """Load test credentials from environment."""
     from tests.utils import load_test_credentials
+
     return load_test_credentials()
 
 
@@ -73,18 +74,19 @@ def real_client(test_credentials):
     """Create a real LouieClient for integration tests."""
     if not test_credentials:
         pytest.skip("No test credentials available")
-    
+
     import graphistry
+
     from louieai import LouieClient
-    
+
     # Register with Graphistry
     graphistry.register(
         api=test_credentials.get("api_version", 3),
         server=test_credentials["server"],
         username=test_credentials["username"],
-        password=test_credentials["password"]
+        password=test_credentials["password"],
     )
-    
+
     # Create Louie client
     louie_server = test_credentials.get("louie_server", "https://louie-dev.grph.xyz")
     return LouieClient(server_url=louie_server)
@@ -95,11 +97,11 @@ def real_client(test_credentials):
 def sample_dataframe_data():
     """Sample data for DataFrame mocking."""
     return {
-        'source_ip': ['192.168.1.1', '10.0.0.1', '172.16.0.1'],
-        'user': ['alice', 'bob', 'charlie'],
-        'value': [100, 200, 300],
-        'customer_id': ['cust001', 'cust002', 'cust003'],
-        'timestamp': ['2024-01-01', '2024-01-02', '2024-01-03']
+        "source_ip": ["192.168.1.1", "10.0.0.1", "172.16.0.1"],
+        "user": ["alice", "bob", "charlie"],
+        "value": [100, 200, 300],
+        "customer_id": ["cust001", "cust002", "cust003"],
+        "timestamp": ["2024-01-01", "2024-01-02", "2024-01-03"],
     }
 
 
@@ -114,13 +116,12 @@ def skip_if_no_credentials(func):
     """Skip test if no credentials are available."""
     return pytest.mark.skipif(
         not should_run_integration_tests(),
-        reason="Integration test credentials not available"
+        reason="Integration test credentials not available",
     )(func)
 
 
 def skip_if_integration_mode(func):
     """Skip test if running in integration mode only."""
     return pytest.mark.skipif(
-        get_test_mode() == "integration",
-        reason="Unit test skipped in integration mode"
+        get_test_mode() == "integration", reason="Unit test skipped in integration mode"
     )(func)
