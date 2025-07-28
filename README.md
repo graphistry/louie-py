@@ -99,6 +99,22 @@ Complete API documentation is available at [louieai.readthedocs.io/api](https://
 - [PyGraphistry Documentation](https://github.com/graphistry/pygraphistry) – Learn how to set up Graphistry, which is required for LouieAI.
 - [Project Documentation](https://louieai.readthedocs.io) – Full documentation on ReadTheDocs.
 
+## Testing
+
+See [Testing Guide](https://louieai.readthedocs.io/en/latest/testing/) for details on running tests.
+
+For unit tests (no credentials required):
+```bash
+pytest
+```
+
+For integration tests with a real Louie instance:
+```bash
+cp .env.example .env
+# Edit .env with your credentials
+pytest tests/integration/
+```
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. We have a structured AI-involved development workflow – check out the AI planning template in `AI_PROGRESS/` if you're interested in how we use AI to assist development.
