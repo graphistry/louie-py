@@ -108,8 +108,8 @@ jobs:
     
     - name: Install dependencies
       run: |
-        uv venv --python python${{ matrix.python-version }}
-        uv pip install -e ".[dev]"
+        uv venv --python python3.12
+        uv pip install -e ".[dev,docs]"
     
     - name: Test documentation examples
       run: |
