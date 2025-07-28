@@ -300,5 +300,3 @@ class LouieResponse:
 ## Next Steps
 
 - See [Query Patterns](../query-patterns.md) for examples of queries that generate each response type
-- Check [Tutorials](../tutorials/) for complete working examples
-- Explore [Advanced Topics](../advanced/) for custom response handling

@@ -22,7 +22,7 @@ thread = client.create_thread(name="Customer Analysis")
 
 1. [Database Queries](#database-queries)
 2. [Visualizations](#visualizations)
-3. [Analysis & Insights](#analysis--insights)
+3. [Analysis & Insights](#analysis-insights)
 4. [Multi-Step Workflows](#multi-step-workflows)
 5. [Data Integration](#data-integration)
 6. [Advanced Patterns](#advanced-patterns)
@@ -148,7 +148,7 @@ if response.type == "Base64ImageElement":
     save_base64_image(response.src, "user_trends.png")
 ```
 
-## Analysis & Insights
+## Analysis Insights
 
 ### Anomaly Detection with TableAI
 ```python

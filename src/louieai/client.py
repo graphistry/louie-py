@@ -145,7 +145,7 @@ class LouieClient:
         """Get the authentication manager."""
         return self._auth_manager
 
-    def register(self, **kwargs) -> "LouieClient":
+    def register(self, **kwargs: Any) -> "LouieClient":
         """Register authentication credentials (passthrough to graphistry).
 
         Args:
