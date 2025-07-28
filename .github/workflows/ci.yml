@@ -18,15 +18,17 @@ jobs:
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install dependencies
-        run: uv pip install -e ".[dev]"
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
       - name: Lint (ruff)
-        run: ruff check .
+        run: uv run ruff check .
       - name: Format (ruff)
-        run: ruff format --check .
+        run: uv run ruff format --check .
       - name: Type Check (mypy)
-        run: mypy .
+        run: uv run mypy .
       - name: Run Tests
-        run: pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85
+        run: uv run pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85
   
   install-test:
     runs-on: ubuntu-latest
@@ -78,11 +80,13 @@ jobs:
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install dependencies
-        run: uv pip install -e ".[docs]"
+        run: |
+          uv venv
+          uv pip install -e ".[docs]"
       - name: Validate ReadTheDocs config
         run: |
           curl -sSL https://raw.githubusercontent.com/readthedocs/readthedocs.org/main/readthedocs/rtd_tests/fixtures/spec/v2/schema.json -o rtd-schema.json
-          python -m pip install jsonschema pyyaml
+          uv pip install jsonschema pyyaml
           python -c "
           import yaml, json, jsonschema
           with open('.readthedocs.yml') as f:
