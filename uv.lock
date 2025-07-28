@@ -251,7 +251,7 @@ wheels = [
 
 [[package]]
 name = "graphistry"
-version = "0.40.0"
+version = "0.41.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -264,9 +264,9 @@ dependencies = [
     { name = "squarify" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/fa/e58a44d8f58045fcd4215a8382f58367635cf2202d9b9466b3775e02b770/graphistry-0.40.0.tar.gz", hash = "sha256:48595741d1d447470f93ed8cdeb507fd2508fef71050e2aed28f64bc775ac9ff", size = 308092, upload-time = "2025-07-23T07:36:55.384Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/af/8c5399d77351e4767a4e5bd268eb6828ae20d01a6cbc4caac4484a13739e/graphistry-0.41.0.tar.gz", hash = "sha256:a56d790b5251b0a9eb715b641ea9717b79d8589b9ff8e86e922ffcee67ba891d", size = 308164, upload-time = "2025-07-26T16:15:09.309Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/ee/bceda59aca1cdd7828f59adfc54808b48c0a1d657c17639f31488add5e13/graphistry-0.40.0-py3-none-any.whl", hash = "sha256:c0bc4a033692eb193f934db8eebdba4b46d8e9b513e19c6878b770dde29fbd86", size = 332285, upload-time = "2025-07-23T07:36:53.791Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/61/a24176a2b92baab083f92c8bcd334b6ba19f1abee78d203eb8d53ad4eacf/graphistry-0.41.0-py3-none-any.whl", hash = "sha256:e274863c1c0a779512d5292f6b89f958e882a4b04d61061c495cc020d7b2bb77", size = 332422, upload-time = "2025-07-26T16:15:07.521Z" },
 ]
 
 [[package]]
@@ -376,6 +376,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-xdist" },
+    { name = "python-dotenv" },
     { name = "ruff" },
 ]
 docs = [
@@ -386,7 +387,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "graphistry", specifier = ">=0.40.0" },
+    { name = "graphistry", specifier = ">=0.41.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.6.0" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6.0" },
@@ -400,6 +401,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.0" },
+    { name = "python-dotenv", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12.0" },
 ]
 provides-extras = ["dev", "docs"]
@@ -942,6 +944,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3", size = 342432, upload-time = "2024-03-01T18:36:20.211Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload-time = "2024-03-01T18:36:18.57Z" },
+]
+
+[[package]]
+name = "python-dotenv"
+version = "1.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/b0/4bc07ccd3572a2f9df7e6782f52b0c6c90dcbb803ac4a167702d7d0dfe1e/python_dotenv-1.1.1.tar.gz", hash = "sha256:a8a6399716257f45be6a007360200409fce5cda2661e3dec71d23dc15f6189ab", size = 41978, upload-time = "2025-06-24T04:21:07.341Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5f/ed/539768cf28c661b5b068d66d96a2f155c4971a5d55684a514c1a0e0dec2f/python_dotenv-1.1.1-py3-none-any.whl", hash = "sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc", size = 20556, upload-time = "2025-06-24T04:21:06.073Z" },
 ]
 
 [[package]]

@@ -23,7 +23,7 @@ classifiers = [
 keywords = ["Louie.ai", "Graphistry", "AI", "client", "investigation"]
 
 dependencies = [
-  "graphistry>=0.40.0",
+  "graphistry>=0.41.0",
   "httpx>=0.28.0",
   "pandas>=2.0.0",
   "pyarrow>=21.0.0"
@@ -45,7 +45,8 @@ dev = [
   "pytest-xdist>=3.6.0",
   "pre-commit>=4.2.0",
   "mkdocs>=1.6.0",
-  "mkdocs-material>=9.6.0"
+  "mkdocs-material>=9.6.0",
+  "python-dotenv>=1.0.0"
 ]
 docs = [
   "mkdocs>=1.6.0",
