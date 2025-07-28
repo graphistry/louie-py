@@ -1,0 +1,196 @@
+"""Authentication handling for LouieAI client."""
+
+import time
+from typing import Optional, Dict, Any, Callable
+import graphistry
+import httpx
+from functools import wraps
+
+
+class AuthManager:
+    """Manages authentication and token refresh for Louie client."""
+    
+    def __init__(self, 
+                 graphistry_client: Optional[Any] = None,
+                 username: Optional[str] = None,
+                 password: Optional[str] = None,
+                 api_key: Optional[str] = None,
+                 api: int = 3,
+                 server: Optional[str] = None):
+        """Initialize auth manager.
+        
+        Args:
+            graphistry_client: Existing Graphistry client to use for auth
+            username: Username for direct authentication
+            password: Password for direct authentication
+            api_key: API key for direct authentication
+            api: API version (default: 3)
+            server: Server URL for direct authentication
+        """
+        self._graphistry_client = graphistry_client
+        self._credentials = {
+            'username': username,
+            'password': password,
+            'api_key': api_key,
+            'api': api,
+            'server': server
+        }
+        self._last_auth_time = 0
+        self._token_lifetime = 3600  # Default 1 hour, will be updated from response
+        
+    def get_token(self) -> str:
+        """Get current auth token, refreshing if needed.
+        
+        Returns:
+            Valid authentication token
+            
+        Raises:
+            RuntimeError: If authentication fails
+        """
+        # If using external graphistry client
+        if self._graphistry_client:
+            token = self._graphistry_client.api_token()
+            if not token:
+                # Try to refresh using client's refresh method if available
+                if hasattr(self._graphistry_client, 'refresh'):
+                    self._graphistry_client.refresh()
+                    token = self._graphistry_client.api_token()
+            return token
+            
+        # Otherwise use global graphistry auth
+        token = graphistry.api_token()
+        
+        # Check if we need to refresh
+        if self._should_refresh_token():
+            self._refresh_auth()
+            token = graphistry.api_token()
+            
+        if not token:
+            raise RuntimeError(
+                "No Graphistry API token found. Please call "
+                "graphistry.register() to authenticate or pass credentials to LouieClient."
+            )
+            
+        return token
+        
+    def get_auth_header(self) -> Dict[str, str]:
+        """Get authorization header with current token.
+        
+        Returns:
+            Dictionary with Authorization header
+        """
+        token = self.get_token()
+        return {"Authorization": f"Bearer {token}"}
+    
+    def refresh_token(self) -> None:
+        """Force refresh the authentication token."""
+        if self._graphistry_client:
+            # If using external client, try its refresh method
+            if hasattr(self._graphistry_client, 'refresh'):
+                self._graphistry_client.refresh()
+            else:
+                # Force refresh through api_token
+                self._graphistry_client.api_token(refresh=True)
+        else:
+            # Use global graphistry refresh
+            graphistry.api_token(refresh=True)
+            self._last_auth_time = time.time()
+        
+    def _should_refresh_token(self) -> bool:
+        """Check if token should be refreshed based on age."""
+        if self._last_auth_time == 0:
+            return False  # Never authenticated through us
+            
+        # Refresh if 90% of lifetime has passed
+        elapsed = time.time() - self._last_auth_time
+        return elapsed > (self._token_lifetime * 0.9)
+        
+    def _refresh_auth(self) -> None:
+        """Refresh authentication using stored credentials."""
+        if not any(self._credentials.values()):
+            return  # No credentials stored
+            
+        # Build register kwargs
+        kwargs = {k: v for k, v in self._credentials.items() if v is not None}
+        
+        if kwargs:
+            graphistry.register(**kwargs)
+            self._last_auth_time = time.time()
+    
+    def _is_jwt_error(self, message: str) -> bool:
+        """Check if error message indicates a JWT authentication error.
+        
+        Args:
+            message: Error message to check
+            
+        Returns:
+            True if this is a JWT-related error
+        """
+        if not message:
+            return False
+            
+        message_lower = message.lower()
+        jwt_indicators = [
+            'jwt',
+            'token expired',
+            'authentication credentials'
+        ]
+        
+        return any(indicator in message_lower for indicator in jwt_indicators)
+            
+    def handle_auth_error(self, error: Exception) -> bool:
+        """Handle authentication errors by attempting to re-authenticate.
+        
+        Args:
+            error: The error that occurred
+            
+        Returns:
+            True if re-authentication succeeded and should retry, False otherwise
+        """
+        # Only handle HTTPStatusError with 401 status
+        if not isinstance(error, httpx.HTTPStatusError):
+            return False
+            
+        if not hasattr(error.response, 'status_code') or error.response.status_code != 401:
+            return False
+            
+        # Check if this is specifically a JWT error
+        error_detail = ""
+        try:
+            if hasattr(error.response, 'text'):
+                import json
+                error_data = json.loads(error.response.text)
+                error_detail = error_data.get('detail', '')
+        except:
+            error_detail = str(error)
+            
+        if not self._is_jwt_error(error_detail):
+            return False  # Not a JWT error, don't retry
+            
+        try:
+            # Force refresh for JWT errors
+            self.refresh_token()
+            return True
+        except Exception:
+            return False
+
+
+def auto_retry_auth(func: Callable) -> Callable:
+    """Decorator to automatically retry on auth failures.
+    
+    This decorator will catch auth errors and attempt to refresh
+    the token once before retrying the operation.
+    """
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except (httpx.HTTPStatusError, RuntimeError) as e:
+            # Check if this might be an auth error
+            if hasattr(self, 'auth_manager') and self.auth_manager.handle_auth_error(e):
+                # Auth refreshed, try once more
+                return func(self, *args, **kwargs)
+            else:
+                # Not an auth error or refresh failed
+                raise
+    return wrapper
