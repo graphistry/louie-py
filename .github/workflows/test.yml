@@ -1,0 +1,117 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: |
+        uv sync --dev
+    
+    - name: Run unit tests
+      run: |
+        uv run pytest tests/unit/ -v --cov=louieai --cov-report=xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unit
+        name: Unit Tests - Python ${{ matrix.python-version }}
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    # Only run if credentials are available
+    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository)
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+    
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: |
+        uv sync --dev
+    
+    - name: Run integration tests
+      env:
+        GRAPHISTRY_SERVER: ${{ secrets.GRAPHISTRY_SERVER }}
+        GRAPHISTRY_USERNAME: ${{ secrets.GRAPHISTRY_USERNAME }}
+        GRAPHISTRY_PASSWORD: ${{ secrets.GRAPHISTRY_PASSWORD }}
+        LOUIE_SERVER: ${{ secrets.LOUIE_SERVER }}
+      run: |
+        # Only run if credentials are configured
+        if [ -n "$GRAPHISTRY_USERNAME" ]; then
+          uv run pytest tests/integration/ -v --cov=louieai --cov-report=xml
+        else
+          echo "⚠️  Skipping integration tests - no credentials configured"
+        fi
+    
+    - name: Upload coverage to Codecov
+      if: env.GRAPHISTRY_USERNAME != ''
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: integration
+        name: Integration Tests
+
+  documentation-tests:
+    name: Documentation Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+    
+    - name: Install UV
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: |
+        uv sync --dev
+    
+    - name: Test documentation examples
+      run: |
+        uv run pytest tests/unit/test_documentation.py -v
+    
+    - name: Build documentation
+      run: |
+        uv run mkdocs build --strict
