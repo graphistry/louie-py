@@ -15,7 +15,7 @@ echo "Downloading ReadTheDocs schema..."
 curl -sSL https://raw.githubusercontent.com/readthedocs/readthedocs.org/main/readthedocs/rtd_tests/fixtures/spec/v2/schema.json -o /tmp/rtd-schema.json
 
 # Validate using Python
-python3 -c "
+uv run python -c "
 import yaml
 import json
 import jsonschema
@@ -36,7 +36,7 @@ try:
     sys.exit(0)
 except jsonschema.ValidationError as e:
     print(f'❌ Validation error: {e.message}')
-    print(f'   Path: {".".join(str(p) for p in e.path)}')
+    print(f'   Path: {\".\" if e.path else \"root\"}')
     sys.exit(1)
 except Exception as e:
     print(f'❌ Error: {e}')

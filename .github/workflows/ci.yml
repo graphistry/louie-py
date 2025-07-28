@@ -89,7 +89,7 @@ jobs:
         run: |
           curl -sSL https://raw.githubusercontent.com/readthedocs/readthedocs.org/main/readthedocs/rtd_tests/fixtures/spec/v2/schema.json -o rtd-schema.json
           uv pip install jsonschema pyyaml
-          python -c "
+          uv run python -c "
           import yaml, json, jsonschema
           with open('.readthedocs.yml') as f:
               config = yaml.safe_load(f)

@@ -16,7 +16,7 @@ check_uv
 check_project_root
 
 print_step "Quick lint check (errors only)"
-./scripts/ruff.sh check --select=F,E . || print_error "Critical linting errors found"
+./bin/uv run ruff check . || print_error "Critical linting errors found"
 print_success "No critical errors"
 
 print_step "Validate ReadTheDocs config"
@@ -24,7 +24,7 @@ print_step "Validate ReadTheDocs config"
 print_success "ReadTheDocs config valid"
 
 print_step "Running tests (fail fast)"
-./scripts/pytest.sh -x --tb=short || print_error "Tests failed"
+./bin/uv run pytest -x --tb=short || print_error "Tests failed"
 print_success "Tests passed"
 
 echo ""

@@ -38,28 +38,28 @@ if ! command -v uv &> /dev/null; then
 fi
 
 print_step "Installing dependencies with uv"
-uv pip install -e ".[dev]" || print_error "Failed to install dependencies"
+./bin/uv pip install -e ".[dev]" || print_error "Failed to install dependencies"
 print_success "Dependencies installed"
 
 print_step "Linting with ruff"
-./scripts/ruff.sh || print_error "Linting failed"
+./bin/uv run ruff check . || print_error "Linting failed"
 print_success "Linting passed"
 
 print_step "Format checking with ruff"
-./scripts/format.sh --check || print_error "Format check failed"
+./bin/uv run ruff format --check . || print_error "Format check failed"
 print_success "Format check passed"
+
+print_step "Type checking with mypy"
+./bin/uv run mypy . || print_error "Type checking failed"
+print_success "Type checking passed"
+
+print_step "Running tests with coverage (85% threshold)"
+./bin/uv run pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85 || print_error "Tests or coverage threshold failed"
+print_success "Tests and coverage passed"
 
 print_step "Validate ReadTheDocs config"
 ./scripts/validate-readthedocs.sh || print_error "ReadTheDocs config is invalid"
 print_success "ReadTheDocs config valid"
-
-print_step "Type checking with mypy"
-./scripts/mypy.sh || print_error "Type checking failed"
-print_success "Type checking passed"
-
-print_step "Running tests with coverage (85% threshold)"
-./scripts/pytest.sh -q --cov-report=xml --cov-fail-under=85 || print_error "Tests or coverage threshold failed"
-print_success "Tests and coverage passed"
 
 echo ""
 echo -e "${GREEN}🎉 All CI checks passed! Ready for push/PR${NC}"
