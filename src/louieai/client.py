@@ -1,67 +1,366 @@
-from typing import Any
+"""Enhanced Louie client that matches the documented API."""
 
-import graphistry
+import json
+from typing import Any, Dict, List, Optional, Union
+from dataclasses import dataclass
 import httpx
+import graphistry
+from .auth import AuthManager, auto_retry_auth
+
+
+@dataclass
+class Thread:
+    """Represents a Louie conversation thread."""
+    id: str
+    name: Optional[str] = None
+
+
+class Response:
+    """Response containing thread_id and multiple elements from a query."""
+    
+    def __init__(self, thread_id: str, elements: List[Dict[str, Any]]):
+        """Initialize response with thread ID and elements.
+        
+        Args:
+            thread_id: The thread ID this response belongs to
+            elements: List of element dictionaries from the response
+        """
+        self.thread_id = thread_id
+        self.elements = elements
+    
+    @property
+    def text_elements(self) -> List[Dict[str, Any]]:
+        """Get all text elements from the response."""
+        return [e for e in self.elements if e.get("type") == "TextElement"]
+    
+    @property
+    def dataframe_elements(self) -> List[Dict[str, Any]]:
+        """Get all dataframe elements from the response."""
+        return [e for e in self.elements if e.get("type") == "DfElement"]
+    
+    @property
+    def graph_elements(self) -> List[Dict[str, Any]]:
+        """Get all graph elements from the response."""
+        return [e for e in self.elements if e.get("type") == "GraphElement"]
+    
+    @property
+    def has_dataframes(self) -> bool:
+        """Check if response contains any dataframe elements."""
+        return len(self.dataframe_elements) > 0
+    
+    @property
+    def has_graphs(self) -> bool:
+        """Check if response contains any graph elements."""
+        return len(self.graph_elements) > 0
+    
+    @property
+    def has_errors(self) -> bool:
+        """Check if response contains any error elements."""
+        return any(e.get("type") == "ExceptionElement" for e in self.elements)
+
+
 
 
 class LouieClient:
     """
-    A client for interacting with the Louie.ai service.
-    Uses Graphistry's authentication token for authorization.
+    Enhanced client for Louie.ai that matches the documented API.
+    
+    This client provides thread-based conversations with natural language queries.
+    
+    Authentication can be handled in multiple ways:
+    1. Pass an existing Graphistry client
+    2. Pass credentials directly
+    3. Use existing graphistry.register() authentication
     """
-
-    def __init__(self, server_url: str = "https://den.louie.ai"):
-        """
-        Initialize the LouieClient.
-
-        :param server_url: Base URL for the Louie.ai service
-                          (default is the production Louie endpoint).
-        """
-        self.server_url = server_url
-        # Ensure Graphistry is registered (i.e., an API token is available)
-        # We don't fetch the token here to avoid doing it at import;
-        # will do when needed.
-
-    def ask(self, prompt: str) -> Any:
-        """
-        Send a prompt to Louie.ai and get a response.
-
-        :param prompt: The prompt or query to send to the Louie.ai service.
-        :return: The response from Louie.ai (parsed from JSON),
-                 or raises an exception on error.
-        """
-        # Get the current Graphistry API token for auth
-        token: str | None = graphistry.api_token()
-        if token is None:
-            raise RuntimeError(
-                "No Graphistry API token found. Please call "
-                "graphistry.register() to authenticate."
+    
+    def __init__(self, 
+                 server_url: str = "https://den.louie.ai",
+                 graphistry_client: Optional[Any] = None,
+                 username: Optional[str] = None,
+                 password: Optional[str] = None,
+                 api_key: Optional[str] = None,
+                 api: int = 3,
+                 server: Optional[str] = None):
+        """Initialize the Louie client.
+        
+        Args:
+            server_url: Base URL for the Louie.ai service
+            graphistry_client: Existing Graphistry client to use for auth
+            username: Username for direct authentication
+            password: Password for direct authentication  
+            api_key: API key for direct authentication
+            api: API version (default: 3)
+            server: Graphistry server URL for direct authentication
+            
+        Examples:
+            # Use existing graphistry authentication
+            client = LouieClient()
+            
+            # Pass credentials directly
+            client = LouieClient(
+                username="user",
+                password="pass",
+                server="hub.graphistry.com"
             )
-        # Prepare the request
-        headers = {"Authorization": f"Bearer {token}"}
-        # TODO: confirm correct Louie endpoint and response format when official
-        # docs are available
-        url = f"{self.server_url}/api/ask"
-        try:
-            response = httpx.post(
-                url, json={"prompt": prompt}, headers=headers, timeout=30.0
-            )
-            response.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            # Include response text or json in error
-            error_text = ""
+            
+            # Use existing graphistry client
+            g = graphistry.nodes(df)
+            client = LouieClient(graphistry_client=g)
+        """
+        self.server_url = server_url.rstrip('/')
+        self._client = httpx.Client(timeout=60.0)
+        
+        # Set up authentication
+        self._auth_manager = AuthManager(
+            graphistry_client=graphistry_client,
+            username=username,
+            password=password,
+            api_key=api_key,
+            api=api,
+            server=server
+        )
+        
+        # If credentials provided, authenticate immediately
+        if any([username, password, api_key]):
+            # Build kwargs for register, excluding None values
+            register_kwargs = {}
+            if username is not None:
+                register_kwargs['username'] = username
+            if password is not None:
+                register_kwargs['password'] = password
+            if api_key is not None:
+                register_kwargs['api_key'] = api_key
+            if api is not None:
+                register_kwargs['api'] = api
+            if server is not None:
+                register_kwargs['server'] = server
+                
+            if register_kwargs:
+                self.register(**register_kwargs)
+    
+    @property
+    def auth_manager(self) -> AuthManager:
+        """Get the authentication manager."""
+        return self._auth_manager
+        
+    def register(self, **kwargs) -> 'LouieClient':
+        """Register authentication credentials (passthrough to graphistry).
+        
+        Args:
+            **kwargs: Same arguments as graphistry.register()
+            
+        Returns:
+            Self for chaining
+            
+        Examples:
+            client.register(username="user", password="pass")
+            client.register(api_key="key-123")
+        """
+        graphistry.register(**kwargs)
+        return self
+        
+    def _get_headers(self) -> Dict[str, str]:
+        """Get authorization headers using auth manager."""
+        token = self._auth_manager.get_token()
+        return {"Authorization": f"Bearer {token}"}
+    
+    def _parse_jsonl_response(self, response_text: str) -> Dict[str, Any]:
+        """Parse JSONL response into structured data.
+        
+        Returns dict with:
+        - dthread_id: The thread ID
+        - elements: List of response elements
+        """
+        result = {
+            "dthread_id": None,
+            "elements": []
+        }
+        
+        # Track elements by ID to handle streaming updates
+        elements_by_id = {}
+        
+        for line in response_text.strip().split('\n'):
+            if not line:
+                continue
             try:
-                error_data = response.json()
-                error_text = error_data.get("error", "") or error_data.get(
-                    "message", ""
-                )
-            except Exception:
-                error_text = response.text
-            raise RuntimeError(
-                f"LouieAI API returned error {response.status_code}: {error_text}"
-            ) from e
-        except httpx.RequestError as e:
-            # Network or other request issue
-            raise RuntimeError(f"Failed to connect to LouieAI: {e}") from e
-        # Assuming the API returns JSON
-        return response.json()
+                data = json.loads(line)
+                
+                # First line contains thread ID
+                if "dthread_id" in data:
+                    result["dthread_id"] = data["dthread_id"]
+                    
+                # Subsequent lines contain element updates
+                elif "payload" in data:
+                    elem = data["payload"]
+                    elem_id = elem.get("id")
+                    if elem_id:
+                        # Update or add element
+                        elements_by_id[elem_id] = elem
+                        
+            except json.JSONDecodeError:
+                continue
+        
+        # Convert to list, preserving order
+        result["elements"] = list(elements_by_id.values())
+        return result
+    
+    def create_thread(self, name: Optional[str] = None, 
+                     initial_prompt: Optional[str] = None) -> Thread:
+        """Create a new conversation thread.
+        
+        Args:
+            name: Optional name for the thread
+            initial_prompt: Optional first message to initialize thread
+            
+        Returns:
+            Thread object with ID
+            
+        Note: If no initial_prompt, thread ID will be empty until first add_cell
+        """
+        if initial_prompt:
+            # Create thread with initial message
+            response = self.add_cell("", initial_prompt)
+            return Thread(id=response.thread_id, name=name)
+        else:
+            # Return placeholder - actual thread created on first add_cell
+            return Thread(id="", name=name)
+    
+    @auto_retry_auth
+    def add_cell(self, thread_id: str, prompt: str, 
+                 agent: str = "LouieAgent") -> Response:
+        """Add a cell (query) to a thread and get response.
+        
+        Args:
+            thread_id: Thread ID to add to (empty string creates new thread)
+            prompt: Natural language query
+            agent: Agent to use (default: LouieAgent)
+            
+        Returns:
+            Response object containing thread_id and all elements
+        """
+        headers = self._get_headers()
+        
+        # Build query parameters
+        params = {
+            "query": prompt,
+            "agent": agent,
+            "ignore_traces": True,
+            "share_mode": "Private"
+        }
+        
+        # Add thread ID if continuing existing thread
+        if thread_id:
+            params["dthread_id"] = thread_id
+            
+        # Make request
+        response = self._client.post(
+            f"{self.server_url}/api/chat/",
+            headers=headers,
+            params=params
+        )
+        response.raise_for_status()
+        
+        # Parse JSONL response
+        result = self._parse_jsonl_response(response.text)
+        
+        # Get the thread ID
+        actual_thread_id = result["dthread_id"]
+        
+        # Return Response with all elements
+        return Response(thread_id=actual_thread_id, elements=result["elements"])
+    
+    @auto_retry_auth
+    def list_threads(self, page: int = 1, page_size: int = 20) -> List[Thread]:
+        """List available threads.
+        
+        Args:
+            page: Page number (1-based)
+            page_size: Number of items per page
+            
+        Returns:
+            List of Thread objects
+        """
+        headers = self._get_headers()
+        
+        response = self._client.get(
+            f"{self.server_url}/api/dthreads",
+            headers=headers,
+            params={
+                "page": page,
+                "page_size": page_size,
+                "sort_by": "last_modified",
+                "sort_order": "desc"
+            }
+        )
+        response.raise_for_status()
+        
+        data = response.json()
+        threads = []
+        for item in data.get("items", []):
+            threads.append(Thread(
+                id=item.get("id", ""),
+                name=item.get("name")
+            ))
+            
+        return threads
+    
+    @auto_retry_auth
+    def get_thread(self, thread_id: str) -> Thread:
+        """Get a specific thread by ID.
+        
+        Args:
+            thread_id: Thread ID to retrieve
+            
+        Returns:
+            Thread object
+        """
+        headers = self._get_headers()
+        
+        response = self._client.get(
+            f"{self.server_url}/api/dthreads/{thread_id}",
+            headers=headers
+        )
+        response.raise_for_status()
+        
+        data = response.json()
+        return Thread(
+            id=data.get("id", ""),
+            name=data.get("name")
+        )
+    
+    def ask(self, prompt: str) -> Any:
+        """Simple one-shot query (backward compatibility).
+        
+        Args:
+            prompt: Natural language query
+            
+        Returns:
+            Response from Louie
+        """
+        response = self.add_cell("", prompt)
+        return response
+    
+    def __enter__(self):
+        """Context manager support."""
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Clean up client on exit."""
+        self._client.close()
+
+
+# Convenience function for backward compatibility
+def ask(prompt: str, server_url: str = "https://den.louie.ai") -> Any:
+    """Simple one-shot query to Louie.
+    
+    Args:
+        prompt: Natural language query
+        server_url: Louie server URL
+        
+    Returns:
+        Response from Louie
+    """
+    with LouieClient(server_url) as client:
+        thread = client.create_thread()
+        response = client.add_cell("", prompt)  # Empty string creates new thread
+        return response
