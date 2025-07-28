@@ -131,7 +131,7 @@ pytest tests/integration/
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. We have a structured AI-involved development workflow – check out the AI planning template in `AI_PROGRESS/` if you're interested in how we use AI to assist development.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. We have a structured AI-involved development workflow – check out the AI planning template in `plans/` if you're interested in how we use AI to assist development.
 
 This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
