@@ -89,17 +89,23 @@ See the [documentation](https://louieai.readthedocs.io) for more details and exa
 
 ## Testing
 
-See the [Testing Guide](https://louieai.readthedocs.io/en/latest/development/#testing) for detailed testing instructions.
-
-**Quick start:**
 ```bash
-# Run unit tests
-./scripts/pytest.sh
+# Quick CI checks (fast feedback)
+./scripts/ci-quick.sh
 
-# Run integration tests (requires real Louie instance)
-# Set credentials in .env file first
+# Full local CI pipeline
+./scripts/ci-local.sh
+
+# Run specific tools
+./scripts/pytest.sh           # Run tests
+./scripts/ruff.sh            # Lint/format
+./scripts/mypy.sh            # Type checking
+
+# Integration tests (requires credentials in .env)
 ./scripts/pytest.sh tests/integration/
 ```
+
+See the [Testing Guide](https://louieai.readthedocs.io/en/latest/development/#testing) for details.
 
 ## API Reference
 
@@ -112,22 +118,6 @@ Complete API documentation is available at [louieai.readthedocs.io/api](https://
 - [Louie.ai Homepage](https://louie.ai) – Learn about the LouieAI platform.
 - [PyGraphistry Documentation](https://github.com/graphistry/pygraphistry) – Learn how to set up Graphistry, which is required for LouieAI.
 - [Project Documentation](https://louieai.readthedocs.io) – Full documentation on ReadTheDocs.
-
-## Testing
-
-See [Testing Guide](https://louieai.readthedocs.io/en/latest/testing/) for details on running tests.
-
-For unit tests (no credentials required):
-```bash
-pytest
-```
-
-For integration tests with a real Louie instance:
-```bash
-cp .env.example .env
-# Edit .env with your credentials
-pytest tests/integration/
-```
 
 ## Contributing
 
