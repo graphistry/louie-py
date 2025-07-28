@@ -87,6 +87,20 @@ except RuntimeError as e:
 
 See the [documentation](https://louieai.readthedocs.io) for more details and examples.
 
+## Testing
+
+See the [Testing Guide](https://louieai.readthedocs.io/en/latest/development/#testing) for detailed testing instructions.
+
+**Quick start:**
+```bash
+# Run unit tests
+./scripts/pytest.sh
+
+# Run integration tests (requires real Louie instance)
+# Set credentials in .env file first
+./scripts/pytest.sh tests/integration/
+```
+
 ## API Reference
 
 Complete API documentation is available at [louieai.readthedocs.io/api](https://louieai.readthedocs.io/en/latest/api/). Key classes:

@@ -184,6 +184,31 @@ We provide intelligent wrapper scripts that mirror CI exactly with sensible defa
 
 ## CI Workflow Integration
 
+### ReadTheDocs Configuration Validation
+
+The project includes validation for `.readthedocs.yml` to catch configuration errors before they reach ReadTheDocs:
+
+```bash
+# Validate ReadTheDocs config
+./scripts/validate-readthedocs.sh
+
+# Test validation with known errors
+./scripts/test-rtd-validation.sh
+```
+
+**How it works:**
+- Downloads official RTD JSON schema from their repository
+- Validates `.readthedocs.yml` against the schema using jsonschema
+- Catches common errors like:
+  - Invalid `build.jobs` structure (must be dict, not list)
+  - Missing required fields (e.g., `version`)
+  - Invalid field values
+
+**Integrated into CI:**
+- Runs in `ci-quick.sh` for fast local feedback
+- Runs in `ci-local.sh` for full validation
+- Runs in GitHub Actions `docs-test` job
+
 ### Local Testing (Match CI)
 ```bash
 # Modern approach (recommended)
