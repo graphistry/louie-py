@@ -1,148 +1,135 @@
 # Contributing to LouieAI Python Library
 
-Thank you for your interest in contributing! We welcome contributions via pull requests and appreciate your help in making this project better.
+Thank you for your interest in contributing! We're excited to work with you to make LouieAI better.
 
-## Quick Start
+## Welcome!
 
-**New to the project?** Start with our [Developer Guide](https://louieai.readthedocs.io/en/latest/development/) for complete technical setup, tool usage, and troubleshooting.
+Whether you're fixing a bug, adding a feature, or improving documentation, every contribution matters. This guide will help you understand our process and community.
 
-**Experienced developer?** Fork, clone, and run:
-```bash
-uv pip install -e ".[dev]" && pre-commit install && pytest -q
-```
+**For technical setup and development details, see [DEVELOP.md](DEVELOP.md).**
+
+## Getting Started
+
+1. **Check existing issues** - See if someone's already working on it
+2. **Fork the repository** - Create your own copy
+3. **Set up your environment** - See [DEVELOP.md](DEVELOP.md) for details
+4. **Make your changes** - Follow our patterns and style
+5. **Submit a PR** - We'll review and provide feedback
 
 ## Developer Certificate of Origin
 
-By contributing to this project, you are agreeing to the Developer Certificate of Origin (DCO). All commits must be signed off with:
-
-```
-Signed-off-by: Your Name <your.email@example.com>
-```
-
-You can do this automatically by using the `-s` flag when committing:
+We use the DCO to ensure all contributions can be legally included. Simply add a sign-off to your commits:
 
 ```bash
 git commit -s -m "Your commit message"
 ```
 
-The full DCO text is available at https://developercertificate.org/
+This adds `Signed-off-by: Your Name <email>` to your commit. No paperwork required!
 
-This lightweight approach (no CLAs or paperwork!) ensures contributions can be legally included while keeping the process simple.
+[Learn more about DCO](https://developercertificate.org/)
 
-## Contribution Workflows
+## Types of Contributions
 
-### Feature Development
-1. **Open an issue** describing the feature (if not already exists)
-2. **Create a branch**: `git checkout -b feature/description`
-3. **Develop and test**: Follow our [Developer Guide](https://louieai.readthedocs.io/en/latest/development/)
-4. **Submit PR**: Link to the issue, describe changes, ensure CI passes
-5. **Review process**: Address feedback and iterate as needed
+### 🐛 Bug Reports
+- Check if the bug is already reported
+- Include minimal reproduction steps
+- Share your environment details
+- Be patient - we're a small team!
 
-### Bug Fixes
-1. **Reproduce the bug** locally first
-2. **Create a branch**: `git checkout -b bugfix/description`
-3. **Fix and add tests** to prevent regression
-4. **Submit PR**: Include reproduction steps and fix description
-5. **Verify fix**: Ensure the original issue is resolved
+### ✨ Feature Requests
+- Open an issue to discuss first
+- Explain the use case, not just the solution
+- Be open to alternative approaches
+- Consider starting with a smaller scope
 
-### Documentation Contributions
-1. **Identify documentation gaps** or errors
-2. **Create a branch**: `git checkout -b docs/description`
-3. **Update documentation**: 
-   - User docs in `docs/`
-   - Dev docs in [Developer Guide](https://louieai.readthedocs.io/en/latest/development/)
-   - API docs: Update docstrings in source code (auto-generated via mkdocstrings)
-4. **Test locally**: 
-   - Run `mkdocs serve` to preview changes
-   - Run `mkdocs build --strict` to ensure no warnings
-5. **Submit PR**: Include screenshots if visual changes
+### 🔧 Code Contributions
+- **Features**: Open issue → Discuss → Implement → PR
+- **Bugs**: Reproduce → Fix with tests → PR
+- **Refactoring**: Discuss first in an issue
+- See [DEVELOP.md](DEVELOP.md) for technical workflow
 
-## Code Review Process
+### 📚 Documentation
+- Fix typos and clarify confusing sections
+- Add examples from your experience
+- Improve getting started guides
+- Share your integration stories
 
-### For Contributors
-- **Self-review**: Use pre-commit hooks and run full test suite
-- **CI compliance**: All checks must pass (lint, format, type-check, tests)
-- **Documentation**: Update relevant docs for user-facing changes
-- **Tests**: Include test coverage for new functionality
+## What to Expect
 
-### For Maintainers
-- **Review criteria**: Code quality, test coverage, documentation completeness
-- **Response time**: We aim to respond to PRs within 3 business days
-- **Approval process**: At least one maintainer approval required
-- **Merge strategy**: Squash and merge with descriptive commit messages
+### Response Times
+- First response: Within 3 business days
+- Review iterations: Best effort, usually 1-2 days
+- Merge decision: After CI passes and review complete
 
-## Pull Request Guidelines
+### Review Process
+- Automated checks run first (tests, linting)
+- Human review focuses on design and usability
+- We may suggest changes or alternatives
+- All feedback is meant to improve the project
 
-### PR Title Format
-```
-type: brief description
+### After Your PR is Merged
+- We'll include you in release notes
+- Your contribution helps the entire community
+- Consider tackling another issue!
 
-Examples:
-feat: add async support for LouieClient
-fix: handle network timeouts correctly
-docs: update installation instructions
-chore: upgrade development dependencies
-```
+## Making a Good PR
 
-### PR Description Template
-```markdown
-## Summary
-Brief description of changes and motivation.
+### Title: Be Clear and Specific
+- ✅ `fix: handle JWT token expiration correctly`
+- ❌ `fix bug`
+- ✅ `feat: add retry logic for network errors`
+- ❌ `update client.py`
 
-## Changes
-- List of specific changes made
-- Include any breaking changes
+### Description: Tell a Story
+1. **What** changed and **why**
+2. **How** you tested it
+3. **What** issue it closes (if any)
 
-## Testing
-- [ ] Tests added/updated
-- [ ] Manual testing completed
-- [ ] CI checks passing
+Don't worry about being perfect - we'll help you improve it!
 
-## Documentation
-- [ ] Documentation updated if needed
-- [ ] Developer guide updated if needed
+## Community Values
 
-Closes #<issue-number>
-```
-
-## Release Contributions
-
-### For Maintainers
-Our [Developer Guide](https://louieai.readthedocs.io/en/latest/development/) includes complete release process documentation:
-- Version bumping strategy
-- Release notes preparation
-- PyPI publishing workflow
-- Post-release verification
-
-### For Contributors
-- **Feature requests**: Open issues to discuss before implementation
-- **Breaking changes**: Require discussion and planning
-- **Version planning**: Major features should target upcoming releases
-
-## Community Guidelines
+### We Strive To:
+- **Be welcoming**: Everyone was new once
+- **Be helpful**: Share knowledge generously
+- **Be patient**: Good things take time
+- **Be respectful**: Diverse perspectives make us stronger
 
 ### Code of Conduct
-This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+We follow our [Code of Conduct](CODE_OF_CONDUCT.md). Please read it.
 
-### Communication
-- **Issues**: For bug reports, feature requests, and questions
-- **Discussions**: For general questions and community interaction
-- **PR comments**: For specific code review feedback
+## Where to Get Help
 
-### Using AI Tools (Optional)
-This project uses an AI co-pilot approach for some development tasks. We have an AI planning template under `AI_PROGRESS/PLAN_TEMPLATE.md`. If you'd like to use an AI assistant to help code, you can follow a similar approach. This is entirely optional but can help maintain consistency and traceability.
+### 🤔 Questions?
+- Check our [documentation](https://louieai.readthedocs.io)
+- Search existing [issues](https://github.com/graphistry/louie-py/issues)
+- Open a [discussion](https://github.com/graphistry/louie-py/discussions)
 
-## Getting Help
+### 🔧 Technical Setup?
+- See [DEVELOP.md](DEVELOP.md) for detailed instructions
+- Check [troubleshooting guide](https://louieai.readthedocs.io/en/latest/troubleshooting/)
+- Ask in discussions - we're here to help!
 
-- **Technical setup**: See our [Developer Guide](https://louieai.readthedocs.io/en/latest/development/)
-- **Questions**: Open a GitHub issue or discussion
-- **Security issues**: Follow instructions in [SECURITY.md](SECURITY.md)
-- **General project info**: Check the [README](README.md)
+### 🔒 Security Issues?
+- See [SECURITY.md](SECURITY.md) for reporting process
+- Do not open public issues for security vulnerabilities
 
 ## Recognition
 
-All contributors are valued and will be recognized in our project. Significant contributions may be highlighted in release notes and project documentation.
+### All Contributors Are Valued! 
+We appreciate:
+- 🐛 Bug reporters who help us improve
+- 💡 Idea contributors who shape our direction
+- 🔨 Code contributors who build features
+- 📚 Documentation writers who help others
+- 💬 Community members who answer questions
+
+Your contributions will be included in release notes!
+
+## Using AI Tools (Optional)
+
+We sometimes use AI assistants for development. If you're interested, check out `ai/templates/PLAN.md` for our approach. It's completely optional!
 
 ---
 
-**Ready to contribute?** Start with our [Developer Guide](https://louieai.readthedocs.io/en/latest/development/) for complete technical details, then jump in! We're excited to work with you.
+**Ready to start?** Check [DEVELOP.md](DEVELOP.md) for setup, pick an issue, and let's build something great together! 🚀

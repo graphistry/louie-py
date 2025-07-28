@@ -98,6 +98,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
@@ -142,3 +144,12 @@ cython_debug/
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated/imported data
+data/element_types.json
+docs/api/response-types-generated.md
+src/louieai/_version.py
+
+# Planning and temporary files
+AI_PROGRESS/
+plans/

@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+# Use Python version from .python-version file, with fallback
+if [ -f ".python-version" ]; then
+    PYTHON_VERSION=$(cat .python-version)
+    export UV_PYTHON="python${PYTHON_VERSION}"
+else
+    # Fallback to 3.12 if no .python-version file
+    export UV_PYTHON="python3.12"
+fi
+
+# If .venv doesn't exist, create it with correct Python
+if [ ! -d ".venv" ]; then
+    uv venv --python $UV_PYTHON
+fi
+
+# Sanity check: ensure we're not using host Python when running commands
+if [[ "$1" == "run" ]] && [[ "$2" == "python" || "$2" == "pytest" || "$2" == "mypy" ]]; then
+    # Verify we have a .venv
+    if [ ! -f ".venv/bin/python" ]; then
+        echo "❌ ERROR: .venv not found but trying to run Python commands"
+        echo "This would use host Python instead of project Python!"
+        exit 1
+    fi
+fi
+
+# Run uv with all arguments
+exec uv "$@"

@@ -7,6 +7,9 @@ nav:
   - API Reference:
     - Overview: api/index.md
     - LouieClient: api/client.md
+    - Response Types: api/response-types.md
+  - Query Patterns: query-patterns.md
+  - Testing: testing.md
   - Developer Guide: development.md
 theme:
   name: material
