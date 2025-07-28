@@ -5,8 +5,8 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, TypeVar, cast
 
-import graphistry
 import httpx
+from graphistry.pygraphistry import PyGraphistry
 
 
 class AuthManager:
@@ -64,13 +64,14 @@ class AuthManager:
                 )
             return str(token)
 
-        # Otherwise use global graphistry auth
-        token = graphistry.api_token()
+        # Otherwise use global graphistry auth  
+        # Note: PyGraphistry is a singleton instance, equivalent to graphistry.api_token()
+        token = PyGraphistry.api_token()
 
         # Check if we need to refresh
         if self._should_refresh_token():
             self._refresh_auth()
-            token = graphistry.api_token()
+            token = PyGraphistry.api_token()
 
         if not token:
             raise RuntimeError(
@@ -135,7 +136,7 @@ class AuthManager:
             register_kwargs["server"] = self._credentials["server"]
 
         if register_kwargs:
-            graphistry.register(**register_kwargs)
+            PyGraphistry.register(**register_kwargs)
             self._last_auth_time = time.time()
 
     def _is_jwt_error(self, message: str) -> bool:

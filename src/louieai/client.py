@@ -4,8 +4,8 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-import graphistry
 import httpx
+from graphistry.pygraphistry import PyGraphistry
 
 from .auth import AuthManager, auto_retry_auth
 
@@ -159,7 +159,7 @@ class LouieClient:
             client.register(username="user", password="pass")
             client.register(api_key="key-123")
         """
-        graphistry.register(**kwargs)
+        PyGraphistry.register(**kwargs)
         return self
 
     def _get_headers(self) -> dict[str, str]:
