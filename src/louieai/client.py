@@ -126,13 +126,13 @@ class LouieClient:
         # If credentials provided, authenticate immediately
         if any([username, password, api_key]):
             # Build kwargs for register, excluding None values
-            register_kwargs = {}
+            register_kwargs: dict[str, Any] = {}
             if username is not None:
                 register_kwargs["username"] = username
             if password is not None:
                 register_kwargs["password"] = password
             if api_key is not None:
-                register_kwargs["api_key"] = api_key
+                register_kwargs["key"] = api_key  # graphistry uses 'key' parameter
             if api is not None:
                 register_kwargs["api"] = api
             if server is not None:
@@ -174,7 +174,7 @@ class LouieClient:
         - dthread_id: The thread ID
         - elements: List of response elements
         """
-        result = {"dthread_id": None, "elements": []}
+        result: dict[str, Any] = {"dthread_id": None, "elements": []}
 
         # Track elements by ID to handle streaming updates
         elements_by_id = {}
@@ -243,10 +243,10 @@ class LouieClient:
         headers = self._get_headers()
 
         # Build query parameters
-        params = {
+        params: dict[str, str] = {
             "query": prompt,
             "agent": agent,
-            "ignore_traces": True,
+            "ignore_traces": "true",  # Convert bool to string for HTTP params
             "share_mode": "Private",
         }
 

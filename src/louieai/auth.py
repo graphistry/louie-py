@@ -3,7 +3,7 @@
 import time
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import graphistry
 import httpx
@@ -118,11 +118,21 @@ class AuthManager:
         if not any(self._credentials.values()):
             return  # No credentials stored
 
-        # Build register kwargs
-        kwargs = {k: v for k, v in self._credentials.items() if v is not None}
+        # Build register kwargs with proper types
+        register_kwargs: dict[str, Any] = {}
+        if self._credentials["username"]:
+            register_kwargs["username"] = self._credentials["username"]
+        if self._credentials["password"]:
+            register_kwargs["password"] = self._credentials["password"]
+        if self._credentials["api_key"]:
+            register_kwargs["key"] = self._credentials["api_key"]  # graphistry uses 'key' parameter
+        if self._credentials["api"]:
+            register_kwargs["api"] = self._credentials["api"]
+        if self._credentials["server"]:
+            register_kwargs["server"] = self._credentials["server"]
 
-        if kwargs:
-            graphistry.register(**kwargs)
+        if register_kwargs:
+            graphistry.register(**register_kwargs)
             self._last_auth_time = time.time()
 
     def _is_jwt_error(self, message: str) -> bool:
@@ -193,7 +203,7 @@ def auto_retry_auth(func: F) -> F:
     """
 
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
         try:
             return func(self, *args, **kwargs)
         except (httpx.HTTPStatusError, RuntimeError) as e:
@@ -205,4 +215,4 @@ def auto_retry_auth(func: F) -> F:
                 # Not an auth error or refresh failed
                 raise
 
-    return wrapper
+    return cast(F, wrapper)
