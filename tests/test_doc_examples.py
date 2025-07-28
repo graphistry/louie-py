@@ -114,7 +114,7 @@ def create_test_environment() -> dict[str, Any]:
 
     # Pre-set some variables that might be referenced
     namespace["thread"] = mock_client.create_thread(name="Test Thread")
-    namespace["response"] = mock_client.ask("Test")
+    namespace["response"] = mock_client.add_cell("", "Test")
 
     return namespace
 

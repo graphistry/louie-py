@@ -320,17 +320,6 @@ class LouieClient:
         data = response.json()
         return Thread(id=data.get("id", ""), name=data.get("name"))
 
-    def ask(self, prompt: str) -> Any:
-        """Simple one-shot query (backward compatibility).
-
-        Args:
-            prompt: Natural language query
-
-        Returns:
-            Response from Louie
-        """
-        response = self.add_cell("", prompt)
-        return response
 
     def __enter__(self):
         """Context manager support."""
@@ -341,18 +330,3 @@ class LouieClient:
         self._client.close()
 
 
-# Convenience function for backward compatibility
-def ask(prompt: str, server_url: str = "https://den.louie.ai") -> Any:
-    """Simple one-shot query to Louie.
-
-    Args:
-        prompt: Natural language query
-        server_url: Louie server URL
-
-    Returns:
-        Response from Louie
-    """
-    with LouieClient(server_url) as client:
-        client.create_thread()
-        response = client.add_cell("", prompt)  # Empty string creates new thread
-        return response

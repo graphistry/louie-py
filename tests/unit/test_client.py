@@ -205,22 +205,6 @@ class TestLouieClient:
         assert df_elem["type"] == "DfElement"
         assert df_elem["metadata"]["shape"] == [10, 3]
 
-    def test_ask_method_compatibility(self, client, mock_httpx_client):
-        """Test backward-compatible ask() method."""
-        # Mock response with JSONL format
-        mock_response = Mock()
-        mock_response.text = (
-            '{"dthread_id": "D_new001"}\n'
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Answer"}}'
-        )
-        mock_response.raise_for_status = Mock()
-        mock_httpx_client.post.return_value = mock_response
-
-        with patch.object(client, "_client", mock_httpx_client):
-            response = client.ask("What is the weather?")
-
-        assert response.thread_id == "D_new001"
-        assert response.elements[0]["text"] == "Answer"
 
     def test_error_handling(self, client, mock_httpx_client):
         """Test error handling for API failures."""

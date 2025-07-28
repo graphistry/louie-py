@@ -1,12 +1,18 @@
 #!/bin/bash
 set -e
 
-# Always use Python 3.12 for this project
-export UV_PYTHON="python3.12"
+# Use Python version from .python-version file, with fallback
+if [ -f ".python-version" ]; then
+    PYTHON_VERSION=$(cat .python-version)
+    export UV_PYTHON="python${PYTHON_VERSION}"
+else
+    # Fallback to 3.12 if no .python-version file
+    export UV_PYTHON="python3.12"
+fi
 
 # If .venv doesn't exist, create it with correct Python
 if [ ! -d ".venv" ]; then
-    uv venv --python python3.12
+    uv venv --python $UV_PYTHON
 fi
 
 # Sanity check: ensure we're not using host Python when running commands

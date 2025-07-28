@@ -180,7 +180,7 @@ class TestDocumentationIntegration:
     )
     def test_response_types(self, real_client, prompt, expected_type):
         """Test different prompts return expected response types."""
-        response = real_client.ask(prompt)
+        response = real_client.add_cell("", prompt)
 
         assert response.thread_id.startswith("D_")
         assert len(response.elements) > 0

@@ -6,7 +6,7 @@ This guide covers the technical setup and development workflow for contributors 
 
 ### Prerequisites
 
-- Python 3.11 or higher
+- Python 3.12 or higher
 - Git
 - uv package manager (recommended) or pip
 
@@ -219,7 +219,7 @@ logging.basicConfig(level=logging.DEBUG)
 ## CI/CD
 
 GitHub Actions runs on all PRs:
-- Python 3.8-3.12 compatibility
+- Python 3.12-3.13 compatibility
 - Linting and formatting checks
 - Type checking
 - Unit and integration tests
