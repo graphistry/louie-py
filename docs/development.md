@@ -96,20 +96,30 @@ mypy --no-error-summary .        # Less verbose output
 
 ### pytest (Test Runner)
 ```bash
-# Run tests
-pytest                           # All tests
-pytest -v                        # Verbose output
-pytest -x                        # Stop on first failure
-pytest -q                        # Quiet output
+# Run tests (always use uv run for correct environment)
+uv run pytest                    # All tests
+uv run pytest -v                 # Verbose output
+uv run pytest -x                 # Stop on first failure
+uv run pytest -q                 # Quiet output
+
+# Or use the smart script (recommended)
+./scripts/pytest.sh              # Includes coverage + threshold
+./scripts/pytest.sh -v           # Your args + smart defaults
 
 # Parallel testing (faster)
-pytest -n auto                   # Use all CPU cores
-pytest -n 4                      # Use 4 processes
+uv run pytest -n auto            # Use all CPU cores
+uv run pytest -n 4               # Use 4 processes
 
 # Specific tests
-pytest tests/test_louie_client.py # Single file
-pytest -k "test_error"           # Tests matching pattern
+uv run pytest tests/test_louie_client.py # Single file
+uv run pytest -k "test_error"    # Tests matching pattern
 ```
+
+**Important Python Environment Note:**
+- Always use `uv run` or our smart scripts to ensure correct Python version
+- The project requires Python 3.11+ (we use 3.12 in development)
+- A `.python-version` file pins the version for consistency
+- If you see Python 3.8 errors, you're likely using global Python instead of venv
 
 ## Local CI Simulation
 
@@ -173,6 +183,31 @@ We provide intelligent wrapper scripts that mirror CI exactly with sensible defa
 ```
 
 ## CI Workflow Integration
+
+### ReadTheDocs Configuration Validation
+
+The project includes validation for `.readthedocs.yml` to catch configuration errors before they reach ReadTheDocs:
+
+```bash
+# Validate ReadTheDocs config
+./scripts/validate-readthedocs.sh
+
+# Test validation with known errors
+./scripts/test-rtd-validation.sh
+```
+
+**How it works:**
+- Downloads official RTD JSON schema from their repository
+- Validates `.readthedocs.yml` against the schema using jsonschema
+- Catches common errors like:
+  - Invalid `build.jobs` structure (must be dict, not list)
+  - Missing required fields (e.g., `version`)
+  - Invalid field values
+
+**Integrated into CI:**
+- Runs in `ci-quick.sh` for fast local feedback
+- Runs in `ci-local.sh` for full validation
+- Runs in GitHub Actions `docs-test` job
 
 ### Local Testing (Match CI)
 ```bash
@@ -307,9 +342,30 @@ pre-commit run --all-files
 ```
 
 ### Environment Issues
-- **Python version**: Ensure 3.11+ with `python --version`
+
+**Python Version Conflicts:**
+```bash
+# Check environment (run our diagnostic script)
+./scripts/test-env-check.sh
+
+# Common issue: global Python being used instead of venv
+# Solution 1: Always use uv run
+uv run python --version          # Should show 3.12.x
+uv run pytest                    # Correct way to run tests
+
+# Solution 2: Use python -m pattern
+uv run python -m pytest          # Even more explicit
+
+# Solution 3: Reset environment if corrupted
+rm -rf .venv
+uv venv --python 3.12
+uv sync
+```
+
+**Other Environment Issues:**
 - **Dependencies**: Fresh install with `uv pip install -e ".[dev]"`
 - **Cache issues**: Clear with `rm -rf .ruff_cache .mypy_cache`
+- **Global tools interfering**: Check `which pytest` (should be in .venv)
 
 ## Release Process
 

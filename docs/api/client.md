@@ -8,7 +8,7 @@ The main client class for interacting with the Louie.ai service.
 
 ## Usage Examples
 
-### Basic Usage
+### Thread-Based Conversations
 
 ```python
 import louieai
@@ -17,12 +17,34 @@ import graphistry
 # First authenticate with Graphistry
 graphistry.register(api=3, username="your_user", password="your_pass")
 
-# Create client with default server
+# Create client
 client = louieai.LouieClient()
 
-# Ask a question
-response = client.ask("Analyze the network patterns in my dataset")
-print(response)
+# Start a new thread with a query
+thread = client.create_thread(
+    name="Network Analysis",
+    initial_prompt="Analyze the network patterns in my dataset"
+)
+
+# Continue analysis in the same thread
+response = client.add_cell(
+    thread.id,
+    "Focus on the largest connected component"
+)
+
+# Response types vary based on the query
+if response.type == "TextElement":
+    print(response.text)
+elif response.type == "GraphElement":
+    print(f"Visualization available at: {response.dataset_id}")
+```
+
+### Simple One-Shot Queries
+
+```python
+# For quick queries without maintaining thread context
+response = client.ask("Summarize the key findings")
+print(response.text)
 ```
 
 ### Custom Server URL
@@ -32,11 +54,30 @@ print(response)
 client = louieai.LouieClient(server_url="https://custom.louie.ai")
 ```
 
+### Managing Threads
+
+```python
+# List existing threads
+threads = client.list_threads(page_size=10)
+for thread in threads:
+    print(f"{thread.id}: {thread.name}")
+
+# Continue an existing thread
+if threads:
+    response = client.add_cell(
+        threads[0].id,
+        "What were the main conclusions?"
+    )
+```
+
 ### Error Handling
 
 ```python
 try:
-    response = client.ask("My question")
+    thread = client.create_thread(
+        initial_prompt="Query the sales database"
+    )
+    response = client.add_cell(thread.id, "Show top customers")
 except RuntimeError as e:
     if "No Graphistry API token" in str(e):
         print("Please authenticate with graphistry.register() first")

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- AI collaboration framework with comprehensive guidelines
+- Task planning template for structured AI-assisted development
+- Publishing guide for PyPI releases
+- ReadTheDocs configuration validation scripts
+- GitHub Actions workflow for automated PyPI publishing
+- Testing section in README with quick start instructions
+
+### Changed
+- Updated documentation dependencies to latest versions
+- Enhanced CI pipeline with ReadTheDocs validation
+- Improved development documentation with RTD validation info
+
+### Fixed
+- Fixed ReadTheDocs configuration with proper build.jobs structure
+
 ## [0.1.0] - 2025-07-26
 
 ### Added
