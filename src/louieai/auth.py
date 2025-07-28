@@ -59,7 +59,9 @@ class AuthManager:
                 self._graphistry_client.refresh()
                 token = self._graphistry_client.api_token()
             if not token:
-                raise RuntimeError("Failed to get authentication token from graphistry client")
+                raise RuntimeError(
+                    "Failed to get authentication token from graphistry client"
+                )
             return str(token)
 
         # Otherwise use global graphistry auth
@@ -125,7 +127,8 @@ class AuthManager:
         if self._credentials["password"]:
             register_kwargs["password"] = self._credentials["password"]
         if self._credentials["api_key"]:
-            register_kwargs["key"] = self._credentials["api_key"]  # graphistry uses 'key' parameter
+            # graphistry uses 'key' parameter
+            register_kwargs["key"] = self._credentials["api_key"]
         if self._credentials["api"]:
             register_kwargs["api"] = self._credentials["api"]
         if self._credentials["server"]:
@@ -193,7 +196,8 @@ class AuthManager:
             return False
 
 
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
+
 
 def auto_retry_auth(func: F) -> F:
     """Decorator to automatically retry on auth failures.
