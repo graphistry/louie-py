@@ -18,7 +18,7 @@
 
 ## Installation
 
-Requires Python 3.11+ and an existing Graphistry account.
+Requires Python 3.10+ and an existing Graphistry account.
 
 ```bash
 # Using uv (recommended)
