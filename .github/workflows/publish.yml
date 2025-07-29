@@ -8,6 +8,8 @@ on:
 jobs:
   test-publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for trusted publishing
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,7 +32,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           verbose: true
 
   publish:
