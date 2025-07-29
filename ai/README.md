@@ -47,6 +47,7 @@ pytest
 
 - **NEVER** commit credentials or API keys
 - Use `.env` files for test credentials (already in .gitignore)
+- Use `tmp/` folder for temporary test scripts with credentials (already in .gitignore)
 - Check for sensitive data before commits
 - Use secure token handling patterns
 
@@ -84,7 +85,8 @@ louie-py/
 │   └── integration/     # Integration tests (real API)
 ├── docs/                # MkDocs documentation
 ├── scripts/             # Development scripts
-└── ai/                  # AI assistant resources
+├── ai/                  # AI assistant resources
+└── tmp/                 # Temporary test files (gitignored)
 ```
 
 ## Response Types
