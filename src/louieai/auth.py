@@ -9,7 +9,7 @@ import httpx
 from graphistry.pygraphistry import GraphistryClient
 
 # TypeVar for decorator type preservation
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class AuthManager:
