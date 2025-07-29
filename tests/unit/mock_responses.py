@@ -4,7 +4,7 @@ This module provides realistic mock responses for all Louie API response types.
 """
 
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -25,7 +25,7 @@ class MockResponseLibrary:
             "text": text,
             "language": language,
             "thread_id": thread_id,
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "status": "completed",
         }
 
@@ -52,7 +52,7 @@ class MockResponseLibrary:
                 "memory_usage": shape[0] * shape[1] * 8,
                 "description": f"DataFrame with {shape[0]} rows and {shape[1]} columns",
             },
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "status": "completed",
         }
 
@@ -82,7 +82,7 @@ class MockResponseLibrary:
                 },
             },
             "url": f"https://hub.graphistry.com/graph/graph.html?dataset={dataset_id}",
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "status": "completed",
         }
 
@@ -105,7 +105,7 @@ class MockResponseLibrary:
                 f"  File '<stdin>', line 1\n"
                 f"{error_type}: {message}"
             ),
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "status": "error",
         }
 
@@ -135,7 +135,7 @@ class MockResponseLibrary:
                 "height": 600,
                 "format": "png",
             },
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "status": "completed",
         }
 
@@ -169,7 +169,7 @@ class MockResponseLibrary:
                 },
             },
             "url": f"https://kepler.gl/demo?mapId={map_id}",
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "status": "completed",
         }
 
@@ -195,7 +195,7 @@ class MockResponseLibrary:
             "result": result,
             "thread_id": thread_id,
             "metadata": {"agent": "DataAgent", "duration_ms": 50},
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "status": "completed",
         }
 
