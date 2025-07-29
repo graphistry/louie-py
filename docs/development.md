@@ -229,7 +229,7 @@ Our pre-commit configuration runs:
 - `python-check-blanket-noqa` (prevent lazy # noqa usage)
 
 ### CI Pipeline
-- **Matrix**: Tests on Python 3.10, 3.11, 3.12
+- **Matrix**: Tests on Python 3.10, 3.11, 3.12, 3.13
 - **Steps**: Lint → Format → Type Check → Test + Coverage (85% threshold)
 - **Triggers**: PRs and pushes to main/develop/feature/*
 - **Coverage**: XML reports generated for all runs
