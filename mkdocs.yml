@@ -9,6 +9,7 @@ nav:
     - LouieClient: api/client.md
     - Response Types: api/response-types.md
   - Query Patterns: query-patterns.md
+  - Examples: examples.md
   - Testing: testing.md
   - Developer Guide: development.md
 theme:
@@ -20,8 +21,8 @@ theme:
   logo: assets/louie-logo.png
   favicon: assets/louie-logo.png
 docs_dir: docs
-repo_url: https://github.com/graphistry/louieai
-repo_name: graphistry/louieai
+repo_url: https://github.com/graphistry/louie-py
+repo_name: graphistry/louie-py
 plugins:
   - search
   - mkdocstrings:
