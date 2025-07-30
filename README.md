@@ -37,23 +37,23 @@ import louieai as lui
 # Authenticate with your Graphistry account
 graphistry.register(api=3, username="your_user", password="your_pass")
 
-# Create a client and ask questions
+# Create a client and make queries
 client = lui.Client()
-response = client.ask("Show me patterns in the security logs")
+response = client.add_cell("", "Show me patterns in the security logs")
 
 # Access different response types
 for text in response.text_elements:
     print(text['text'])
     
-for df in response.df_elements:
+for df in response.dataframe_elements:
     print(df['table'])  # pandas DataFrame
 ```
 
 ## Documentation
 
-- [User Guide](https://louieai.readthedocs.io) - Complete usage examples and tutorials
-- [API Reference](https://louieai.readthedocs.io/en/latest/api/) - Detailed API documentation
-- [Examples](https://louieai.readthedocs.io/en/latest/examples/) - Common patterns and use cases
+- [User Guide](https://louie-py.readthedocs.io) - Complete usage examples and tutorials
+- [API Reference](https://louie-py.readthedocs.io/en/latest/api/) - Detailed API documentation
+- [Examples](https://louie-py.readthedocs.io/en/latest/examples/) - Common patterns and use cases
 
 ## Links
 
@@ -70,5 +70,3 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## License
 
 Apache 2.0 - see [LICENSE](LICENSE)
-
-The Apache-2.0 license enables easy integration in enterprise environments, Splunk apps, and Jupyter notebooks.
