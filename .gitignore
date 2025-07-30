@@ -153,3 +153,4 @@ src/louieai/_version.py
 # Planning and temporary files
 AI_PROGRESS/
 plans/
+tmp/
