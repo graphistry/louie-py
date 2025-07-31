@@ -47,6 +47,76 @@ class TestLouieClient:
         assert client.server_url == "https://test.louie.ai"
         assert client.auth_manager is not None
 
+    def test_client_initialization_with_graphistry_client_object(self):
+        """Test client works with GraphistryClient objects (not just plottables)."""
+        # Mock a GraphistryClient object (what graphistry.client() returns)
+        mock_client = Mock()
+        mock_client.api_token = Mock(return_value="test-token")
+        mock_client.register = Mock()
+        mock_client.refresh = Mock()
+
+        client = LouieClient(graphistry_client=mock_client)
+
+        assert client.auth_manager is not None
+        assert client.auth_manager._graphistry_client is mock_client
+
+    def test_multiple_clients_with_distinct_graphistry_clients(self):
+        """Test multiple LouieClient instances with distinct GraphistryClients."""
+        # Create two distinct GraphistryClient mocks
+        alice_g = Mock()
+        alice_g.api_token = Mock(return_value="alice-token")
+        alice_g.register = Mock()
+        alice_g.refresh = Mock()
+
+        bob_g = Mock()
+        bob_g.api_token = Mock(return_value="bob-token")
+        bob_g.register = Mock()
+        bob_g.refresh = Mock()
+
+        # Create two LouieClients with distinct GraphistryClients
+        alice_client = LouieClient(graphistry_client=alice_g)
+        bob_client = LouieClient(graphistry_client=bob_g)
+
+        # Verify they use different GraphistryClient objects
+        assert alice_client.auth_manager._graphistry_client is alice_g
+        assert bob_client.auth_manager._graphistry_client is bob_g
+        assert (
+            alice_client.auth_manager._graphistry_client
+            is not bob_client.auth_manager._graphistry_client
+        )
+
+        # Verify they have separate auth managers
+        assert alice_client.auth_manager is not bob_client.auth_manager
+
+    def test_client_isolation_no_confused_deputy(self):
+        """Test that separate clients don't interfere (no confused deputy)."""
+        # Create two clients with different tokens
+        alice_g = Mock()
+        alice_g.api_token = Mock(return_value="alice-token-123")
+        alice_g.register = Mock()
+        alice_g.refresh = Mock()
+
+        bob_g = Mock()
+        bob_g.api_token = Mock(return_value="bob-token-456")
+        bob_g.register = Mock()
+        bob_g.refresh = Mock()
+
+        alice_client = LouieClient(graphistry_client=alice_g)
+        bob_client = LouieClient(graphistry_client=bob_g)
+
+        # Get tokens from each client
+        alice_token = alice_client.auth_manager.get_token()
+        bob_token = bob_client.auth_manager.get_token()
+
+        # Verify each client gets its own token
+        assert alice_token == "alice-token-123"
+        assert bob_token == "bob-token-456"
+        assert alice_token != bob_token
+
+        # Verify the right mock was called
+        alice_g.api_token.assert_called()
+        bob_g.api_token.assert_called()
+
     def test_create_thread_with_initial_prompt(self, client, mock_httpx_client):
         """Test thread creation with initial prompt."""
         # Mock response with JSONL format

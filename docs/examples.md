@@ -117,6 +117,56 @@ client = lui.Client(graphistry_client=g)
 response = client.add_cell("", "What patterns do you see in this network?")
 ```
 
+## Multi-tenant and Concurrent Usage
+
+For applications serving multiple users or requiring concurrent sessions, use PyGraphistry client objects to ensure proper isolation:
+
+```python
+import graphistry
+import louieai as lui
+
+# Create isolated client instances for different users
+alice_g = graphistry.client()
+alice_g.register(api=3, username="alice", password="alice_pass")
+alice_client = lui.LouieClient(graphistry_client=alice_g)
+
+bob_g = graphistry.client()
+bob_g.register(api=3, username="bob", password="bob_pass") 
+bob_client = lui.LouieClient(graphistry_client=bob_g)
+
+# Each client operates independently with isolated authentication
+alice_response = alice_client.add_cell("", "Alice's query")
+bob_response = bob_client.add_cell("", "Bob's query")
+
+# Clients don't interfere with each other - safe for concurrent use
+alice_followup = alice_client.add_cell(alice_response.thread_id, "Alice followup")
+bob_followup = bob_client.add_cell(bob_response.thread_id, "Bob followup")
+
+print(f"Alice thread: {alice_response.thread_id}")
+print(f"Bob thread: {bob_response.thread_id}")
+# Different thread IDs confirm proper isolation
+```
+
+### Multi-server Support
+
+Connect different users to different Graphistry servers:
+
+```python
+# Production server for Alice
+alice_g = graphistry.client()
+alice_g.register(api=3, server="prod.graphistry.com", username="alice", password="pw")
+alice_client = lui.LouieClient(graphistry_client=alice_g)
+
+# Staging server for Bob
+bob_g = graphistry.client()  
+bob_g.register(api=3, server="staging.graphistry.com", username="bob", password="pw")
+bob_client = lui.LouieClient(graphistry_client=bob_g)
+
+# Each client uses their respective server
+alice_resp = alice_client.add_cell("", "Production analysis")
+bob_resp = bob_client.add_cell("", "Staging test")
+```
+
 ## Direct Authentication
 
 Pass credentials directly to the client:
