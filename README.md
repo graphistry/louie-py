@@ -20,9 +20,31 @@ import louieai as lui
 graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
 client = lui.LouieClient(server_url="https://den.louie.ai")
 
-# Ask questions in natural language
-response = client.add_cell("", "What are the top security risks in my data?")
+# Ask questions in natural language  
+response = client.add_cell("", "Find accounts sharing payment methods or shipping addresses")
+
+# Get fraud insights
 print(response.text_elements[0]['text'])
+# Output: "Found 23 suspicious account clusters sharing payment/shipping details:
+# 
+# **Payment Card Sharing**:
+# • Card ending 4789: Used by 8 different accounts in 3 days
+# • Card ending 2156: 5 accounts, all created within same hour
+# 
+# **Address Clustering**:
+# • 123 Oak St: 12 accounts using same shipping address
+# • suspicious_email@temp.com: 7 accounts with similar email patterns
+# 
+# **Risk Assessment**: 67% likely promotional abuse, 23% payment fraud"
+
+# Access the connection data
+if response.dataframe_elements:
+    clusters_df = response.dataframe_elements[0]['table']
+    print(clusters_df.head())
+    #     account_id shared_payment shared_address  cluster_size  risk_score
+    # 0   user_1234      card_4789    123_oak_st            12        7.2
+    # 1   user_5678      card_4789    456_elm_ave            8        6.8  
+    # 2   user_9012      card_2156    123_oak_st            5        8.1
 ```
 
 ## Documentation

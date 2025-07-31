@@ -19,8 +19,31 @@ graphistry.register(api=3, server="hub.graphistry.com", username="your_user", pa
 client = lui.LouieClient(server_url="https://den.louie.ai")
 
 # Ask questions in natural language
-response = client.add_cell("", "What are the top security risks in my data?")
+response = client.add_cell("", "Show me users with unusual ordering patterns or velocity")
+
+# Get behavioral fraud analysis
 print(response.text_elements[0]['text'])
+# Output: "Identified 34 accounts with suspicious ordering behavior:
+# 
+# **High Velocity Orders**:
+# • user_78234: 47 orders in 2 hours (avg basket: $67)
+# • user_45891: 23 orders from same IP, different payment methods
+# 
+# **Geographic Inconsistencies**:
+# • 12 accounts: Billing in NYC, shipping to warehouse addresses in TX
+# • 8 accounts: VPN usage combined with expedited shipping
+# 
+# **Pattern Analysis**: 73% likely reseller activity, 18% promotional abuse"
+
+# Access transaction patterns
+if response.dataframe_elements:
+    patterns_df = response.dataframe_elements[0]['table']
+    print("\nSuspicious ordering patterns:")
+    print(patterns_df.head())
+    #     user_id  orders_24h  avg_basket  billing_state shipping_state  pattern_type
+    # 0  user_78234          47       $67         NY             TX      high_velocity
+    # 1  user_45891          23      $134         CA             CA      payment_cycling  
+    # 2  user_23456          18       $89         FL             WA      geo_inconsistent
 ```
 
 ## Key Features
