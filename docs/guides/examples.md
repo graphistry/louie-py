@@ -14,7 +14,7 @@ import louieai as lui
 graphistry.register(api=3, username="your_user", password="your_pass")
 
 # Create client and make a query
-client = lui.Client()
+client = lui.LouieClient()
 response = client.add_cell("", "What are the top security threats in my data?")
 
 # Print the response
@@ -113,7 +113,7 @@ df = pd.DataFrame({
 g = graphistry.edges(df, 'source', 'target')
 
 # Pass it to LouieAI
-client = lui.Client(graphistry_client=g)
+client = lui.LouieClient(graphistry_client=g)
 response = client.add_cell("", "What patterns do you see in this network?")
 ```
 
