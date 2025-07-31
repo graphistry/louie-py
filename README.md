@@ -35,11 +35,11 @@ pip install louieai
 import graphistry
 import louieai as lui
 
-# Authenticate with your Graphistry account
+# Authenticate with your Graphistry account (defaults to hub.graphistry.com)
 graphistry.register(api=3, username="your_user", password="your_pass")
 
-# Create a client and make queries
-client = lui.Client()
+# Create a client and make queries (defaults to den.louie.ai)
+client = lui.LouieClient()
 response = client.add_cell("", "Show me patterns in the security logs")
 
 # Access different response types
@@ -48,6 +48,26 @@ for text in response.text_elements:
     
 for df in response.dataframe_elements:
     print(df['table'])  # pandas DataFrame
+```
+
+### Server Configuration
+
+**Graphistry Server** (defaults to `hub.graphistry.com`):
+```python
+# Use default Graphistry Hub
+graphistry.register(api=3, username="your_user", password="your_pass")
+
+# Or specify custom server
+graphistry.register(api=3, server="your-server.graphistry.com", username="your_user", password="your_pass")
+```
+
+**Louie Server** (defaults to `den.louie.ai`):
+```python
+# Use default Louie API
+client = lui.LouieClient()
+
+# Or specify custom server
+client = lui.LouieClient(server_url="https://your-custom-louie.ai")
 ```
 
 See the [Authentication Guide](https://louie-py.readthedocs.io/en/latest/authentication/) for advanced options including multi-tenant usage, API keys, and concurrent sessions.
