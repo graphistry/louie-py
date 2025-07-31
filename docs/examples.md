@@ -117,24 +117,7 @@ client = lui.Client(graphistry_client=g)
 response = client.add_cell("", "What patterns do you see in this network?")
 ```
 
-## Direct Authentication
-
-Pass credentials directly to the client:
-
-```python
-# Instead of using graphistry.register()
-client = lui.Client(
-    username="your_user",
-    password="your_pass",
-    server="hub.graphistry.com"
-)
-
-# Or use API key
-client = lui.Client(
-    api_key="your_api_key",
-    server="hub.graphistry.com"
-)
-```
+For advanced authentication options including multi-tenant usage, API keys, and concurrent sessions, see the [Authentication Guide](authentication.md).
 
 ## Managing Threads
 
