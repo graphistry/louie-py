@@ -435,7 +435,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.17.0" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.2.0" },
-    { name = "pyarrow", specifier = ">=21.0.0" },
+    { name = "pyarrow", specifier = ">=14.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.0" },
