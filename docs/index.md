@@ -4,6 +4,25 @@ Welcome to the **LouieAI** Python client library documentation.
 
 **LouieAI** is Graphistry's genAI-native investigation platform. This library allows Python applications to interact with LouieAI via its API, leveraging Graphistry authentication.
 
+## Install & Go
+
+```bash
+pip install louieai
+```
+
+```python
+import graphistry
+import louieai as lui
+
+# Connect to Graphistry Hub and Louie Den
+graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
+client = lui.LouieClient(server_url="https://den.louie.ai")
+
+# Ask questions in natural language
+response = client.add_cell("", "What are the top security risks in my data?")
+print(response.text_elements[0]['text'])
+```
+
 ## Key Features
 
 - **Thread-based conversations**: Maintain context across multiple queries
