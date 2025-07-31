@@ -138,6 +138,6 @@ response = client.add_cell(thread.id, "Continue our previous analysis")
 
 ## Next Steps
 
-- Check out the [API Reference](api/index.md) for detailed documentation
+- Check out the [API Reference](../api/index.md) for detailed documentation
 - Learn about [Query Patterns](query-patterns.md) for advanced usage
-- Explore the [Architecture](architecture.md) to understand how LouieAI works
+- Explore the [Architecture](../developer/architecture.md) to understand how LouieAI works

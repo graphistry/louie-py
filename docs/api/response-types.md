@@ -299,4 +299,4 @@ class LouieResponse:
 
 ## Next Steps
 
-- See [Query Patterns](../query-patterns.md) for examples of queries that generate each response type
+- See [Query Patterns](../guides/query-patterns.md) for examples of queries that generate each response type

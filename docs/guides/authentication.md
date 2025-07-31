@@ -205,4 +205,4 @@ client = lui.LouieClient(
 
 - [PyGraphistry Authentication Guide](https://pygraphistry.readthedocs.io/en/latest/server/register.html) - Comprehensive guide to PyGraphistry authentication options
 - [PyGraphistry Concurrency Guide](https://pygraphistry.readthedocs.io/en/latest/server/concurrency.html) - Best practices for concurrent PyGraphistry usage
-- [LouieAI API Reference](api/client.md) - Complete API documentation for LouieClient
+- [LouieAI API Reference](../api/client.md) - Complete API documentation for LouieClient

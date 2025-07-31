@@ -406,4 +406,4 @@ response = client.add_cell(thread.id, """
 - Try these patterns with your own data
 - Combine patterns for complex workflows  
 - Share successful patterns with the community
-- See [Response Types](api/response-types.md) for handling different outputs
+- See [Response Types](../api/response-types.md) for handling different outputs
