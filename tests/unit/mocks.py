@@ -116,10 +116,10 @@ class MockResponse:
             self.text = "Sample analysis response with insights"
             self.content = self.text  # Alias
             self.language = "Markdown"
-        
+
         # Add elements list and convenience properties
         self._setup_elements(response_type)
-    
+
     def _setup_elements(self, response_type: str):
         """Set up elements list and convenience properties."""
         # Create elements list based on response type
@@ -127,61 +127,53 @@ class MockResponse:
             "type": self.type,
             "id": self.id,
         }
-        
+
         if response_type == "text":
-            element.update({
-                "text": self.text,
-                "language": getattr(self, "language", "Markdown")
-            })
+            element.update(
+                {"text": self.text, "language": getattr(self, "language", "Markdown")}
+            )
         elif response_type == "dataframe":
-            element.update({
-                "metadata": self.metadata,
-                "table": MockDataFrame()
-            })
+            element.update({"metadata": self.metadata, "table": MockDataFrame()})
         elif response_type == "graph":
-            element.update({
-                "dataset_id": self.dataset_id,
-                "status": self.status
-            })
+            element.update({"dataset_id": self.dataset_id, "status": self.status})
         elif response_type == "exception":
-            element.update({
-                "error_type": self.error_type,
-                "message": self.message,
-                "traceback": self.traceback
-            })
+            element.update(
+                {
+                    "error_type": self.error_type,
+                    "message": self.message,
+                    "traceback": self.traceback,
+                }
+            )
         elif response_type == "image":
-            element.update({
-                "src": self.src,
-                "alt": self.alt
-            })
-        
+            element.update({"src": self.src, "alt": self.alt})
+
         self.elements = [element]
-    
+
     @property
     def text_elements(self) -> list[dict[str, Any]]:
         """Get all text elements from the response."""
         return [e for e in self.elements if e.get("type") == "TextElement"]
-    
+
     @property
     def dataframe_elements(self) -> list[dict[str, Any]]:
         """Get all dataframe elements from the response."""
         return [e for e in self.elements if e.get("type") == "DfElement"]
-    
-    @property 
+
+    @property
     def graph_elements(self) -> list[dict[str, Any]]:
         """Get all graph elements from the response."""
         return [e for e in self.elements if e.get("type") == "GraphElement"]
-    
+
     @property
     def has_graphs(self) -> bool:
         """Check if response has graph elements."""
         return len(self.graph_elements) > 0
-    
-    @property 
+
+    @property
     def has_dataframes(self) -> bool:
         """Check if response has dataframe elements."""
         return len(self.dataframe_elements) > 0
-    
+
     @property
     def has_errors(self) -> bool:
         """Check if response has error elements."""

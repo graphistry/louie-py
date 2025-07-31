@@ -204,7 +204,7 @@ class TestDocumentation:
     "doc_file",
     [
         "docs/getting-started/quick-start.md",
-        "docs/api/client.md", 
+        "docs/api/client.md",
         "docs/guides/query-patterns.md",
         "docs/guides/examples.md",
     ],
