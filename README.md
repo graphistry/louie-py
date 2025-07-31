@@ -50,29 +50,7 @@ for df in response.dataframe_elements:
     print(df['table'])  # pandas DataFrame
 ```
 
-## Multi-tenant Usage
-
-For safe concurrent or multi-tenant applications, use PyGraphistry client objects to ensure proper isolation:
-
-```python
-import graphistry
-import louieai as lui
-
-# Create isolated client instances for different users/contexts
-alice_g = graphistry.client()
-alice_g.register(api=3, username="alice", password="alice_pass")
-alice_client = lui.LouieClient(graphistry_client=alice_g)
-
-bob_g = graphistry.client()  
-bob_g.register(api=3, username="bob", password="bob_pass")
-bob_client = lui.LouieClient(graphistry_client=bob_g)
-
-# Each client operates independently with isolated authentication
-alice_response = alice_client.add_cell("", "Alice's query")
-bob_response = bob_client.add_cell("", "Bob's query")
-
-# No interference between clients - safe for concurrent use
-```
+See the [Authentication Guide](https://louie-py.readthedocs.io/en/latest/authentication/) for advanced options including multi-tenant usage, API keys, and concurrent sessions.
 
 ## Documentation
 

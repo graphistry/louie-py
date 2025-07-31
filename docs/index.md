@@ -29,31 +29,20 @@ pip install git+https://github.com/<owner>/louieai.git
 
 ## Authentication
 
-LouieAI supports multiple authentication methods:
+LouieAI integrates with PyGraphistry for authentication:
 
 ```python
+import graphistry
 from louieai import LouieClient
 
-# Method 1: Use existing graphistry authentication
-import graphistry
+# Authenticate with PyGraphistry
 graphistry.register(api=3, username="your_user", password="your_pass")
+
+# LouieAI automatically uses the PyGraphistry authentication
 client = LouieClient()
-
-# Method 2: Pass credentials directly
-client = LouieClient(
-    username="your_user",
-    password="your_pass",
-    server="hub.graphistry.com"
-)
-
-# Method 3: Use register method
-client = LouieClient()
-client.register(username="your_user", password="your_pass")
-
-# Method 4: Use existing graphistry client
-g = graphistry.nodes(df).edges(df2)
-client = LouieClient(graphistry_client=g)
 ```
+
+For more authentication options including API keys, multi-tenant usage, and direct credentials, see the [Authentication Guide](authentication.md).
 
 ## Usage Example
 
