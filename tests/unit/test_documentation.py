@@ -189,23 +189,24 @@ class TestDocumentation:
             self._test_code_block(code, "docs/api/client.md", line_num)
 
     def test_query_patterns_examples(self):
-        """Test examples in docs/query-patterns.md."""
-        doc_path = Path("docs/query-patterns.md")
+        """Test examples in docs/guides/query-patterns.md."""
+        doc_path = Path("docs/guides/query-patterns.md")
         if not doc_path.exists():
-            pytest.skip("docs/query-patterns.md not found")
+            pytest.skip("docs/guides/query-patterns.md not found")
 
         blocks = extract_python_blocks(doc_path)
         for code, line_num, _context in blocks:
-            self._test_code_block(code, "docs/query-patterns.md", line_num)
+            self._test_code_block(code, "docs/guides/query-patterns.md", line_num)
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
     "doc_file",
     [
-        "docs/index.md",
+        "docs/getting-started/quick-start.md",
         "docs/api/client.md",
-        "docs/query-patterns.md",
+        "docs/guides/query-patterns.md",
+        "docs/guides/examples.md",
     ],
 )
 def test_documentation_file(doc_file):

@@ -25,7 +25,9 @@ thread = client.create_thread(name="Customer Analysis")
 3. [Analysis & Insights](#analysis-insights)
 4. [Multi-Step Workflows](#multi-step-workflows)
 5. [Data Integration](#data-integration)
-6. [Advanced Patterns](#advanced-patterns)
+6. [Orchestration Agents](#orchestration-agents)
+7. [Specialized Tools & Agents](#specialized-tools-agents)
+8. [Advanced Patterns](#advanced-patterns)
 
 ## Database Queries
 
@@ -273,6 +275,252 @@ response = client.add_cell(thread.id, """
 """)
 ```
 
+## Orchestration Agents
+
+Orchestration agents excel at coordinating complex, multi-system workflows and managing sophisticated analysis pipelines. These patterns leverage Louie's ability to reason across multiple data sources and coordinate sequential operations.
+
+### Executive Dashboard Orchestration
+```python
+# Orchestrate a complete executive dashboard update
+response = client.add_cell(thread.id, """
+    Act as an executive dashboard orchestrator:
+    
+    1. **Revenue Metrics**: Query Stripe API and Salesforce for Q4 revenue data
+    2. **Customer Health**: Pull NPS scores from survey system and churn metrics from analytics DB
+    3. **Operational KPIs**: Get system uptime from monitoring and support ticket volumes from Zendesk
+    4. **Market Intelligence**: Analyze competitor pricing from scraped data and industry trends
+    5. **Risk Assessment**: Review security incidents and compliance status
+    
+    Orchestrate all data collection, calculate executive-level KPIs, and generate:
+    - Executive summary dashboard with key metrics
+    - Red/yellow/green status indicators 
+    - Trend analysis with quarter-over-quarter comparisons
+    - Action items requiring executive attention
+""")
+```
+
+### Incident Response Orchestration
+```python
+# Complex security incident response workflow
+response = client.add_cell(thread.id, """
+    Act as an incident response orchestrator for potential data breach:
+    
+    **Phase 1 - Detection & Scoping**:
+    - Query SIEM (Splunk) for anomalous access patterns in last 48h
+    - Cross-reference with identity management system for affected accounts
+    - Pull network logs from security appliances for suspicious traffic
+    
+    **Phase 2 - Impact Assessment**:
+    - Identify all databases/systems accessed by compromised accounts
+    - Query audit logs to determine data potentially accessed
+    - Calculate blast radius and classify incident severity
+    
+    **Phase 3 - Response Coordination**:
+    - Generate timeline of events with evidence
+    - Create Graphistry visualization of attack path
+    - Produce incident report with recommended containment actions
+    - Prepare compliance notification draft if required
+    
+    Coordinate all phases automatically and provide comprehensive incident briefing.
+""")
+```
+
+### Business Intelligence Orchestration
+```python
+# Weekly business intelligence automation
+response = client.add_cell(thread.id, """
+    Act as a BI orchestrator for comprehensive weekly business review:
+    
+    **Sales Performance**:
+    - Query CRM for pipeline changes and deal progression
+    - Analyze conversion rates by source and sales rep
+    - Compare actuals vs targets with variance analysis
+    
+    **Marketing Effectiveness**:
+    - Pull campaign performance from Google Ads, Facebook, LinkedIn
+    - Calculate customer acquisition cost by channel
+    - Measure attribution and multi-touch journey analysis
+    
+    **Product Usage**:
+    - Query product analytics for feature adoption and user engagement
+    - Identify usage patterns and potential churn signals
+    - Track product-led growth metrics
+    
+    **Financial Health**:
+    - Calculate cash flow, burn rate, and runway projections
+    - Analyze subscription metrics (MRR, churn, expansion)
+    - Monitor key financial ratios and trends
+    
+    Orchestrate all analysis and produce executive-ready business intelligence report.
+""")
+```
+
+### Data Pipeline Orchestration
+```python
+# Complex ETL orchestration and validation
+response = client.add_cell(thread.id, """
+    Orchestrate a comprehensive data pipeline validation and optimization:
+    
+    **Data Quality Assessment**:
+    - Validate data freshness across all source systems
+    - Check referential integrity between related tables
+    - Identify schema drift and missing data patterns
+    
+    **Performance Analysis**:
+    - Query system logs for pipeline execution times
+    - Identify bottlenecks in data transformation steps
+    - Analyze resource utilization during peak loads
+    
+    **Data Lineage Mapping**:
+    - Trace data flow from sources through transformations
+    - Identify downstream dependencies and impact analysis
+    - Document critical data assets and ownership
+    
+    **Optimization Recommendations**:
+    - Suggest pipeline improvements and cost optimizations
+    - Recommend data partitioning and indexing strategies
+    - Provide capacity planning for expected growth
+    
+    Coordinate all assessments and deliver comprehensive data architecture review.
+""")
+```
+
+## Specialized Tools & Agents
+
+Specialized agents focus on domain-specific expertise and leverage particular tools or methodologies for deep analysis in their area of specialization.
+
+### TableAI Analysis Agent
+```python
+# Advanced statistical analysis with TableAI
+response = client.add_cell(thread.id, """
+    Act as a TableAI statistical analysis specialist:
+    
+    Use TableAI's advanced capabilities to:
+    - Perform sophisticated anomaly detection on customer transaction data
+    - Identify subtle patterns in user behavior that indicate fraud risk
+    - Build predictive models for customer lifetime value
+    - Generate statistical significance tests for A/B test results
+    - Create correlation matrices with feature importance rankings
+    
+    Provide statistical rigor with confidence intervals, p-values, and effect sizes.
+    Explain findings in business terms with actionable recommendations.
+""")
+```
+
+### Graphistry Network Analysis Agent
+```python
+# Advanced network analysis with Graphistry
+response = client.add_cell(thread.id, """
+    Act as a Graphistry network analysis specialist:
+    
+    Create sophisticated network visualizations to:
+    - Map customer relationship networks based on shared attributes (email domains, IP addresses, devices)
+    - Identify community structures and influential nodes in social networks
+    - Trace money flows and transaction patterns for fraud detection
+    - Visualize system dependencies and failure propagation paths
+    - Build knowledge graphs connecting entities across multiple data sources
+    
+    Use advanced Graphistry features like:
+    - Dynamic node sizing based on centrality measures
+    - Edge bundling for cleaner large-network visualization  
+    - Time-based animations showing network evolution
+    - Interactive filtering and drill-down capabilities
+    
+    Provide network science insights with centrality measures and community detection.
+""")
+```
+
+### UMAP Clustering Specialist
+```python
+# Advanced dimensionality reduction and clustering
+response = client.add_cell(thread.id, """
+    Act as a UMAP clustering and dimensionality reduction specialist:
+    
+    Perform advanced customer segmentation using:
+    - UMAP for nonlinear dimensionality reduction preserving local structure
+    - Multiple clustering algorithms (HDBSCAN, K-means, Gaussian mixture)
+    - Feature engineering from behavioral, demographic, and transactional data
+    - Cluster validation using silhouette analysis and stability measures
+    
+    Create interpretable customer segments with:
+    - 2D/3D UMAP visualizations colored by cluster and key attributes
+    - Cluster characteristic profiles with statistical significance
+    - Actionable marketing strategies for each segment
+    - Segment migration analysis over time
+    
+    Provide mathematical rigor with hyperparameter justification and validation metrics.
+""")
+```
+
+### Security Analysis Agent
+```python
+# Specialized cybersecurity analysis
+response = client.add_cell(thread.id, """
+    Act as a cybersecurity analysis specialist:
+    
+    Perform comprehensive threat hunting and analysis:
+    - Parse and correlate logs from multiple security tools (SIEM, EDR, firewall)
+    - Apply MITRE ATT&CK framework to identify attack patterns
+    - Use behavioral analytics to detect insider threats
+    - Analyze network traffic for command & control communications
+    - Investigate phishing campaigns and malware propagation
+    
+    Specialized techniques:
+    - Time-series analysis of authentication failures and account lockouts
+    - Graph analysis of lateral movement patterns
+    - Statistical analysis of network traffic baselines
+    - Threat intelligence correlation with IOCs and TTPs
+    
+    Provide security-specific outputs: STIX/TAXII format, risk scores, and IOC lists.
+""")
+```
+
+### Financial Analysis Agent
+```python
+# Advanced financial modeling and analysis
+response = client.add_cell(thread.id, """
+    Act as a financial analysis specialist:
+    
+    Perform sophisticated financial analysis including:
+    - Monte Carlo simulations for revenue forecasting
+    - Cohort analysis for subscription revenue prediction
+    - Unit economics modeling with sensitivity analysis
+    - Cash flow projections under multiple scenarios
+    - Competitive benchmarking and market analysis
+    
+    Advanced financial techniques:
+    - Discounted cash flow valuations with WACC calculations
+    - Financial ratio analysis with peer comparisons
+    - Working capital optimization analysis
+    - Capital allocation efficiency assessment
+    
+    Provide executive-ready financial models with assumptions documentation.
+""")
+```
+
+### Marketing Attribution Agent
+```python
+# Advanced marketing attribution and optimization
+response = client.add_cell(thread.id, """
+    Act as a marketing attribution and optimization specialist:
+    
+    Perform sophisticated marketing analysis:
+    - Multi-touch attribution modeling (linear, time-decay, position-based)
+    - Marketing mix modeling (MMM) for channel effectiveness
+    - Customer journey analysis across touchpoints
+    - Incrementality testing and uplift measurement
+    - Creative performance analysis with A/B testing
+    
+    Advanced marketing techniques:
+    - Bayesian attribution modeling with uncertainty quantification
+    - Media saturation curves and diminishing returns analysis
+    - Cross-channel interaction effects and synergies
+    - Lifetime value optimization across acquisition channels
+    
+    Provide actionable budget reallocation recommendations with expected ROI.
+""")
+```
+
 ## Advanced Patterns
 
 ### Iterative Refinement
@@ -406,4 +654,4 @@ response = client.add_cell(thread.id, """
 - Try these patterns with your own data
 - Combine patterns for complex workflows  
 - Share successful patterns with the community
-- See [Response Types](api/response-types.md) for handling different outputs
+- See [Response Types](../api/response-types.md) for handling different outputs

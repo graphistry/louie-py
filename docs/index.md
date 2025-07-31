@@ -4,98 +4,47 @@ Welcome to the **LouieAI** Python client library documentation.
 
 **LouieAI** is Graphistry's genAI-native investigation platform. This library allows Python applications to interact with LouieAI via its API, leveraging Graphistry authentication.
 
-## Installation
+## Install & Go
 
-Requires Python 3.11+ and an existing Graphistry account.
-
-Using uv (recommended):
-```bash
-uv pip install louieai
-```
-
-Using pip:
 ```bash
 pip install louieai
 ```
 
-For development or latest features:
-```bash
-# With uv
-uv pip install git+https://github.com/<owner>/louieai.git
-
-# With pip  
-pip install git+https://github.com/<owner>/louieai.git
-```
-
-## Authentication
-
-LouieAI integrates with PyGraphistry for authentication:
-
 ```python
 import graphistry
-from louieai import LouieClient
+import louieai as lui
 
-# Authenticate with PyGraphistry
-graphistry.register(api=3, username="your_user", password="your_pass")
+# Connect to Graphistry Hub and Louie Den
+graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
+client = lui.LouieClient(server_url="https://den.louie.ai")
 
-# LouieAI automatically uses the PyGraphistry authentication
-client = LouieClient()
+# Ask questions in natural language
+response = client.add_cell("", "Show me users with unusual ordering patterns or velocity")
+
+# Get behavioral fraud analysis
+print(response.text_elements[0]['text'])
+# Output: "Identified 34 accounts with suspicious ordering behavior:
+# 
+# **High Velocity Orders**:
+# • user_78234: 47 orders in 2 hours (avg basket: $67)
+# • user_45891: 23 orders from same IP, different payment methods
+# 
+# **Geographic Inconsistencies**:
+# • 12 accounts: Billing in NYC, shipping to warehouse addresses in TX
+# • 8 accounts: VPN usage combined with expedited shipping
+# 
+# **Pattern Analysis**: 73% likely reseller activity, 18% promotional abuse"
+
+# Access transaction patterns
+if response.dataframe_elements:
+    patterns_df = response.dataframe_elements[0]['table']
+    print("\nSuspicious ordering patterns:")
+    print(patterns_df.head())
+    #     user_id  orders_24h  avg_basket  billing_state shipping_state  pattern_type
+    # 0  user_78234          47       $67         NY             TX      high_velocity
+    # 1  user_45891          23      $134         CA             CA      payment_cycling  
+    # 2  user_23456          18       $89         FL             WA      geo_inconsistent
 ```
-
-For more authentication options including API keys, multi-tenant usage, and direct credentials, see the [Authentication Guide](authentication.md).
-
-## Usage Example
-
-```python
-# Create a thread with an initial query
-thread = client.create_thread(
-    name="Data Analysis",
-    initial_prompt="What insights can you find about sales trends?"
-)
-
-# Continue the conversation in the same thread
-response = client.add_cell(
-    thread.id,
-    "Can you create a visualization of the top 10 products?"
-)
-
-# Access response data
-if response.type == "TextElement":
-    print(response.text)
-elif response.type == "DfElement":
-    df = response.to_dataframe()
-```
-
-Louie maintains conversation context within threads, allowing for sophisticated multi-step analyses.
-
-## Simple One-Shot Queries
-
-For quick queries without thread context:
-
-```python
-# Simple ask() method for backward compatibility
-response = client.ask("What are the key metrics in the dataset?")
-print(response.text)
-```
-
-## Error Handling
-
-The LouieClient provides comprehensive error handling with detailed messages:
-
-```python
-try:
-    thread = client.create_thread(
-        initial_prompt="Analyze customer churn patterns"
-    )
-    response = client.add_cell(thread.id, "Show me the top risk factors")
-except RuntimeError as e:
-    print(f"Error occurred: {e}")
-```
-
-The client distinguishes between different error types:
-- **HTTP Errors (4xx/5xx)**: Extracts error messages from API responses
-- **Network Errors**: Provides connection failure details
-- **Authentication Errors**: Clear guidance when Graphistry token is missing
 
 ## Key Features
 
@@ -106,4 +55,40 @@ The client distinguishes between different error types:
 - **Auto-refresh authentication**: Automatically handles JWT token expiration
 - **Multiple auth methods**: Works with existing Graphistry sessions or direct credentials
 
-See the [Architecture](architecture.md) page for more details on how LouieAI and Graphistry integrate.
+## Getting Started
+
+New to LouieAI? Start here:
+
+1. **[Installation](getting-started/installation.md)** - Install the LouieAI Python client
+2. **[Authentication](getting-started/authentication.md)** - Set up authentication with PyGraphistry
+3. **[Quick Start](getting-started/quick-start.md)** - Make your first queries and explore features
+
+## User Guides
+
+Ready to dive deeper? These guides cover common use cases and advanced features:
+
+- **[Examples](guides/examples.md)** - Practical examples and usage patterns
+- **[Query Patterns](guides/query-patterns.md)** - Advanced query techniques and best practices
+- **[Authentication Guide](guides/authentication.md)** - Multi-tenant usage, API keys, and troubleshooting
+
+## API Reference
+
+Complete technical documentation:
+
+- **[API Overview](api/index.md)** - Overview of the LouieAI API
+- **[LouieClient Reference](api/client.md)** - Complete LouieClient documentation
+- **[Response Types](api/response-types.md)** - Understanding LouieAI response formats
+
+## Developer Resources
+
+Contributing to LouieAI or setting up for development:
+
+- **[Architecture](developer/architecture.md)** - How LouieAI and Graphistry integrate
+- **[Development Guide](developer/development.md)** - Local development setup
+- **[Testing](developer/testing.md)** - Running and writing tests
+- **[Publishing](developer/publishing.md)** - Release process documentation
+
+## Support
+
+- **[GitHub Issues](https://github.com/graphistry/louie-py/issues)** - Report bugs or request features
+- **[Graphistry Community](https://github.com/graphistry/pygraphistry)** - PyGraphistry support and community
