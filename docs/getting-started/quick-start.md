@@ -18,11 +18,11 @@ See the [Authentication Guide](authentication.md) for detailed authentication op
 import graphistry
 from louieai import LouieClient
 
-# Authenticate with PyGraphistry
-graphistry.register(api=3, username="your_user", password="your_pass")
+# Authenticate with PyGraphistry Hub
+graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
 
-# LouieAI automatically uses the PyGraphistry authentication
-client = LouieClient()
+# Connect to Louie Den (default detective AI service)
+client = LouieClient(server_url="https://den.louie.ai")
 ```
 
 ### 3. Your First Query

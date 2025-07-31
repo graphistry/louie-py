@@ -4,12 +4,19 @@ This guide covers all authentication options for LouieAI, from basic setup to ad
 
 ## Overview
 
-LouieAI integrates seamlessly with PyGraphistry's authentication system. When you authenticate with PyGraphistry, LouieAI automatically uses those credentials to connect to the Louie.ai service.
+**LouieAI uses PyGraphistry for authentication** - you don't need separate credentials. When you authenticate with PyGraphistry, LouieAI automatically uses those credentials to connect to the Louie.ai service.
 
-The authentication flow:
-1. Authenticate with PyGraphistry (via `graphistry.register()` or client objects)
-2. LouieAI extracts the JWT token from PyGraphistry
-3. Token is automatically refreshed when needed
+**Server Options:**
+- **Use Graphistry Hub** - Free account at [hub.graphistry.com](https://hub.graphistry.com)
+- **Run your own server** - Deploy PyGraphistry on your infrastructure
+
+### How It Works
+
+The authentication flow is simple:
+
+1. **Authenticate with PyGraphistry** (via `graphistry.register()` or client objects)
+2. **LouieAI extracts the JWT token** from PyGraphistry automatically
+3. **Token is refreshed** when needed without user intervention
 
 ## Basic Authentication
 
