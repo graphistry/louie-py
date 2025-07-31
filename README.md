@@ -12,6 +12,7 @@
 - **Seamless Authentication**: Integrates with PyGraphistry authentication
 - **Rich Responses**: Get text answers, dataframes, and Graphistry visualizations
 - **Thread-based Conversations**: Maintain context across multiple queries
+- **Multi-tenant Safe**: Supports PyGraphistry client objects for isolated sessions
 - **Type-safe**: Full type hints for better IDE support
 
 *Alpha Release: Core functionality is available with more features coming soon.*
@@ -48,6 +49,8 @@ for text in response.text_elements:
 for df in response.dataframe_elements:
     print(df['table'])  # pandas DataFrame
 ```
+
+See the [Authentication Guide](https://louie-py.readthedocs.io/en/latest/authentication/) for advanced options including multi-tenant usage, API keys, and concurrent sessions.
 
 ## Documentation
 

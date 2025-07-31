@@ -3,6 +3,7 @@ site_description: Documentation for the LouieAI Python client library.
 site_url: https://louie-py.readthedocs.io
 nav:
   - Home: index.md
+  - Authentication: authentication.md
   - Architecture: architecture.md
   - API Reference:
     - Overview: api/index.md
