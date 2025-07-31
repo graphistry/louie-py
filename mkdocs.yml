@@ -3,16 +3,23 @@ site_description: Documentation for the LouieAI Python client library.
 site_url: https://louie-py.readthedocs.io
 nav:
   - Home: index.md
-  - Authentication: authentication.md
-  - Architecture: architecture.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Authentication: getting-started/authentication.md
+    - Quick Start: getting-started/quick-start.md
+  - User Guides:
+    - Examples: guides/examples.md
+    - Query Patterns: guides/query-patterns.md
+    - Authentication Guide: guides/authentication.md
   - API Reference:
     - Overview: api/index.md
     - LouieClient: api/client.md
     - Response Types: api/response-types.md
-  - Query Patterns: query-patterns.md
-  - Examples: examples.md
-  - Testing: testing.md
-  - Developer Guide: development.md
+  - Developer:
+    - Architecture: developer/architecture.md
+    - Development: developer/development.md
+    - Testing: developer/testing.md
+    - Publishing: developer/publishing.md
 theme:
   name: material
   features:

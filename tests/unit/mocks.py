@@ -117,6 +117,68 @@ class MockResponse:
             self.content = self.text  # Alias
             self.language = "Markdown"
 
+        # Add elements list and convenience properties
+        self._setup_elements(response_type)
+
+    def _setup_elements(self, response_type: str):
+        """Set up elements list and convenience properties."""
+        # Create elements list based on response type
+        element = {
+            "type": self.type,
+            "id": self.id,
+        }
+
+        if response_type == "text":
+            element.update(
+                {"text": self.text, "language": getattr(self, "language", "Markdown")}
+            )
+        elif response_type == "dataframe":
+            element.update({"metadata": self.metadata, "table": MockDataFrame()})
+        elif response_type == "graph":
+            element.update({"dataset_id": self.dataset_id, "status": self.status})
+        elif response_type == "exception":
+            element.update(
+                {
+                    "error_type": self.error_type,
+                    "message": self.message,
+                    "traceback": self.traceback,
+                }
+            )
+        elif response_type == "image":
+            element.update({"src": self.src, "alt": self.alt})
+
+        self.elements = [element]
+
+    @property
+    def text_elements(self) -> list[dict[str, Any]]:
+        """Get all text elements from the response."""
+        return [e for e in self.elements if e.get("type") == "TextElement"]
+
+    @property
+    def dataframe_elements(self) -> list[dict[str, Any]]:
+        """Get all dataframe elements from the response."""
+        return [e for e in self.elements if e.get("type") == "DfElement"]
+
+    @property
+    def graph_elements(self) -> list[dict[str, Any]]:
+        """Get all graph elements from the response."""
+        return [e for e in self.elements if e.get("type") == "GraphElement"]
+
+    @property
+    def has_graphs(self) -> bool:
+        """Check if response has graph elements."""
+        return len(self.graph_elements) > 0
+
+    @property
+    def has_dataframes(self) -> bool:
+        """Check if response has dataframe elements."""
+        return len(self.dataframe_elements) > 0
+
+    @property
+    def has_errors(self) -> bool:
+        """Check if response has error elements."""
+        return any(e.get("type") == "ExceptionElement" for e in self.elements)
+
 
 class MockThread:
     """Mock thread object."""
@@ -166,6 +228,10 @@ def create_mock_client():
         return list(threads.values())[:page_size]
 
     def get_thread(thread_id):
+        # If the thread doesn't exist, create a mock one for testing
+        if thread_id not in threads:
+            thread = MockThread(thread_id, f"Mock Thread {thread_id}")
+            threads[thread_id] = thread
         return threads.get(thread_id)
 
     # Set up client methods
