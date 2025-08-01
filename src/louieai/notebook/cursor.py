@@ -1,0 +1,513 @@
+"""Global cursor implementation for notebook-friendly API."""
+
+import logging
+from collections import deque
+from typing import Any
+
+import pandas as pd
+
+from louieai import LouieClient, Response
+
+logger = logging.getLogger(__name__)
+
+
+class ResponseProxy:
+    """Proxy for historical responses with same property access."""
+
+    def __init__(self, response: Response | None):
+        self._response = response
+
+    @property
+    def df(self) -> pd.DataFrame | None:
+        """Latest dataframe or None."""
+        dfs = self.dfs
+        return dfs[0] if dfs else None
+
+    @property
+    def dfs(self) -> list[pd.DataFrame]:
+        """All dataframes from this response."""
+        if not self._response:
+            return []
+        return self._extract_dataframes(self._response)
+
+    @property
+    def text(self) -> str | None:
+        """Primary text or None."""
+        texts = self.texts
+        return texts[0] if texts else None
+
+    @property
+    def texts(self) -> list[str]:
+        """All text elements."""
+        if not self._response:
+            return []
+        if (not hasattr(self._response, 'text_elements') or
+                not self._response.text_elements):
+            return []
+        return [elem.get('content', '') for elem in self._response.text_elements]
+
+    @property
+    def elements(self) -> list[dict[str, Any]]:
+        """All elements with type tags."""
+        if not self._response:
+            return []
+
+        result = []
+
+        # If response has raw elements list, check for ExceptionElements
+        if hasattr(self._response, 'elements') and self._response.elements:
+            for elem in self._response.elements:
+                if isinstance(elem, dict) and elem.get('type') == 'ExceptionElement':
+                    result.append({
+                        'type': 'error',
+                        'value': elem.get('message', 'Unknown error'),
+                        'error_type': elem.get('error_type'),
+                        'traceback': elem.get('traceback')
+                    })
+
+        # Add text elements
+        if hasattr(self._response, 'text_elements') and self._response.text_elements:
+            for elem in self._response.text_elements:
+                if isinstance(elem, dict):
+                    result.append({
+                        'type': 'text',
+                        'value': elem.get('content', '')
+                    })
+
+        # Add dataframe elements
+        if (hasattr(self._response, 'dataframe_elements') and
+                self._response.dataframe_elements):
+            for elem in self._response.dataframe_elements:
+                if isinstance(elem, dict) and 'table' in elem:
+                    result.append({
+                        'type': 'dataframe',
+                        'value': elem['table']
+                    })
+
+        # Add graph elements
+        if hasattr(self._response, 'graph_elements') and self._response.graph_elements:
+            for elem in self._response.graph_elements:
+                result.append({
+                    'type': 'graph',
+                    'value': elem
+                })
+
+        return result
+
+    @property
+    def errors(self) -> list[dict[str, Any]]:
+        """All error elements."""
+        if not self._response:
+            return []
+        if not hasattr(self._response, 'elements'):
+            return []
+        return [
+            elem for elem in self._response.elements
+            if isinstance(elem, dict) and elem.get('type') == 'ExceptionElement'
+        ]
+
+    @property
+    def has_errors(self) -> bool:
+        """Check if response contains errors."""
+        return len(self.errors) > 0
+
+    def _extract_dataframes(self, response: Response) -> list[pd.DataFrame]:
+        """Extract pandas DataFrames from response."""
+        if (not hasattr(response, 'dataframe_elements') or
+                not response.dataframe_elements):
+            return []
+        dfs = []
+        for elem in response.dataframe_elements:
+            if (isinstance(elem, dict) and 'table' in elem and
+                    isinstance(elem['table'], pd.DataFrame)):
+                dfs.append(elem['table'])
+        return dfs
+
+
+class GlobalCursor:
+    """Global cursor for notebook-friendly API.
+
+    Provides implicit thread management and history tracking for
+    natural notebook workflows.
+
+    Quick Start:
+        >>> import louieai as lui
+        >>> lui("What's the weather today?")
+        >>> lui.df  # Access any returned dataframe
+        >>> lui.text  # Access the text response
+
+    Session Management:
+        - Thread ID managed automatically
+        - History tracked (last 100 responses)
+        - Access previous: lui[-1], lui[-2], etc.
+
+    Trace Control:
+        >>> lui.traces = True  # Enable reasoning traces
+        >>> lui("Complex query", traces=False)  # Override per query
+
+    Data Access:
+        - lui.df: Latest dataframe (or None)
+        - lui.dfs: All dataframes from latest response
+        - lui.text: Primary text response
+        - lui.texts: All text elements
+        - lui.elements: All elements with type tags
+    """
+
+    def __init__(self, client: LouieClient | None = None):
+        """Initialize global cursor.
+
+        Args:
+            client: LouieAI client instance. If None, creates default client.
+        """
+        if client is None:
+            # Create client with env credentials if available
+            import os
+
+            # Check for Louie-specific URL
+            server_url = os.environ.get('LOUIE_URL', 'https://louie-dev.grph.xyz')
+
+            # Check for credentials
+            username = (os.environ.get('LOUIE_USER') or
+                       os.environ.get('GRAPHISTRY_USERNAME'))
+            password = (os.environ.get('LOUIE_PASS') or
+                       os.environ.get('GRAPHISTRY_PASSWORD'))
+            server = (os.environ.get('LOUIE_SERVER') or
+                     os.environ.get('GRAPHISTRY_SERVER'))
+
+            kwargs = {'server_url': server_url}
+            if username:
+                kwargs['username'] = username
+            if password:
+                kwargs['password'] = password
+            if server:
+                kwargs['server'] = server
+
+            client = LouieClient(**kwargs)
+        self._client = client
+        self._history: deque[Response] = deque(maxlen=100)
+        self._current_thread: str | None = None
+        self._traces: bool = False
+
+    def __call__(
+        self,
+        prompt: str,
+        *,
+        traces: bool | None = None,
+        **kwargs: Any
+    ) -> Response:
+        """Execute a query with implicit thread management.
+
+        Args:
+            prompt: Natural language query
+            traces: Override session trace setting for this query
+            **kwargs: Additional arguments passed to client.query()
+
+        Returns:
+            Response from the API
+        """
+        # Get or create thread
+        if self._current_thread is None:
+            self._current_thread = self._get_or_create_thread()
+
+        # Determine trace setting
+        use_traces = traces if traces is not None else self._traces
+
+        # Build parameters
+        params = {
+            'prompt': prompt,
+            'thread_id': self._current_thread,
+            **kwargs
+        }
+
+        # Extract add_cell specific params
+        thread_id = params.pop('thread_id')
+        agent = params.pop('agent', 'LouieAgent')
+
+        # Execute query
+        try:
+            response = self._client.add_cell(
+                thread_id=thread_id,
+                prompt=prompt,
+                agent=agent,
+                traces=use_traces
+            )
+
+            # Update thread ID in case it was created
+            if not self._current_thread:
+                self._current_thread = response.thread_id
+
+            # Store in history
+            self._history.append(response)
+
+            # Auto-display in Jupyter if available
+            if self._in_jupyter() and kwargs.get('display', True):
+                self._display(response)
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Query failed: {e}")
+            raise
+
+    def _get_or_create_thread(self) -> str:
+        """Get existing thread or create new one."""
+        # Return empty string to create new thread on first add_cell
+        return ""
+
+    def _in_jupyter(self) -> bool:
+        """Check if running in Jupyter environment."""
+        try:
+            # Check for IPython without importing it
+            import sys
+            return 'IPython' in sys.modules
+        except Exception:
+            return False
+
+    def _display(self, response: Response) -> None:
+        """Display response in Jupyter."""
+        # For now, skip display functionality
+        # This will be properly implemented when IPython is added as optional dependency
+        pass
+
+    @property
+    def traces(self) -> bool:
+        """Get trace setting for this session."""
+        return self._traces
+
+    @traces.setter
+    def traces(self, value: bool) -> None:
+        """Set trace setting for this session."""
+        self._traces = value
+
+    @property
+    def df(self) -> pd.DataFrame | None:
+        """Latest dataframe or None."""
+        dfs = self.dfs
+        return dfs[0] if dfs else None
+
+    @property
+    def dfs(self) -> list[pd.DataFrame]:
+        """All dataframes from latest response."""
+        if not self._history:
+            return []
+        return self._extract_dataframes(self._history[-1])
+
+    @property
+    def text(self) -> str | None:
+        """Primary text or None."""
+        texts = self.texts
+        return texts[0] if texts else None
+
+    @property
+    def texts(self) -> list[str]:
+        """All text elements."""
+        if not self._history:
+            return []
+        latest = self._history[-1]
+        if not hasattr(latest, 'text_elements') or not latest.text_elements:
+            return []
+        return [elem.get('content', '') for elem in latest.text_elements]
+
+    @property
+    def charts(self) -> list[dict[str, Any]]:
+        """All chart specifications."""
+        if not self._history:
+            return []
+        # For now, return empty as charts aren't implemented yet
+        return []
+
+    @property
+    def images(self) -> list[Any]:
+        """All images."""
+        if not self._history:
+            return []
+        # For now, return empty as images aren't implemented yet
+        return []
+
+    @property
+    def elements(self) -> list[dict[str, Any]]:
+        """All elements with type tags."""
+        if not self._history:
+            return []
+
+        proxy = ResponseProxy(self._history[-1])
+        return proxy.elements
+
+    @property
+    def errors(self) -> list[dict[str, Any]]:
+        """All error elements from latest response."""
+        if not self._history:
+            return []
+        proxy = ResponseProxy(self._history[-1])
+        return proxy.errors
+
+    @property
+    def has_errors(self) -> bool:
+        """Check if latest response contains errors."""
+        return len(self.errors) > 0
+
+    def __repr__(self) -> str:
+        """String representation for interactive help."""
+        status_parts = []
+
+        # Session info
+        if self._current_thread:
+            status_parts.append("Session: Active")
+        else:
+            status_parts.append("Session: Not started")
+
+        # History info
+        history_count = len(self._history)
+        status_parts.append(f"History: {history_count} responses")
+
+        # Traces info
+        status_parts.append(f"Traces: {'Enabled' if self._traces else 'Disabled'}")
+
+        # Latest data info
+        if self._history:
+            latest = self._history[-1]
+            data_info = []
+
+            # Count elements
+            text_count = (len(latest.text_elements)
+                         if hasattr(latest, 'text_elements') else 0)
+            df_count = (len(latest.dataframe_elements)
+                       if hasattr(latest, 'dataframe_elements') else 0)
+
+            if text_count:
+                data_info.append(f"{text_count} text")
+            if df_count:
+                data_info.append(f"{df_count} dataframe")
+
+            if data_info:
+                status_parts.append(f"Latest: {', '.join(data_info)}")
+
+        status = " | ".join(status_parts)
+        return f"<LouieAI Notebook Interface | {status}>"
+
+    def _repr_html_(self) -> str:
+        """HTML representation for Jupyter notebooks."""
+        html_parts = [
+            "<div style='border: 1px solid #ddd; padding: 10px; border-radius: 5px;'>",
+            "<h4 style='margin-top: 0;'>🤖 LouieAI Notebook Interface</h4>"
+        ]
+
+        # Session status
+        if self._current_thread:
+            html_parts.append("<p>✅ <b>Session:</b> Active</p>")
+        else:
+            html_parts.append(
+                "<p>⚪ <b>Session:</b> Not started "
+                "(use <code>lui('your query')</code>)</p>"
+            )
+
+        # History
+        history_count = len(self._history)
+        html_parts.append(f"<p>📚 <b>History:</b> {history_count} responses")
+        if history_count > 0:
+            html_parts.append(
+                " (access with <code>lui[-1]</code>, "
+                "<code>lui[-2]</code>, etc.)</p>"
+            )
+        else:
+            html_parts.append("</p>")
+
+        # Traces
+        if self._traces:
+            html_parts.append("<p>🔍 <b>Traces:</b> Enabled (showing AI reasoning)</p>")
+        else:
+            html_parts.append(
+                "<p>🔍 <b>Traces:</b> Disabled "
+                "(use <code>lui.traces = True</code> to enable)</p>"
+            )
+
+        # Latest data
+        if self._history:
+            latest = self._history[-1]
+            proxy = ResponseProxy(latest)
+
+            # Check for errors first
+            if proxy.has_errors:
+                html_parts.append("<p>⚠️ <b>Latest Response Contains Errors:</b></p>")
+                html_parts.append("<ul style='margin: 5px 0; color: #d73a49;'>")
+                for error in proxy.errors[:3]:  # Show first 3 errors
+                    msg = error.get('message', 'Unknown error')
+                    html_parts.append(f"<li>{msg}</li>")
+                if len(proxy.errors) > 3:
+                    html_parts.append(
+                        f"<li>... and {len(proxy.errors) - 3} more errors</li>"
+                    )
+                html_parts.append("</ul>")
+                html_parts.append("<p>Access errors with <code>lui.errors</code></p>")
+            else:
+                html_parts.append("<p><b>Latest Response:</b></p>")
+                html_parts.append("<ul style='margin: 5px 0;'>")
+
+                # Text elements
+                text_count = (len(latest.text_elements)
+                             if hasattr(latest, 'text_elements') else 0)
+                if text_count:
+                    html_parts.append(
+                        f"<li>{text_count} text element(s) - access with "
+                        "<code>lui.text</code> or <code>lui.texts</code></li>"
+                    )
+
+                # DataFrames
+                df_count = (len(latest.dataframe_elements)
+                           if hasattr(latest, 'dataframe_elements') else 0)
+                if df_count:
+                    html_parts.append(
+                        f"<li>{df_count} dataframe(s) - access with "
+                        "<code>lui.df</code> or <code>lui.dfs</code></li>"
+                    )
+
+                html_parts.append("</ul>")
+
+        # Quick help
+        html_parts.append(
+            "<details><summary><b>Quick Help</b> "
+            "(click to expand)</summary>"
+        )
+        html_parts.append(
+            "<pre style='margin: 10px 0; padding: 10px; "
+            "background: #f5f5f5;'>"
+        )
+        html_parts.append("# Make a query\n")
+        html_parts.append("lui('Show me sales data from last week')\n\n")
+        html_parts.append("# Access results\n")
+        html_parts.append("df = lui.df          # Latest dataframe\n")
+        html_parts.append("text = lui.text      # Latest text response\n")
+        html_parts.append("all_dfs = lui.dfs    # All dataframes\n\n")
+        html_parts.append("# History\n")
+        html_parts.append("lui[-1].df           # Previous response's dataframe\n\n")
+        html_parts.append("# Traces (AI reasoning)\n")
+        html_parts.append("lui.traces = True    # Enable for session\n")
+        html_parts.append("lui('query', traces=True)  # Enable for one query")
+        html_parts.append("</pre>")
+        html_parts.append("</details>")
+
+        html_parts.append("</div>")
+
+        return "\n".join(html_parts)
+
+    def __getitem__(self, index: int) -> ResponseProxy:
+        """Access history: lui[-1], lui[-2], etc."""
+        if not self._history:
+            return ResponseProxy(None)
+        try:
+            return ResponseProxy(self._history[index])
+        except IndexError:
+            return ResponseProxy(None)
+
+    def _extract_dataframes(self, response: Response) -> list[pd.DataFrame]:
+        """Extract pandas DataFrames from response."""
+        if (not hasattr(response, 'dataframe_elements') or
+                not response.dataframe_elements):
+            return []
+        dfs = []
+        for elem in response.dataframe_elements:
+            if (isinstance(elem, dict) and 'table' in elem and
+                    isinstance(elem['table'], pd.DataFrame)):
+                dfs.append(elem['table'])
+        return dfs
+

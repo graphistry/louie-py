@@ -227,7 +227,12 @@ class LouieClient:
 
     @auto_retry_auth
     def add_cell(
-        self, thread_id: str, prompt: str, agent: str = "LouieAgent"
+        self,
+        thread_id: str,
+        prompt: str,
+        agent: str = "LouieAgent",
+        *,
+        traces: bool = False
     ) -> Response:
         """Add a cell (query) to a thread and get response.
 
@@ -235,6 +240,7 @@ class LouieClient:
             thread_id: Thread ID to add to (empty string creates new thread)
             prompt: Natural language query
             agent: Agent to use (default: LouieAgent)
+            traces: Whether to include reasoning traces in response (default: False)
 
         Returns:
             Response object containing thread_id and all elements
@@ -245,7 +251,8 @@ class LouieClient:
         params: dict[str, str] = {
             "query": prompt,
             "agent": agent,
-            "ignore_traces": "true",  # Convert bool to string for HTTP params
+            # Convert bool to string for HTTP params
+            "ignore_traces": str(not traces).lower(),
             "share_mode": "Private",
         }
 
