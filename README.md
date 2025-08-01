@@ -13,18 +13,13 @@ pip install louieai
 ```
 
 ```python
-import graphistry
-import louieai as lui
-
-# Connect to Graphistry Hub and Louie Den
-graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
-client = lui.LouieClient(server_url="https://den.louie.ai")
+from louieai.notebook import lui
 
 # Ask questions in natural language  
-response = client.add_cell("", "Find accounts sharing payment methods or shipping addresses")
+lui("Find accounts sharing payment methods or shipping addresses")
 
-# Get fraud insights
-print(response.text_elements[0]['text'])
+# Get fraud insights instantly
+print(lui.text)
 # Output: "Found 23 suspicious account clusters sharing payment/shipping details:
 # 
 # **Payment Card Sharing**:
@@ -38,8 +33,8 @@ print(response.text_elements[0]['text'])
 # **Risk Assessment**: 67% likely promotional abuse, 23% payment fraud"
 
 # Access the connection data
-if response.dataframe_elements:
-    clusters_df = response.dataframe_elements[0]['table']
+clusters_df = lui.df
+if clusters_df is not None:
     print(clusters_df.head())
     #     account_id shared_payment shared_address  cluster_size  risk_score
     # 0   user_1234      card_4789    123_oak_st            12        7.2

@@ -13,6 +13,7 @@ nav:
     - Authentication Guide: guides/authentication.md
   - API Reference:
     - Overview: api/index.md
+    - Notebook API: api/notebook.md
     - LouieClient: api/client.md
     - Response Types: api/response-types.md
   - Developer:

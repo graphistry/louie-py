@@ -11,18 +11,13 @@ pip install louieai
 ```
 
 ```python
-import graphistry
-import louieai as lui
-
-# Connect to Graphistry Hub and Louie Den
-graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
-client = lui.LouieClient(server_url="https://den.louie.ai")
+from louieai.notebook import lui
 
 # Ask questions in natural language
-response = client.add_cell("", "Show me users with unusual ordering patterns or velocity")
+lui("Show me users with unusual ordering patterns or velocity")
 
-# Get behavioral fraud analysis
-print(response.text_elements[0]['text'])
+# Get behavioral fraud analysis instantly
+print(lui.text)
 # Output: "Identified 34 accounts with suspicious ordering behavior:
 # 
 # **High Velocity Orders**:
@@ -36,8 +31,8 @@ print(response.text_elements[0]['text'])
 # **Pattern Analysis**: 73% likely reseller activity, 18% promotional abuse"
 
 # Access transaction patterns
-if response.dataframe_elements:
-    patterns_df = response.dataframe_elements[0]['table']
+patterns_df = lui.df
+if patterns_df is not None:
     print("\nSuspicious ordering patterns:")
     print(patterns_df.head())
     #     user_id  orders_24h  avg_basket  billing_state shipping_state  pattern_type
@@ -48,6 +43,7 @@ if response.dataframe_elements:
 
 ## Key Features
 
+- **Notebook-friendly API**: Streamlined `lui()` interface for Jupyter notebooks
 - **Thread-based conversations**: Maintain context across multiple queries
 - **Multiple response types**: Handle text, DataFrames, visualizations, and more
 - **Streaming support**: Responses stream in real-time via JSONL
@@ -67,9 +63,10 @@ New to LouieAI? Start here:
 
 Ready to dive deeper? These guides cover common use cases and advanced features:
 
-- **[Examples](guides/examples.md)** - Practical examples and usage patterns
+- **[Examples](guides/examples.md)** - Practical examples for both notebook and client APIs
 - **[Query Patterns](guides/query-patterns.md)** - Advanced query techniques and best practices
 - **[Authentication Guide](guides/authentication.md)** - Multi-tenant usage, API keys, and troubleshooting
+- **[Interactive Notebooks](notebooks/)** - Hands-on Jupyter notebook examples
 
 ## API Reference
 
