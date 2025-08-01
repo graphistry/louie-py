@@ -174,15 +174,16 @@ class GlobalCursor:
             server = (os.environ.get('LOUIE_SERVER') or
                      os.environ.get('GRAPHISTRY_SERVER'))
 
-            kwargs = {'server_url': server_url}
+            # Build client kwargs
+            client_kwargs: dict[str, Any] = {'server_url': server_url}
             if username:
-                kwargs['username'] = username
+                client_kwargs['username'] = username
             if password:
-                kwargs['password'] = password
+                client_kwargs['password'] = password
             if server:
-                kwargs['server'] = server
+                client_kwargs['server'] = server
 
-            client = LouieClient(**kwargs)
+            client = LouieClient(**client_kwargs)
         self._client = client
         self._history: deque[Response] = deque(maxlen=100)
         self._current_thread: str | None = None

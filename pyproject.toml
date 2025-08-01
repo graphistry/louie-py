@@ -113,6 +113,10 @@ ignore_missing_imports = true
 module = "graphistry"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "pandas"
+ignore_missing_imports = true
+
 # Ignore mypy issues in test files for complex mocking
 [[tool.mypy.overrides]]
 module = "tests.*"

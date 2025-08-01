@@ -8,4 +8,4 @@ from .auth import AuthManager
 from .client import LouieClient, Response, Thread
 from .notebook import lui
 
-__all__ = ["AuthManager", "LouieClient", "Response", "Thread", "lui", "__version__"]
+__all__ = ["AuthManager", "LouieClient", "Response", "Thread", "__version__", "lui"]
