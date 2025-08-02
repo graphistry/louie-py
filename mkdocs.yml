@@ -16,8 +16,6 @@ nav:
     - Examples: guides/examples.md
     - Query Patterns: guides/query-patterns.md
     - Authentication Guide: guides/authentication.md
-  - Migration:
-    - Environment Variables: migration/env-vars.md
   - API Reference:
     - Overview: api/index.md
     - Notebook API: api/notebook.md

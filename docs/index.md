@@ -12,20 +12,34 @@ pip install louieai
 
 ```python
 # First, set up authentication with PyGraphistry
-import os
 import graphistry
 
-# Option 1: Environment variables (recommended)
+# Option 1: Environment variables (recommended for notebooks)
+# In your terminal or notebook:
 # export GRAPHISTRY_USERNAME="your_username"
 # export GRAPHISTRY_PASSWORD="your_password"
+
+# Then in Python:
+from louieai.notebook import lui
+# lui will automatically use the environment variables
 
 # Option 2: Direct authentication
 graphistry.register(
     api=3, 
-    server="hub.graphistry.com",  # or your server
+    server="hub.graphistry.com",  # or your enterprise server
     username="your_username", 
     password="your_password"
 )
+
+# Verify authentication worked (optional)
+try:
+    import pandas as pd
+    # This will trigger authentication if not already done
+    graphistry.nodes(pd.DataFrame({'id': [1]})).plot(render=False)
+    print("Authentication successful!")
+except Exception as e:
+    print(f"Authentication failed: {e}")
+    # Check your credentials and server URL
 
 # Now import and use LouieAI
 from louieai.notebook import lui
