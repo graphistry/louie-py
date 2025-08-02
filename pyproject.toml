@@ -119,6 +119,10 @@ ignore_missing_imports = true
 module = "pandas"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "IPython.*"
+ignore_missing_imports = true
+
 # Ignore mypy issues in test files for complex mocking
 [[tool.mypy.overrides]]
 module = "tests.*"

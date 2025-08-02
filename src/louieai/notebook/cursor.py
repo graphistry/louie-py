@@ -342,7 +342,7 @@ class Cursor:
 
     def __call__(
         self, prompt: str, *, traces: bool | None = None, **kwargs: Any
-    ) -> Response:
+    ) -> "Cursor":
         """Execute a query with implicit thread management.
 
         Args:
@@ -351,7 +351,7 @@ class Cursor:
             **kwargs: Additional arguments passed to client.query()
 
         Returns:
-            Response from the API
+            Self for chaining and property access
         """
         # Get or create thread
         if self._current_thread is None:

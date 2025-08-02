@@ -119,4 +119,4 @@ class CallableModule:
         return louie(*args, **kwargs)
 
 
-sys.modules[__name__] = CallableModule(sys.modules[__name__])
+sys.modules[__name__] = CallableModule(sys.modules[__name__])  # type: ignore[assignment]
