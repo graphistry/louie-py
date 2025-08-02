@@ -380,15 +380,17 @@ class LouieClient:
         start_time = time.time()
 
         # Use configured timeouts
-        with httpx.Client(
-            timeout=httpx.Timeout(
-                self._timeout,  # Overall timeout
-                read=self._streaming_timeout,  # Per-chunk timeout
-            )
-        ) as stream_client:
-            with stream_client.stream(  # noqa: SIM117 - nested with needed
+        with (
+            httpx.Client(
+                timeout=httpx.Timeout(
+                    self._timeout,  # Overall timeout
+                    read=self._streaming_timeout,  # Per-chunk timeout
+                )
+            ) as stream_client,
+            stream_client.stream(
                 "POST", f"{self.server_url}/api/chat/", headers=headers, params=params
-            ) as response:
+            ) as response,
+        ):
                 response.raise_for_status()
 
                 # Collect streaming lines
