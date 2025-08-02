@@ -74,7 +74,9 @@ class TestNotebookExperience:
             # History access works
             # lui[-1] gives ResponseProxy for the latest response
             assert lui[-1].text == "Here's your data analysis:"
-            assert lui[-2].text == "Here's a song for you:\n\nTwinkle twinkle little star"
+            assert lui[-2].text == (
+                "Here's a song for you:\n\nTwinkle twinkle little star"
+            )
 
     def test_notebook_display_modes(self):
         """Test different display scenarios in notebooks."""

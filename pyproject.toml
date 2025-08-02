@@ -128,6 +128,14 @@ ignore_missing_imports = true
 module = "pyarrow"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "httpx"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "IPython.*"
+ignore_missing_imports = true
+
 # Ignore mypy issues in test files for complex mocking
 [[tool.mypy.overrides]]
 module = "tests.*"
