@@ -23,7 +23,10 @@ class TestNotebookExperience:
         mock_response1 = Response(
             thread_id="test-thread",
             elements=[
-                {"type": "TextElement", "content": "Here's a song for you:\n\nTwinkle twinkle little star"}
+                {
+                    "type": "TextElement",
+                    "content": "Here's a song for you:\n\nTwinkle twinkle little star"
+                }
             ]
         )
 
@@ -81,13 +84,19 @@ class TestNotebookExperience:
             HTML=mock_html
         )
 
-        with patch.dict(sys.modules, {'IPython': mock_ipython, 'IPython.display': mock_ipython.display}):
+        with patch.dict(
+            sys.modules,
+            {'IPython': mock_ipython, 'IPython.display': mock_ipython.display}
+        ):
             # Create cursor
             mock_client = MagicMock()
             mock_response = Response(
                 thread_id="test-thread",
                 elements=[
-                    {"type": "TextElement", "content": "# Markdown Header\n\nSome **bold** text"}
+                    {
+                        "type": "TextElement",
+                        "content": "# Markdown Header\n\nSome **bold** text"
+                    }
                 ]
             )
             mock_client.add_cell.return_value = mock_response
@@ -97,7 +106,7 @@ class TestNotebookExperience:
 
             # Query should trigger display
             with patch.object(lui, '_in_jupyter', return_value=True):
-                result = lui("test markdown")
+                lui("test markdown")
 
                 # Should have called Markdown display
                 mock_markdown.assert_called()
@@ -112,7 +121,11 @@ class TestNotebookExperience:
             thread_id="test-thread",
             elements=[
                 {"type": "TextElement", "content": "Processing your request..."},
-                {"type": "ExceptionElement", "message": "API rate limit exceeded", "error_type": "RateLimitError"}
+                {
+                    "type": "ExceptionElement",
+                    "message": "API rate limit exceeded",
+                    "error_type": "RateLimitError"
+                }
             ]
         )
         mock_client.add_cell.return_value = mock_response
@@ -142,7 +155,10 @@ class TestNotebookExperience:
         mock_response = Response(
             thread_id="test-thread",
             elements=[
-                {"type": "TextElement", "content": "Test content with <html> tags & symbols"},
+                {
+                    "type": "TextElement",
+                    "content": "Test content with <html> tags & symbols"
+                },
                 {"type": "DfElement", "table": pd.DataFrame({"a": [1, 2]})}
             ]
         )
@@ -175,9 +191,10 @@ class TestNotebookExperience:
             "LOUIE_URL": "https://test.louie.ai"
         }
 
-        with patch.dict(os.environ, test_env):
-            # Mock the LouieClient to avoid actual connection
-            with patch('louieai.notebook.cursor.LouieClient') as mock_client_class:
+        with (
+            patch.dict(os.environ, test_env),
+            patch('louieai.notebook.cursor.LouieClient') as mock_client_class
+        ):
                 mock_client_instance = MagicMock()
                 mock_client_instance.server_url = "https://test.louie.ai"
                 mock_client_class.return_value = mock_client_instance
@@ -186,7 +203,7 @@ class TestNotebookExperience:
                 from louieai.notebook.cursor import Cursor
 
                 # Create cursor without arguments
-                cursor = Cursor()
+                Cursor()
 
                 # Should have created client with env vars
                 mock_client_class.assert_called_once()
