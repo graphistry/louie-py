@@ -247,17 +247,10 @@ def handle_user_request(user_credentials):
 
 ### Common Authentication Errors
 
-**401 Unauthorized**
-```python
-# JWT token expired - LouieAI automatically refreshes
-# If refresh fails, check credentials
-```
-
-**Connection Errors**
-```python
-# Verify server URL and network connectivity
-# Default server: hub.graphistry.com
-```
+- **401 Unauthorized**: JWT token expired - LouieAI automatically refreshes, but if refresh fails, check credentials
+- **Connection Errors**: Verify server URL and network connectivity (default server: hub.graphistry.com)
+- **Invalid Credentials**: Double-check username/password or API key format
+- **Server Mismatch**: Ensure your Graphistry and Louie servers are properly paired
 
 ### JWT Token Management
 
@@ -273,10 +266,12 @@ client.auth_manager.refresh_token()
 
 ## Security Best Practices
 
-1. **Never hardcode credentials** - Use environment variables or secure vaults
-2. **Use isolated clients** for multi-tenant applications
-3. **Regularly rotate credentials** in production
-4. **Monitor authentication logs** for suspicious activity
+- **Never hardcode credentials** - Use environment variables or secure vaults
+- **Use isolated clients** for multi-tenant applications
+- **Regularly rotate credentials** in production
+- **Monitor authentication logs** for suspicious activity
+- **Use personal keys** for service accounts instead of username/password
+- **Enable MFA** on your Graphistry account when available
 
 Example using environment variables:
 ```python
