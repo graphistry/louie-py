@@ -279,7 +279,7 @@ class TestLouieClient:
         text_elem = response.elements[0]
         assert text_elem["type"] == "TextElement"
         assert text_elem["text"] == "Processing...\nAnalyzing..."
-        
+
         # Check dataframe element
         df_elem = response.elements[1]
         assert df_elem["type"] == "DfElement"
