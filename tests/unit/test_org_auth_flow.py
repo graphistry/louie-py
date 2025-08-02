@@ -41,7 +41,7 @@ class TestOrgAuthFlow:
             assert headers["X-Graphistry-Org"] == target_org
 
     def test_louie_factory_with_graphistry_client_confused_deputy(self):
-        """Test the confused deputy problem: louie() factory loses org_name from 
+        """Test the confused deputy problem: louie() factory loses org_name from
         pre-registered graphistry."""
         target_org = "databricks-pat-botsv3"
 
@@ -68,7 +68,7 @@ class TestOrgAuthFlow:
         auth_manager = lui._client._auth_manager
         stored_org = auth_manager._credentials.get("org_name")
 
-        # This is the key test: Does LouieAI extract org from existing 
+        # This is the key test: Does LouieAI extract org from existing
         # graphistry client?
         if stored_org != target_org:
             pytest.fail(
@@ -168,7 +168,8 @@ class TestOrgAuthFlow:
         "until fixed"
     )
     def test_reproduction_of_user_scenario(self):
-        """Reproduce the exact user scenario to demonstrate the confused deputy problem."""
+        """Reproduce the exact user scenario to demonstrate the confused deputy
+        problem."""
 
         # Step 1: User registers with PyGraphistry including org_name
         with patch("graphistry.register") as mock_g_register:
