@@ -230,4 +230,4 @@ class TestCursorDisplay:
 
         # Check thread properties
         assert result.thread_id == "test-thread-123"
-        assert result.url == "https://den.louie.ai/threads/test-thread-123"
+        assert result.url == "https://den.louie.ai/?dthread=test-thread-123"

@@ -31,35 +31,35 @@ class TestThreadProperties:
         cursor("test query")
 
         assert cursor.thread_id == "abc123def456"
-        assert cursor.url == "https://den.louie.ai/threads/abc123def456"
+        assert cursor.url == "https://den.louie.ai/?dthread=abc123def456"
 
     @pytest.mark.parametrize(
         "server_url,thread_id,expected_url",
         [
             # Production server
-            ("https://den.louie.ai", "abc123", "https://den.louie.ai/threads/abc123"),
-            ("https://den.louie.ai/", "abc123", "https://den.louie.ai/threads/abc123"),
+            ("https://den.louie.ai", "abc123", "https://den.louie.ai/?dthread=abc123"),
+            ("https://den.louie.ai/", "abc123", "https://den.louie.ai/?dthread=abc123"),
             # Dev server
             (
                 "https://louie-dev.grph.xyz",
                 "xyz789",
-                "https://louie-dev.grph.xyz/threads/xyz789",
+                "https://louie-dev.grph.xyz/?dthread=xyz789",
             ),
             (
                 "https://louie-dev.grph.xyz/",
                 "xyz789",
-                "https://louie-dev.grph.xyz/threads/xyz789",
+                "https://louie-dev.grph.xyz/?dthread=xyz789",
             ),
             # Custom/enterprise servers
             (
                 "https://custom.example.com",
                 "test1",
-                "https://custom.example.com/threads/test1",
+                "https://custom.example.com/?dthread=test1",
             ),
             (
                 "https://louie.internal.corp",
                 "corp123",
-                "https://louie.internal.corp/threads/corp123",
+                "https://louie.internal.corp/?dthread=corp123",
             ),
         ],
     )
@@ -105,9 +105,9 @@ class TestThreadProperties:
         # First query
         cursor("first query")
         assert cursor.thread_id == "thread-123"
-        assert cursor.url == "https://den.louie.ai/threads/thread-123"
+        assert cursor.url == "https://den.louie.ai/?dthread=thread-123"
 
         # Second query
         cursor("second query")
         assert cursor.thread_id == "thread-123"
-        assert cursor.url == "https://den.louie.ai/threads/thread-123"  # Same URL
+        assert cursor.url == "https://den.louie.ai/?dthread=thread-123"  # Same URL

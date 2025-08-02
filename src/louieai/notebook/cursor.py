@@ -449,7 +449,7 @@ class Cursor:
         if not self._current_thread:
             return None
         base_url = self._client.server_url.rstrip("/")
-        return f"{base_url}/threads/{self._current_thread}"
+        return f"{base_url}/?dthread={self._current_thread}"
 
     @property
     def df(self) -> pd.DataFrame | None:
@@ -607,7 +607,9 @@ class Cursor:
         if self._current_thread:
             html_parts.append(
                 "<p style='margin: 5px 0; font-size: 0.9em;'>"
-                "✅ <b>Session:</b> Active</p>"
+                f"✅ <b>Session:</b> Active | "
+                f"<b>Thread ID:</b> <code>{self._current_thread}</code> | "
+                f"<a href='{self.url}' target='_blank'>View Thread ↗</a></p>"
             )
         else:
             html_parts.append(
