@@ -1,9 +1,23 @@
-# Agent Overview
+# Agent Guide
 
-LouieAI provides 20+ specialized agents for different data sources and tasks. Most agents have two variants:
+LouieAI provides 40+ specialized agents for different data sources and tasks. Each agent is designed for specific use cases and data types, with most offering two variants:
 
 - **AI-Assisted** (e.g., `PostgresAgent`) - Natural language to query language with semantic understanding
 - **Passthrough** (e.g., `PostgresPassthroughAgent`) - Direct query execution without AI interpretation
+
+## Agent Types
+
+### General Purpose Agents
+- **LouieAgent** (default) - General conversational AI for analysis and mixed tasks
+- **TextAgent** - Basic text processing and manipulation
+- **DoNothingAgent** - Testing agent that returns empty responses
+
+### Database Query Agents with Semantic Layer
+Database agents build **semantic understanding** of your data:
+- **Schema Discovery**: Learn database structure and relationships automatically
+- **Semantic Modeling**: Understand business context and domain terminology  
+- **Intelligent Query Generation**: Generate queries based on meaning, not keywords
+- **Cross-Table Reasoning**: Infer joins and relationships automatically
 
 ## How to Use Agents
 
@@ -30,6 +44,21 @@ client = LouieClient()
 response = client.add_cell("", "Analyze patterns", agent="LouieAgent")
 response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroughAgent")
 ```
+
+### Code & Notebook Agents
+- **CodeAgent** - AI-powered Python code generation with explanations
+- **CodePassthroughAgent** - Direct Python code execution without AI interpretation
+- **NotebookAgent** - Jupyter notebook cell operations and management
+
+### Data Visualization Agents
+- **GraphAgent** / **GraphPassthroughAgent** - Network graphs with Graphistry
+- **PerspectiveAgent** / **PerspectivePassthroughAgent** - Interactive data tables
+- **MermaidAgent** / **MermaidPassthroughAgent** - Flowcharts and diagrams
+- **KeplerAgent** - Interactive geospatial maps
+
+### Specialized Agents
+- **TableAIAgent** - AI-powered table analysis and insights  
+- **FirecrawlAgent** - Web scraping and data extraction
 
 ## Quick Reference Table
 
@@ -64,6 +93,21 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 | TableAI | `TableAIAgent` | Intelligent data insights | Natural Language |
 | **Data Collection** |
 | Firecrawl | `FirecrawlAgent` | Web scraping | Natural Language |
+
+## Semantic Understanding Example
+
+Database agents leverage semantic understanding for intelligent queries:
+
+```python
+# Natural language query
+lui("Show me customer churn trends", agent="DatabricksAgent")
+
+# The agent automatically:
+# - Maps "customer churn" to relevant tables/columns
+# - Calculates appropriate time periods
+# - Determines necessary joins and aggregations
+# - Applies business logic and definitions
+```
 
 ## AI vs Passthrough Comparison
 
