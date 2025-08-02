@@ -138,14 +138,15 @@ def _render_response_html(response, client=None) -> str:
 
                 # GraphElement
                 elif elem_type in ["GraphElement", "graph"]:
-                    # Debug logging with JSON dump
+                    # Debug with prints
                     import json
-                    import logging
-                    logger = logging.getLogger("louieai.notebook")
-                    logger.debug(f"GraphElement JSON: {json.dumps(elem, indent=2, default=str)}")
+                    print(f"\n=== GraphElement Debug ===")
+                    print(f"Type: {elem_type}")
+                    print(f"Element JSON:\n{json.dumps(elem, indent=2, default=str)}")
                     
                     # Extract dataset_id - try multiple possible locations
                     dataset_id = None
+                    code_content = None
                     
                     # First try: element['value']['dataset_id']
                     value = elem.get("value", {})
@@ -160,7 +161,15 @@ def _render_response_html(response, client=None) -> str:
                     if not dataset_id:
                         dataset_id = elem.get("id")
                     
-                    logger.debug(f"Extracted dataset_id: {dataset_id} from value: {json.dumps(value, indent=2, default=str)}")
+                    # Check for code content (for generated graphs like hypergraph)
+                    if not dataset_id:
+                        # Try to get code from text or code field
+                        code_content = elem.get("text") or elem.get("code")
+                    
+                    print(f"Extracted dataset_id: {dataset_id}")
+                    print(f"Extracted code: {code_content}")
+                    print(f"Value field: {json.dumps(value, indent=2, default=str)}")
+                    print("=========================\n")
                     
                     # Get Graphistry server URL from client if available
                     server_url = "https://hub.graphistry.com"  # default
