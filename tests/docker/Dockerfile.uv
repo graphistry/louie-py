@@ -25,8 +25,8 @@ RUN uv pip install --python /test/venv/bin/python /test/*.whl
 
 # Test the installation
 RUN /test/venv/bin/python -c "import louieai; print(f'✅ louieai {louieai.__version__} installed successfully')"
-RUN /test/venv/bin/python -c "from louieai import LouieClient; print('✅ LouieClient imported successfully')"
-RUN /test/venv/bin/python -c "from louieai import LouieClient; client = LouieClient(); print('✅ LouieClient instantiated successfully')"
+RUN /test/venv/bin/python -c "from louieai import louie; print('✅ louie imported successfully')"
+RUN /test/venv/bin/python -c "from louieai import louie; cursor = louie(); print('✅ louie() creates cursor successfully')"
 
 # Verify dependencies
 RUN uv pip list --python /test/venv/bin/python | grep -E "(louieai|graphistry|httpx|pandas|pyarrow)"

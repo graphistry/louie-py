@@ -21,6 +21,9 @@ class AuthManager:
         username: str | None = None,
         password: str | None = None,
         api_key: str | None = None,
+        personal_key_id: str | None = None,
+        personal_key_secret: str | None = None,
+        org_name: str | None = None,
         api: int = 3,
         server: str | None = None,
     ):
@@ -30,7 +33,10 @@ class AuthManager:
             graphistry_client: Existing Graphistry client to use for auth
             username: Username for direct authentication
             password: Password for direct authentication
-            api_key: API key for direct authentication
+            api_key: API key for direct authentication (legacy)
+            personal_key_id: Personal key ID for service account authentication
+            personal_key_secret: Personal key secret for service account authentication
+            org_name: Organization name (optional for all auth methods)
             api: API version (default: 3)
             server: Server URL for direct authentication
         """
@@ -40,6 +46,9 @@ class AuthManager:
             "username": username,
             "password": password,
             "api_key": api_key,
+            "personal_key_id": personal_key_id,
+            "personal_key_secret": personal_key_secret,
+            "org_name": org_name,
             "api": api,
             "server": server,
         }
@@ -101,13 +110,25 @@ class AuthManager:
 
         # Build register kwargs with proper types
         register_kwargs: dict[str, Any] = {}
-        if self._credentials["username"]:
-            register_kwargs["username"] = self._credentials["username"]
-        if self._credentials["password"]:
-            register_kwargs["password"] = self._credentials["password"]
-        if self._credentials["api_key"]:
-            # graphistry uses 'key' parameter
+
+        # Handle different authentication methods
+        pkey_id = self._credentials["personal_key_id"]
+        pkey_secret = self._credentials["personal_key_secret"]
+        if pkey_id and pkey_secret:
+            # Personal key authentication takes precedence
+            register_kwargs["personal_key_id"] = pkey_id
+            register_kwargs["personal_key_secret"] = pkey_secret
+        elif self._credentials["api_key"]:
+            # API key authentication (legacy)
             register_kwargs["key"] = self._credentials["api_key"]
+        elif self._credentials["username"] and self._credentials["password"]:
+            # Username/password authentication
+            register_kwargs["username"] = self._credentials["username"]
+            register_kwargs["password"] = self._credentials["password"]
+
+        # Add common parameters
+        if self._credentials["org_name"]:
+            register_kwargs["org_name"] = self._credentials["org_name"]
         if self._credentials["api"]:
             register_kwargs["api"] = self._credentials["api"]
         if self._credentials["server"]:

@@ -36,6 +36,11 @@ def create_mock_client():
     text_response.type = "TextElement"
     text_response.text = "Sample response text"
     text_response.thread_id = thread.id
+    text_response.elements = [{"type": "TextElement", "text": "Sample response"}]
+    text_response.text_elements = [{"type": "TextElement", "text": "Sample response"}]
+    text_response.dataframe_elements = []
+    text_response.graph_elements = []
+    text_response.__iter__ = Mock(return_value=iter([text_response]))
 
     df_response = Mock()
     df_response.type = "DfElement"
@@ -45,6 +50,7 @@ def create_mock_client():
     # Client methods
     client.create_thread = Mock(return_value=thread)
     client.add_cell = Mock(return_value=text_response)
+    client.ask = Mock(return_value=text_response)
     client.list_threads = Mock(return_value=[thread])
     client.register = Mock(return_value=client)
 
@@ -74,6 +80,14 @@ def test_code_block(code, context):
     mock_louieai = Mock()
     mock_louieai.LouieClient = Mock(return_value=client)
 
+    # Mock notebook module
+    mock_lui = Mock()
+    mock_lui.text = "Sample response text"
+    mock_lui.df = None
+    mock_lui.dfs = []
+    mock_louieai.notebook = Mock()
+    mock_louieai.notebook.lui = mock_lui
+
     # Create namespace with common variables
     namespace = {
         "__builtins__": __builtins__,
@@ -87,6 +101,7 @@ def test_code_block(code, context):
         "threads": [thread],
         "response1": response,
         "response2": response,
+        "lui": mock_lui,
     }
 
     try:

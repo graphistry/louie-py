@@ -14,14 +14,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ReadTheDocs configuration validation scripts
 - GitHub Actions workflow for automated PyPI publishing
 - Testing section in README with quick start instructions
+- Configurable timeout settings for long-running agentic workflows:
+  - `timeout` parameter in LouieClient (default: 300s)
+  - `streaming_timeout` parameter for per-chunk timeouts (default: 120s)
+  - Environment variables: `LOUIE_TIMEOUT` and `LOUIE_STREAMING_TIMEOUT`
+- Clear timeout error messages with guidance for increasing limits
+- Warning messages for requests taking longer than 30 seconds
+- Real-time streaming display for Jupyter notebooks:
+  - Progressive response updates as content is generated
+  - Automatic display refresh without flicker
+  - Faster time-to-first-content for better user experience
+  - Works seamlessly with text, dataframes, and error responses
+- Arrow dataframe fetching support:
+  - Automatic fetching via `/api/dthread/{thread_id}/df/block/{block_id}/arrow` endpoint
+  - Support for both `df_id` and `block_id` fields
+  - Graceful error handling when dataframe fetch fails
 
 ### Changed
 - Updated documentation dependencies to latest versions
 - Enhanced CI pipeline with ReadTheDocs validation
 - Improved development documentation with RTD validation info
+- LouieClient now uses streaming API for chat endpoint
+- Improved error handling for server-sent events (SSE) streaming
 
 ### Fixed
 - Fixed ReadTheDocs configuration with proper build.jobs structure
+- Fixed timeout issues with streaming responses from Louie API
+- Fixed integration tests to handle both PyGraphistry and direct Louie authentication
 
 ## [0.1.0] - 2025-07-26
 

@@ -181,8 +181,8 @@ jobs:
           source test_env/bin/activate
           pip install dist/*.whl
           python -c "import louieai; print(f'✅ louieai {louieai.__version__} installed')"
-          python -c "from louieai import LouieClient; print('✅ LouieClient imported')"
-          python -c "from louieai import LouieClient; client = LouieClient(); print('✅ LouieClient instantiated')"
+          python -c "from louieai import louie, Cursor; print('✅ louie and Cursor imported')"
+          python -c "from louieai import louie; lui = louie(); print('✅ louie() factory works')"
       - name: Test uv installation
         if: matrix.installer == 'uv'
         run: |
@@ -190,8 +190,8 @@ jobs:
           source test_env/bin/activate
           uv pip install dist/*.whl
           python -c "import louieai; print(f'✅ louieai {louieai.__version__} installed')"
-          python -c "from louieai import LouieClient; print('✅ LouieClient imported')"
-          python -c "from louieai import LouieClient; client = LouieClient(); print('✅ LouieClient instantiated')"
+          python -c "from louieai import louie, Cursor; print('✅ louie and Cursor imported')"
+          python -c "from louieai import louie; lui = louie(); print('✅ louie() factory works')"
 
   # Final summary job (for branch protection rules)
   ci-success:

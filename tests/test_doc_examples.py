@@ -8,6 +8,7 @@ It can run in two modes:
 """
 
 import ast
+import os
 import re
 import sys
 from pathlib import Path
@@ -205,6 +206,10 @@ class TestDocumentationIntegration:
     These tests are skipped unless credentials are available.
     """
 
+    @pytest.mark.skipif(
+        not os.environ.get("GRAPHISTRY_USERNAME"),
+        reason="Integration test requires GRAPHISTRY_USERNAME",
+    )
     def test_basic_example_integration(self):
         """Test a basic example against real API."""
         from tests.utils import load_test_credentials
@@ -216,7 +221,7 @@ class TestDocumentationIntegration:
         # Import real modules
         from graphistry.pygraphistry import GraphistryClient
 
-        from louieai import LouieClient
+        from louieai._client import LouieClient
 
         # Create GraphistryClient and register credentials
         graphistry_client = GraphistryClient()

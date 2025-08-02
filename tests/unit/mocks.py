@@ -120,6 +120,18 @@ class MockResponse:
         # Add elements list and convenience properties
         self._setup_elements(response_type)
 
+        # Ensure text_elements is always populated for text responses
+        if response_type == "text" and not self.text_elements:
+            # Force add a text element
+            self.elements.append(
+                {
+                    "type": "TextElement",
+                    "id": self.id,
+                    "content": self.text,
+                    "language": "Markdown",
+                }
+            )
+
     def _setup_elements(self, response_type: str):
         """Set up elements list and convenience properties."""
         # Create elements list based on response type
@@ -130,7 +142,10 @@ class MockResponse:
 
         if response_type == "text":
             element.update(
-                {"text": self.text, "language": getattr(self, "language", "Markdown")}
+                {
+                    "content": self.text,
+                    "language": getattr(self, "language", "Markdown"),
+                }
             )
         elif response_type == "dataframe":
             element.update({"metadata": self.metadata, "table": MockDataFrame()})
@@ -179,6 +194,12 @@ class MockResponse:
         """Check if response has error elements."""
         return any(e.get("type") == "ExceptionElement" for e in self.elements)
 
+    def to_dataframe(self):
+        """Return mock dataframe (for backward compatibility)."""
+        if self.type == "DfElement":
+            return MockDataFrame()
+        return None
+
 
 class MockThread:
     """Mock thread object."""
@@ -193,7 +214,43 @@ class MockThread:
 
 def create_mock_client():
     """Create a fully mocked LouieClient for testing."""
-    client = Mock()
+
+    # Create a wrapper class that makes Mock callable
+    class CallableMock(Mock):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._call_func = None
+
+        def __call__(self, *args, **kwargs):
+            if self._call_func:
+                return self._call_func(*args, **kwargs)
+            return super().__call__(*args, **kwargs)
+
+    client = CallableMock()
+
+    # Set up authentication manager mock with proper credentials structure
+    auth_manager = Mock()
+    auth_manager._credentials = {
+        "username": "test_user",
+        "password": "test_password",
+        "api_key": "test_api_key",
+        "personal_key_id": "test_personal_key_id",
+        "personal_key_secret": "test_personal_key_secret",
+        "org_name": "test_org",
+        "api": 3,
+        "server": "test.graphistry.com",
+    }
+    auth_manager.get_token.return_value = "fake-token-123"
+    client._auth_manager = auth_manager
+
+    # Mock _get_headers method
+    def mock_get_headers():
+        return {
+            "Authorization": "Bearer fake-token-123",
+            "X-Graphistry-Org": "test-org",
+        }
+
+    client._get_headers = Mock(return_value=mock_get_headers())
 
     # Thread management
     thread_counter = 0
@@ -215,7 +272,7 @@ def create_mock_client():
 
         return thread
 
-    def add_cell(thread_id, prompt, agent="LouieAgent"):
+    def add_cell(thread_id, prompt, agent="LouieAgent", traces=False):
         if not thread_id:
             thread = create_thread()
             thread_id = thread.id
@@ -241,6 +298,16 @@ def create_mock_client():
     client.get_thread = Mock(side_effect=get_thread)
     client.register = Mock(return_value=client)
 
+    # Make client callable (for v0.2.0+ interface)
+    def client_call(prompt, *args, **kwargs):
+        thread_id = kwargs.get("thread_id", "")
+        agent = kwargs.get("agent", "LouieAgent")
+        traces = kwargs.get("traces", False)
+        return add_cell(thread_id, prompt, agent, traces)
+
+    # Set the callable function
+    client._call_func = client_call
+
     return client
 
 
@@ -254,7 +321,17 @@ def determine_response_type(prompt: str) -> str:
     prompt_lower = prompt.lower()
 
     if any(
-        word in prompt_lower for word in ["dataframe", "query", "data", "table", "sql"]
+        word in prompt_lower
+        for word in [
+            "dataframe",
+            "query",
+            "data",
+            "table",
+            "sql",
+            "ip addresses",
+            "find",
+            "suspicious",
+        ]
     ):
         return "dataframe"
     elif any(

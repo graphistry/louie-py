@@ -43,18 +43,22 @@ Changelog = "https://github.com/<owner>/louieai/blob/main/CHANGELOG.md"
 dev = [
   "ruff>=0.12.0",
   "mypy>=1.17.0",
+  "pyarrow-stubs",
   "pytest>=8.4.0",
   "pytest-cov>=5.0.0",
   "pytest-xdist>=3.6.0",
   "pre-commit>=4.2.0",
   "mkdocs>=1.6.0",
   "mkdocs-material>=9.6.0",
-  "python-dotenv>=1.0.0"
+  "python-dotenv>=1.0.0",
+  "ipython>=8.0.0"
 ]
 docs = [
   "mkdocs>=1.6.0",
   "mkdocs-material>=9.6.0",
-  "mkdocstrings[python]>=0.24.0"
+  "mkdocstrings[python]>=0.24.0",
+  "mkdocs-jupyter>=0.24.0",
+  "ipykernel>=6.0.0"
 ]
 # We define a separate "docs" extra in case readthedocs needs to install just docs requirements.
 
@@ -80,6 +84,8 @@ ignore = []
 [tool.ruff.lint.per-file-ignores]
 # Ignore style issues in generated files
 "src/louieai/_version.py" = ["UP035", "UP006", "UP007", "I001"]
+# Can't combine nested with statements when second depends on first
+"src/louieai/_client.py" = ["SIM117"]
 
 [tool.ruff.format]
 # Exclude generated files from formatting
@@ -98,7 +104,8 @@ disallow_any_expr = false  # Would be too restrictive
 disallow_any_decorated = false  # Would be too restrictive
 exclude = [
     "templates/",
-    "tests/"
+    "tests/",
+    "docs/"
 ]
 disallow_any_explicit = false  # Would be too restrictive
 disallow_any_generics = true
@@ -111,6 +118,14 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "graphistry"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pandas"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pyarrow"
 ignore_missing_imports = true
 
 # Ignore mypy issues in test files for complex mocking

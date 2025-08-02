@@ -6,7 +6,7 @@ This guide covers the technical setup and development workflow for contributors 
 
 ### Prerequisites
 
-- Python 3.12 or higher
+- Python 3.10 or higher (3.12+ recommended)
 - Git
 - uv package manager (recommended) or pip
 
@@ -40,10 +40,13 @@ This guide covers the technical setup and development workflow for contributors 
 For integration testing, create a `.env` file:
 
 ```bash
-LOUIE_USERNAME=your_username
-LOUIE_PASSWORD=your_password
+GRAPHISTRY_USERNAME=your_username
+GRAPHISTRY_PASSWORD=your_password
 # or
-LOUIE_API_KEY=your_api_key
+GRAPHISTRY_API_KEY=your_api_key
+# or for service accounts
+GRAPHISTRY_PERSONAL_KEY_ID=pk_123...
+GRAPHISTRY_PERSONAL_KEY_SECRET=sk_123...
 ```
 
 ## Project Structure
@@ -101,8 +104,10 @@ Follow conventional commits:
 
 ### Running Tests
 
+**Important**: Always use `./scripts/pytest.sh` instead of `pytest` directly to ensure the correct Python version is used.
+
 ```bash
-# All tests
+# All tests (recommended way)
 ./scripts/pytest.sh
 
 # Unit tests only
@@ -113,7 +118,12 @@ Follow conventional commits:
 
 # With coverage
 ./scripts/pytest.sh --cov=louieai --cov-report=term
+
+# Alternative if scripts not available
+uv run python -m pytest
 ```
+
+**Note**: Running `pytest` directly may use the wrong Python version. The project requires Python 3.10+.
 
 ### Quick CI Checks
 
@@ -219,7 +229,7 @@ logging.basicConfig(level=logging.DEBUG)
 ## CI/CD
 
 GitHub Actions runs on all PRs:
-- Python 3.12-3.13 compatibility
+- Python 3.10-3.13 compatibility
 - Linting and formatting checks
 - Type checking
 - Unit and integration tests

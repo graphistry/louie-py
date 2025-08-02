@@ -6,25 +6,97 @@
 
 AI-powered investigation platform for natural language data analysis.
 
-## Install & Go
+## 🚀 Get Started in 30 Seconds
+
+```python
+# 1. Install
+# pip install louieai
+
+# 2. Authenticate with your PyGraphistry server
+import graphistry
+graphistry.register(
+    api=3,
+    server="hub.graphistry.com",  # or your enterprise server
+    username="bob@company.com",   # your actual username
+    password="MySecurePass456!"   # your actual password
+)
+
+# 3. Start analyzing with natural language
+from louieai.notebook import lui
+lui("Show me all suspicious transactions from the last week")
+
+# 4. Access the results
+print(lui.text)  # Natural language explanation
+df = lui.df      # Pandas DataFrame with the data
+```
+
+## Install & Authenticate
 
 ```bash
 pip install louieai
 ```
 
-```python
-import graphistry
-import louieai as lui
+### Authentication
 
-# Connect to Graphistry Hub and Louie Den
-graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
-client = lui.LouieClient(server_url="https://den.louie.ai")
+LouieAI uses PyGraphistry for authentication. You'll need a free account:
+
+1. **Get PyGraphistry credentials** at [hub.graphistry.com](https://hub.graphistry.com) (free signup)
+2. **Set environment variables** or authenticate in code:
+
+```bash
+# Option 1: Environment variables (recommended for notebooks/scripts)
+export GRAPHISTRY_USERNAME="sarah@analytics.com"
+export GRAPHISTRY_PASSWORD="Analytics2024!"
+export GRAPHISTRY_SERVER="hub.graphistry.com"  # or "my-company.graphistry.com"
+
+# Optional: Custom Louie endpoint (defaults to https://louie.ai)
+export LOUIE_URL="https://louie-enterprise.company.com"
+```
+
+```python
+# Option 2: Authenticate in code
+import graphistry
+graphistry.register(
+    api=3, 
+    server="hub.graphistry.com",  # or your enterprise server
+    username="mike@investigations.org", 
+    password="Secure123!"
+)
+
+# Optional: Use custom Louie server
+from louieai import LouieClient
+client = LouieClient(
+    server_url="https://louie.ai",  # Louie service endpoint (default)
+    server="hub.graphistry.com"      # PyGraphistry server (default)
+)
+```
+
+### Quick Start
+
+```python
+# First, authenticate with your PyGraphistry server
+import graphistry
+graphistry.register(
+    api=3,
+    server="hub.graphistry.com",  # or your private server
+    username="alice@example.com",
+    password="SecurePassword123!"
+)
+
+# Now import and use LouieAI (two options)
+
+# Option 1: New clean import (recommended)
+import louieai
+lui = louieai()  # Automatically uses PyGraphistry auth
+
+# Option 2: Traditional import
+from louieai.notebook import lui
 
 # Ask questions in natural language  
-response = client.add_cell("", "Find accounts sharing payment methods or shipping addresses")
+lui("Find accounts sharing payment methods or shipping addresses")
 
-# Get fraud insights
-print(response.text_elements[0]['text'])
+# Get fraud insights instantly
+print(lui.text)
 # Output: "Found 23 suspicious account clusters sharing payment/shipping details:
 # 
 # **Payment Card Sharing**:
@@ -38,8 +110,8 @@ print(response.text_elements[0]['text'])
 # **Risk Assessment**: 67% likely promotional abuse, 23% payment fraud"
 
 # Access the connection data
-if response.dataframe_elements:
-    clusters_df = response.dataframe_elements[0]['table']
+clusters_df = lui.df
+if clusters_df is not None:
     print(clusters_df.head())
     #     account_id shared_payment shared_address  cluster_size  risk_score
     # 0   user_1234      card_4789    123_oak_st            12        7.2

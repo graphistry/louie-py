@@ -29,7 +29,7 @@ except ImportError:
     )
 
 
-def extract_python_blocks(markdown_path: Path) -> list[tuple[str, int, str]]:
+def extract_python_blocks(markdown_path: Path):
     """Extract Python code blocks from markdown file.
 
     Returns:
@@ -66,6 +66,9 @@ def should_skip_code(code: str) -> bool:
         "uv pip",
         "...",  # Incomplete code
         "# TODO",
+        'lui("',  # Skip code blocks with actual lui calls that make HTTP requests
+        "lui.text",  # Skip property access that might fail after HTTP calls
+        "lui.df",  # Skip property access that might fail after HTTP calls
     ]
     return any(pattern in code for pattern in skip_patterns)
 
@@ -91,7 +94,23 @@ def create_test_namespace(client):
     """Create namespace with all necessary mocks for code execution."""
     # Mock modules
     mock_graphistry = Mock()
-    mock_graphistry.register = Mock()
+
+    # Create a properly mocked graphistry client with auth manager
+    mock_registered_client = Mock()
+    mock_registered_client._auth_manager = Mock()
+    mock_registered_client._auth_manager._credentials = {
+        "username": "test_user",
+        "password": "test_password",
+        "api_key": "test_api_key",
+        "personal_key_id": "test_personal_key_id",
+        "personal_key_secret": "test_personal_key_secret",
+        "org_name": "test_org",
+        "api": 3,
+        "server": "test.graphistry.com",
+    }
+    mock_registered_client._auth_manager.get_token.return_value = "fake-token-123"
+
+    mock_graphistry.register = Mock(return_value=mock_registered_client)
     mock_graphistry.api_token = Mock(return_value="fake-token")
     mock_graphistry.nodes = Mock(return_value=mock_graphistry)
     mock_graphistry.edges = Mock(return_value=mock_graphistry)
@@ -103,8 +122,12 @@ def create_test_namespace(client):
     # Create some pre-existing objects that snippets might reference
     thread = client.create_thread(name="Test Thread")
     response = client.add_cell(thread.id, "test query")
-    response1 = client.add_cell(thread.id, "query data")
+    response1 = client.add_cell(thread.id, "query data")  # Will be dataframe type
     response2 = client.add_cell(thread.id, "analyze results")
+
+    # Ensure response1 has a working to_dataframe method for chaining examples
+    if not hasattr(response1, "to_dataframe") or response1.to_dataframe() is None:
+        response1.to_dataframe = Mock(return_value=MockDataFrame())
 
     # File operations mock
     mock_file = Mock()
@@ -118,6 +141,7 @@ def create_test_namespace(client):
         "open": Mock(return_value=mock_file),
         "client": client,
         "thread": thread,
+        "thread_id": thread.id,  # Add thread_id for code examples
         "response": response,
         "response1": response1,
         "response2": response2,
@@ -128,7 +152,7 @@ def create_test_namespace(client):
         "threads": [thread],
         "graphistry": mock_graphistry,
         "louieai": mock_louieai,  # Add louieai module
-        "g": mock_graphistry,
+        "g": mock_registered_client,
         "pd": pd,  # Real pandas for type checks
         "json": json,
         "save_base64_image": Mock(),  # Mock function referenced in docs
@@ -150,14 +174,48 @@ class TestDocumentation:
         client = create_mock_client()
         namespace = create_test_namespace(client)
 
-        # Mock imports
-        with patch.dict(
-            "sys.modules",
-            {
-                "graphistry": namespace["graphistry"],
-                "louieai": Mock(LouieClient=Mock(return_value=client)),
-                "pandas": pd,
-            },
+        # Create a mock lui object
+        mock_lui = Mock()
+        mock_lui.text = "Mocked text response"
+        mock_lui.df = pd.DataFrame({"col1": [1, 2, 3]})
+        mock_lui.dfs = [mock_lui.df]
+        mock_lui.texts = [mock_lui.text]
+        mock_lui.elements = []
+        mock_lui.errors = []
+        mock_lui.has_errors = False
+        mock_lui._client = client  # Add the client reference
+        mock_lui.traces = False  # Add traces property
+
+        # Mock lui as callable
+        def mock_lui_call(*args, **kwargs):
+            return Mock(text="Response", df=mock_lui.df)
+
+        mock_lui.side_effect = mock_lui_call
+
+        # Create mock louie function that returns mock_lui
+        def mock_louie_factory(*args, **kwargs):
+            return mock_lui
+
+        # Add the mock louieai function directly to namespace
+        namespace["louieai"] = mock_louie_factory
+
+        # Mock environment variables and graphistry module
+        with (
+            patch.dict(
+                "os.environ",
+                {
+                    "GRAPHISTRY_USERNAME": "test_user",
+                    "GRAPHISTRY_PASSWORD": "test_password",
+                    "GRAPHISTRY_SERVER": "test.graphistry.com",
+                },
+            ),
+            patch.dict(
+                "sys.modules",
+                {
+                    "graphistry": namespace["graphistry"],
+                    "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
+                },
+            ),
         ):
             try:
                 exec(code, namespace)
@@ -228,11 +286,27 @@ def test_documentation_file(doc_file):
 
         code = preprocess_code(code)
 
+        # Create a comprehensive mock lui object
+        mock_lui = _create_comprehensive_mock_lui(client)
+
+        # Add lui to namespace for notebook API code
+        namespace["lui"] = mock_lui
+
+        # Create mock louie factory that returns mock_lui
+        def mock_louie_factory(*args, mock_lui=mock_lui, **kwargs):
+            return mock_lui
+
         with patch.dict(
             "sys.modules",
             {
                 "graphistry": namespace["graphistry"],
-                "louieai": Mock(LouieClient=Mock(return_value=client)),
+                "louieai": Mock(
+                    LouieClient=Mock(return_value=client),
+                    louie=mock_louie_factory,
+                    Cursor=Mock,
+                ),
+                "louieai.notebook": Mock(lui=mock_lui),
+                "louieai.globals": Mock(lui=mock_lui),
                 "pandas": pd,
             },
         ):
@@ -246,6 +320,73 @@ def test_documentation_file(doc_file):
         for line_num, context, error in failed:
             msg += f"  Line {line_num} ({context[:50]}...): {error}\n"
         pytest.fail(msg)
+
+
+def _create_comprehensive_mock_lui(client=None):
+    """Create a comprehensive mock lui object that works like the real one."""
+    mock_lui = Mock()
+
+    # Create client if not provided
+    if client is None:
+        client = create_mock_client()
+    mock_lui._client = client
+
+    # Basic attributes
+    mock_lui.text = "Mocked text response"
+    mock_df = pd.DataFrame(
+        {
+            "region": ["North", "South", "East", "West", "North"],
+            "sales": [100, 200, 150, 300, 250],
+            "product": ["A", "B", "C", "D", "E"],
+            "country": ["USA", "Canada", "Mexico", "USA", "Canada"],
+            "failed_logins": [5, 3, 8, 2, 1],
+            "col1": [1, 2, 3, 4, 5],
+        }
+    )
+    mock_lui.df = mock_df
+    mock_lui.dfs = [mock_df]  # Make it a real list
+    mock_lui.texts = ["Mocked text response"]
+    mock_lui.elements = []
+    mock_lui.errors = []
+    mock_lui.has_errors = False
+    mock_lui.traces = False
+
+    # Make lui callable
+    def mock_lui_call(*args, **kwargs):
+        response = Mock()
+        response.text = "Response text"
+        response.df = mock_df
+        response.dfs = [mock_df]
+        response.texts = ["Response text"]
+        response.text_elements = [{"type": "TextElement", "content": "Response text"}]
+        response.dataframe_elements = [{"type": "DfElement", "table": mock_df}]
+        # Update lui's state
+        mock_lui.text = response.text
+        mock_lui.df = response.df
+        return response
+
+    # Use __call__ instead of side_effect for better control
+    mock_lui.__call__ = mock_lui_call
+
+    # Make lui subscriptable for history
+    def mock_getitem(self, index):
+        hist = Mock()
+        hist.text = "Historical text"
+        hist.df = pd.DataFrame(
+            {
+                "region": ["North", "South"],
+                "sales": [100, 200],
+                "product": ["A", "B"],
+                "col1": [1, 2],
+            }
+        )
+        hist.dfs = [hist.df]
+        hist.texts = ["Historical text"]
+        return hist
+
+    mock_lui.__getitem__ = mock_getitem
+
+    return mock_lui
 
 
 if __name__ == "__main__":

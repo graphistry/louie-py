@@ -7,6 +7,35 @@ from unittest.mock import Mock
 
 import pytest
 
+# Python version check
+MIN_PYTHON_VERSION = (3, 10)
+CURRENT_PYTHON_VERSION = sys.version_info[:2]
+
+if CURRENT_PYTHON_VERSION < MIN_PYTHON_VERSION:
+    import warnings
+
+    # Get the recommended command based on available tools
+    recommended_cmd = None
+    if os.path.exists("uv.lock") or os.path.exists("pyproject.toml"):
+        recommended_cmd = "./scripts/pytest.sh"
+        if not os.path.exists("scripts/pytest.sh"):
+            recommended_cmd = "uv run python -m pytest"
+    else:
+        recommended_cmd = "python3.10 -m pytest"
+
+    current_version = ".".join(map(str, CURRENT_PYTHON_VERSION))
+    min_version = ".".join(map(str, MIN_PYTHON_VERSION))
+    warning_msg = (
+        f"\n⚠️  WARNING: You are using Python {current_version}, "
+        f"but this project requires Python {min_version} or higher.\n"
+        f"   Recommended: Use '{recommended_cmd}' instead of 'pytest' directly.\n"
+        f"   This ensures the correct Python version and dependencies are used.\n"
+    )
+    warnings.warn(warning_msg, UserWarning, stacklevel=2)
+
+    # Print to stderr for better visibility
+    print(warning_msg, file=sys.stderr)
+
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -77,7 +106,7 @@ def real_client(test_credentials):
 
     import graphistry
 
-    from louieai import LouieClient
+    from louieai._client import LouieClient
 
     # Register with Graphistry
     graphistry.register(

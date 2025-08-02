@@ -7,14 +7,50 @@ nav:
     - Installation: getting-started/installation.md
     - Authentication: getting-started/authentication.md
     - Quick Start: getting-started/quick-start.md
+    - Example Notebooks:
+      - Getting Started: getting-started/notebooks/01-getting-started.ipynb
+      - Data Science Workflow: getting-started/notebooks/02-data-science-workflow.ipynb
+      - Fraud Investigation: getting-started/notebooks/03-fraud-investigation.ipynb
+      - Error Handling: getting-started/notebooks/04-error-handling.ipynb
   - User Guides:
     - Examples: guides/examples.md
     - Query Patterns: guides/query-patterns.md
     - Authentication Guide: guides/authentication.md
+    - Agent Selection: guides/agent-selection.md
+    - Agent Guides:
+      - Overview: guides/agents/index.md
+      - Database Agents:
+        - Athena: guides/agents/athena.md
+        - BigQuery: guides/agents/bigquery.md
+        - CockroachDB: guides/agents/cockroachdb.md
+        - Databricks: guides/agents/databricks.md
+        - Kusto: guides/agents/kusto.md
+        - MSSQL: guides/agents/mssql.md
+        - MySQL: guides/agents/mysql.md
+        - Neptune: guides/agents/neptune.md
+        - OpenSearch: guides/agents/opensearch.md
+        - PostgreSQL: guides/agents/postgresql.md
+        - Snowflake: guides/agents/snowflake.md
+        - Spanner: guides/agents/spanner.md
+        - Splunk: guides/agents/splunk.md
+      - Visualization:
+        - Graph Networks: guides/agents/graph.md
+        - Interactive Tables: guides/agents/perspective.md
+        - Geospatial Maps: guides/agents/kepler.md
+        - Diagrams: guides/agents/mermaid.md
+      - Code & Development:
+        - Python Code: guides/agents/code.md
+        - Jupyter Notebooks: guides/agents/notebook.md
+      - Data Processing:
+        - Table Analysis: guides/agents/tableai.md
+        - Web Scraping: guides/agents/firecrawl.md
   - API Reference:
     - Overview: api/index.md
+    - Notebook API: api/notebook.md
     - LouieClient: api/client.md
     - Response Types: api/response-types.md
+  - Reference:
+    - Agents: reference/agents.md
   - Developer:
     - Architecture: developer/architecture.md
     - Development: developer/development.md
@@ -33,6 +69,11 @@ repo_url: https://github.com/graphistry/louie-py
 repo_name: graphistry/louie-py
 plugins:
   - search
+  - mkdocs-jupyter:
+      execute: false  # Don't execute notebooks during build
+      include_source: false  # Don't show notebook source JSON
+      ignore_h1_titles: true  # Use the nav title instead of notebook H1
+      allow_errors: true  # Continue if notebook has errors
   - mkdocstrings:
       default_handler: python
       handlers:

@@ -12,48 +12,105 @@ pip install louieai
 
 ```python
 import graphistry
-import louieai as lui
+import louieai
 
-# Connect to Graphistry Hub and Louie Den
-graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
-client = lui.LouieClient(server_url="https://den.louie.ai")
+# Configure servers and authenticate
+graphistry.register(
+    api=3, 
+    server="hub.graphistry.com",  # Your Graphistry server
+    username="alice@example.com", 
+    password="secure123!"
+)
 
-# Ask questions in natural language
-response = client.add_cell("", "Show me users with unusual ordering patterns or velocity")
+# Create Louie interface with server configuration
+lui = louieai(server_url="https://den.louie.ai")  # Your Louie server
 
-# Get behavioral fraud analysis
-print(response.text_elements[0]['text'])
-# Output: "Identified 34 accounts with suspicious ordering behavior:
-# 
-# **High Velocity Orders**:
-# • user_78234: 47 orders in 2 hours (avg basket: $67)
-# • user_45891: 23 orders from same IP, different payment methods
-# 
-# **Geographic Inconsistencies**:
-# • 12 accounts: Billing in NYC, shipping to warehouse addresses in TX
-# • 8 accounts: VPN usage combined with expedited shipping
-# 
-# **Pattern Analysis**: 73% likely reseller activity, 18% promotional abuse"
-
-# Access transaction patterns
-if response.dataframe_elements:
-    patterns_df = response.dataframe_elements[0]['table']
-    print("\nSuspicious ordering patterns:")
-    print(patterns_df.head())
-    #     user_id  orders_24h  avg_basket  billing_state shipping_state  pattern_type
-    # 0  user_78234          47       $67         NY             TX      high_velocity
-    # 1  user_45891          23      $134         CA             CA      payment_cycling  
-    # 2  user_23456          18       $89         FL             WA      geo_inconsistent
+# Start analyzing
+lui("Show me patterns in customer behavior")
+print(lui.text)  # Natural language insights
+df = lui.df      # Data as pandas DataFrame
 ```
+
+## Powerful Options
+
+```python
+# Choose your authentication method
+import louieai
+
+# Option 1: Environment variables (great for notebooks)
+# export GRAPHISTRY_USERNAME="your_username" 
+# export GRAPHISTRY_PASSWORD="your_password"
+lui = louieai()  # Auto-detects credentials
+
+# Option 2: Specific servers and organizations
+g = graphistry.register(
+    api=3,
+    server="hub.graphistry.com",  # or "your-company.graphistry.com"
+    username="your_username",
+    password="your_password",
+    org_name="your-org"  # Optional: specify organization
+)
+lui = louieai(g, server_url="https://den.louie.ai")  # or your enterprise URL
+
+# Control data visibility
+lui = louieai(share_mode="Organization")  # Share within your org
+lui("Analyze sales trends", share_mode="Private")  # Override per query
+
+# Enable AI reasoning traces
+lui.traces = True
+lui("Complex analysis requiring step-by-step reasoning")
+
+# Access conversation history
+previous_result = lui[-1]  # Last response
+older_df = lui[-2].df      # DataFrame from 2 queries ago
+```
+
+**Need more options?** See our guides:
+- [Authentication Guide](guides/authentication.md) - All authentication methods including API keys, multi-tenant usage
+- [Getting Started](getting-started/quick-start.md) - Complete walkthrough with examples
+- [Agent Selection](guides/agent-selection.md) - Use specialized agents for databases and visualizations
 
 ## Key Features
 
+- **Notebook-friendly API**: Streamlined `lui()` interface for Jupyter notebooks
 - **Thread-based conversations**: Maintain context across multiple queries
 - **Multiple response types**: Handle text, DataFrames, visualizations, and more
-- **Streaming support**: Responses stream in real-time via JSONL
+- **40+ Specialized Agents**: Choose from database-specific, visualization, and analysis agents
+- **Real-time streaming**: See responses as they're generated in Jupyter notebooks
 - **Natural language interface**: Access all Louie capabilities through simple prompts
 - **Auto-refresh authentication**: Automatically handles JWT token expiration
 - **Multiple auth methods**: Works with existing Graphistry sessions or direct credentials
+
+### 🤖 Available Agents with Semantic Understanding
+
+LouieAI provides specialized agents that learn and understand your data:
+
+- **General Purpose**: LouieAgent (default), TextAgent, CodeAgent
+- **Databases with Semantic Layer**: 
+  - DatabricksAgent, PostgresAgent, MySQLAgent, SnowflakeAgent, BigQueryAgent
+  - Agents learn your schema, relationships, and business context
+  - Generate complex queries from natural language using semantic understanding
+- **Search & Analytics**: SplunkAgent, OpenSearchAgent, KustoAgent
+- **Visualizations**: GraphAgent, PerspectiveAgent, KeplerAgent, MermaidAgent
+- **Direct Execution**: PassthroughAgent variants for each database (no AI interpretation)
+
+```python
+# Use the default conversational agent
+lui("Analyze security incidents from last week")
+
+# Database agent with semantic understanding
+lui("Show me customer churn trends", agent="DatabricksAgent")
+# The agent understands your schema and business definitions of "churn"
+
+# Natural language leveraging learned semantics
+lui("Which products have anomalous return rates?", agent="PostgresAgent") 
+# Agent knows your product hierarchy, return policies, and what's "anomalous"
+
+# Direct SQL when you need exact control
+lui("SELECT * FROM auth_logs WHERE status='failed'", agent="PostgresPassthroughAgent")
+```
+
+See the complete [Agents Reference](reference/agents.md) for all available agents and usage examples.
 
 ## Getting Started
 
@@ -67,9 +124,11 @@ New to LouieAI? Start here:
 
 Ready to dive deeper? These guides cover common use cases and advanced features:
 
-- **[Examples](guides/examples.md)** - Practical examples and usage patterns
+- **[Examples](guides/examples.md)** - Practical examples for both notebook and client APIs
 - **[Query Patterns](guides/query-patterns.md)** - Advanced query techniques and best practices
 - **[Authentication Guide](guides/authentication.md)** - Multi-tenant usage, API keys, and troubleshooting
+- **[Agent Selection](guides/agent-selection.md)** - How to choose and use different agents
+- **[Interactive Notebooks](getting-started/notebooks/)** - Hands-on Jupyter notebook examples
 
 ## API Reference
 
@@ -78,6 +137,7 @@ Complete technical documentation:
 - **[API Overview](api/index.md)** - Overview of the LouieAI API
 - **[LouieClient Reference](api/client.md)** - Complete LouieClient documentation
 - **[Response Types](api/response-types.md)** - Understanding LouieAI response formats
+- **[Available Agents](reference/agents.md)** - Complete list of 40+ specialized agents
 
 ## Developer Resources
 
