@@ -17,13 +17,15 @@ import httpx
 class StreamingDisplay:
     """Handle streaming display of Louie responses in Jupyter."""
 
-    def __init__(self, display_id: str | None = None):
+    def __init__(self, display_id: str | None = None, client=None):
         """Initialize streaming display.
 
         Args:
             display_id: Optional display ID for updates
+            client: Optional LouieClient instance for accessing Graphistry settings
         """
         self.display_id = display_id
+        self.client = client
         self.elements_by_id: dict[str, dict[str, Any]] = {}
         self.thread_id: str | None = None
         self.start_time = time.time()
@@ -111,15 +113,28 @@ class StreamingDisplay:
             )
 
         elif elem_type in ["GraphElement", "graph"]:
-            # Extract graph ID or dataset
-            graph_id = elem.get("id") or elem.get("dataset") or elem.get("graph_id")
+            # Extract dataset_id from the value dict
+            value = elem.get("value", {})
+            dataset_id = value.get("dataset_id") if isinstance(value, dict) else None
             
-            # Get Graphistry server URL (could be from elem metadata or client config)
-            server_url = elem.get("server_url", "https://hub.graphistry.com")
+            # Get Graphistry server URL from client if available
+            server_url = "https://hub.graphistry.com"  # default
+            if self.client and hasattr(self.client, "_auth_manager"):
+                try:
+                    g = self.client._auth_manager._graphistry_client
+                    if hasattr(g, "client_protocol_hostname") and hasattr(g, "protocol"):
+                        hostname = g.client_protocol_hostname()
+                        # Only prepend protocol if hostname doesn't already include it
+                        if hostname and not hostname.startswith(("http://", "https://")):
+                            server_url = f"{g.protocol()}{hostname}"
+                        elif hostname:
+                            server_url = hostname
+                except Exception:
+                    pass  # Use default
             
-            if graph_id:
+            if dataset_id:
                 # Create iframe for Graphistry visualization
-                iframe_url = f"{server_url}/graph/graph.html?dataset={graph_id}"
+                iframe_url = f"{server_url}/graph/graph.html?dataset={dataset_id}"
                 return (
                     f'<div style="margin: 10px 0;">'
                     f'<iframe src="{iframe_url}" '
@@ -129,7 +144,7 @@ class StreamingDisplay:
                     f'</div>'
                 )
             else:
-                return f"<div style='color: gray;'>[{elem_type}] No graph ID available</div>"
+                return f"<div style='color: gray;'>[{elem_type}] No dataset_id found in value</div>"
 
         else:
             # For unknown types, try to extract text or show raw content
@@ -249,8 +264,8 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     if thread_id:
         params["dthread_id"] = thread_id
 
-    # Create display handler
-    display_handler = StreamingDisplay()
+    # Create display handler with client for Graphistry URL
+    display_handler = StreamingDisplay(client=client)
 
     # Result to return
     result: dict[str, Any] = {"dthread_id": None, "elements": []}

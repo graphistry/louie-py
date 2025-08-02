@@ -85,8 +85,8 @@ def test_render_graph_element_with_id():
     response = Response(
         thread_id="test",
         elements=[
-            {"type": "GraphElement", "id": "abc123"},
-            {"type": "graph", "dataset": "xyz456", "server_url": "https://custom.graphistry.com"},
+            {"type": "GraphElement", "value": {"dataset_id": "abc123"}},
+            {"type": "graph", "value": {"dataset_id": "xyz456"}},
         ],
     )
     
@@ -97,7 +97,7 @@ def test_render_graph_element_with_id():
     assert 'dataset=abc123' in html
     assert 'dataset=xyz456' in html
     assert 'https://hub.graphistry.com/graph/graph.html?dataset=abc123' in html
-    assert 'https://custom.graphistry.com/graph/graph.html?dataset=xyz456' in html
+    assert 'https://hub.graphistry.com/graph/graph.html?dataset=xyz456' in html
     assert 'width="100%"' in html
     assert 'height="600"' in html
 
@@ -116,4 +116,4 @@ def test_render_graph_element_without_id():
     # Should not have iframe
     assert '<iframe' not in html
     # Should have placeholder message
-    assert "No graph ID available" in html
+    assert "No dataset_id found in value" in html

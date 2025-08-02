@@ -11,10 +11,14 @@ from louieai._client import LouieClient, Response
 logger = logging.getLogger(__name__)
 
 
-def _render_response_html(response) -> str:
+def _render_response_html(response, client=None) -> str:
     """Render response to HTML - shared by both auto-display and ResponseProxy.
 
     This is the single source of truth for response rendering.
+    
+    Args:
+        response: Response object to render
+        client: Optional LouieClient instance for accessing Graphistry settings
     """
     if not response:
         return ""
@@ -134,15 +138,28 @@ def _render_response_html(response) -> str:
 
                 # GraphElement
                 elif elem_type in ["GraphElement", "graph"]:
-                    # Extract graph ID or dataset
-                    graph_id = elem.get("id") or elem.get("dataset") or elem.get("graph_id")
+                    # Extract dataset_id from the value dict
+                    value = elem.get("value", {})
+                    dataset_id = value.get("dataset_id") if isinstance(value, dict) else None
                     
-                    # Get Graphistry server URL (could be from elem metadata or client config)
-                    server_url = elem.get("server_url", "https://hub.graphistry.com")
+                    # Get Graphistry server URL from client if available
+                    server_url = "https://hub.graphistry.com"  # default
+                    if client and hasattr(client, "_auth_manager"):
+                        try:
+                            g = client._auth_manager._graphistry_client
+                            if hasattr(g, "client_protocol_hostname") and hasattr(g, "protocol"):
+                                hostname = g.client_protocol_hostname()
+                                # Only prepend protocol if hostname doesn't already include it
+                                if hostname and not hostname.startswith(("http://", "https://")):
+                                    server_url = f"{g.protocol()}{hostname}"
+                                elif hostname:
+                                    server_url = hostname
+                        except Exception:
+                            pass  # Use default
                     
-                    if graph_id:
+                    if dataset_id:
                         # Create iframe for Graphistry visualization
-                        iframe_url = f"{server_url}/graph/graph.html?dataset={graph_id}"
+                        iframe_url = f"{server_url}/graph/graph.html?dataset={dataset_id}"
                         html_parts.append(
                             f'<div style="margin: 10px 0;">'
                             f'<iframe src="{iframe_url}" '
@@ -153,7 +170,7 @@ def _render_response_html(response) -> str:
                         )
                     else:
                         html_parts.append(
-                            f"<div style='color: gray;'>[{elem_type}] No graph ID available</div>"
+                            f"<div style='color: gray;'>[{elem_type}] No dataset_id found in value</div>"
                         )
                 
                 # Unknown types - try to extract text
@@ -557,8 +574,8 @@ class Cursor:
         try:
             from IPython.display import HTML, display
 
-            # Use the shared rendering function
-            html_content = _render_response_html(response)
+            # Use the shared rendering function, passing client for Graphistry URL
+            html_content = _render_response_html(response, self._client)
             if html_content:
                 # Generate a unique display ID for this response
                 display_id = f"louie_response_{response.thread_id}_{id(response)}"
@@ -725,7 +742,7 @@ class Cursor:
             latest = self._history[-1]
             
             # Use the shared renderer for consistent display
-            response_html = _render_response_html(latest)
+            response_html = _render_response_html(latest, self._client)
             if response_html:
                 html_parts.append(response_html)
 
