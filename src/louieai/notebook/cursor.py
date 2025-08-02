@@ -15,7 +15,7 @@ def _render_response_html(response, client=None) -> str:
     """Render response to HTML - shared by both auto-display and ResponseProxy.
 
     This is the single source of truth for response rendering.
-    
+
     Args:
         response: Response object to render
         client: Optional LouieClient instance for accessing Graphistry settings
@@ -138,60 +138,48 @@ def _render_response_html(response, client=None) -> str:
 
                 # GraphElement
                 elif elem_type in ["GraphElement", "graph"]:
-                    # Debug with prints
-                    import json
-                    print(f"\n=== GraphElement Debug ===")
-                    print(f"Type: {elem_type}")
-                    print(f"Element JSON:\n{json.dumps(elem, indent=2, default=str)}")
-                    
                     # Extract dataset_id - try multiple possible locations
                     dataset_id = None
-                    code_content = None
-                    
+
                     # First try: element['value']['dataset_id']
                     value = elem.get("value", {})
                     if isinstance(value, dict):
                         dataset_id = value.get("dataset_id")
-                    
+
                     # Second try: element['dataset_id'] directly
                     if not dataset_id:
                         dataset_id = elem.get("dataset_id")
-                    
+
                     # Third try: element['id'] as fallback
                     if not dataset_id:
                         dataset_id = elem.get("id")
-                    
+
                     # Check for code content (for generated graphs like hypergraph)
                     if not dataset_id:
                         # Try to get code from text or code field
-                        code_content = elem.get("text") or elem.get("code")
-                    
-                    print(f"Extracted dataset_id: {dataset_id}")
-                    print(f"Extracted code: {code_content}")
-                    print(f"Value field: {json.dumps(value, indent=2, default=str)}")
-                    print("=========================\n")
-                    
+                        elem.get("text") or elem.get("code")
+
                     # Get Graphistry server URL from client if available
                     server_url = "https://hub.graphistry.com"  # default
                     if client and hasattr(client, "_auth_manager"):
                         try:
                             g = client._auth_manager._graphistry_client
-                            if hasattr(g, "client_protocol_hostname") and hasattr(g, "protocol"):
+                            if (
+                                hasattr(g, "client_protocol_hostname")
+                                and hasattr(g, "protocol")
+                            ):
                                 hostname = g.client_protocol_hostname()
                                 protocol = g.protocol()
-                                print(f"Raw hostname from client: '{hostname}'")
-                                print(f"g.protocol(): '{protocol}'")
-                                
+
                                 if hostname:
                                     # Fix malformed protocols first
                                     hostname = hostname.replace("https//", "https://")
                                     hostname = hostname.replace("http//", "http://")
-                                    
+
                                     # Check if hostname already contains protocol
                                     if hostname.startswith(("http://", "https://")):
                                         # It's a full URL already
                                         server_url = hostname
-                                        print(f"Using full URL from hostname: {server_url}")
                                     else:
                                         # It's just a hostname, need to add protocol
                                         # Use protocol from g.protocol() if available
@@ -206,14 +194,15 @@ def _render_response_html(response, client=None) -> str:
                                             else:
                                                 protocol = protocol + "://"
                                         server_url = f"{protocol}{hostname}"
-                                        print(f"Constructed URL: {server_url}")
-                        except Exception as e:
-                            print(f"Error getting Graphistry URL: {e}")
+                        except Exception:
                             pass  # Use default
-                    
+
                     if dataset_id:
                         # Create iframe for Graphistry visualization
-                        iframe_url = f"{server_url}/graph/graph.html?dataset={dataset_id}"
+                        iframe_url = (
+                            f"{server_url}/graph/graph.html?"
+                            f"dataset={dataset_id}"
+                        )
                         html_parts.append(
                             f'<div style="margin: 10px 0;">'
                             f'<iframe src="{iframe_url}" '
@@ -228,18 +217,13 @@ def _render_response_html(response, client=None) -> str:
                             f'</div>'
                         )
                     else:
-                        # Show debug info about what was in the element
-                        import json
-                        elem_json = json.dumps(elem, indent=2, default=str)
+                        # Show placeholder for missing dataset_id
                         html_parts.append(
-                            "<details style='margin: 10px 0;'>"
-                            f"<summary style='color: gray; cursor: pointer;'>"
-                            f"[{elem_type}] No dataset_id found - click to see element data</summary>"
-                            f"<pre style='background: #f5f5f5; padding: 10px; margin-top: 5px; "
-                            f"font-size: 0.8em; overflow-x: auto;'>{elem_json}</pre>"
-                            "</details>"
+                            f"<div style='color: #888; padding: 10px; "
+                            f"background: #f5f5f5; margin: 5px 0;'>"
+                            f"[{elem_type}] Graph visualization not available</div>"
                         )
-                
+
                 # Unknown types - try to extract text
                 else:
                     text = (
@@ -807,7 +791,7 @@ class Cursor:
         # Show latest response content if available
         if self._history:
             latest = self._history[-1]
-            
+
             # Use the shared renderer for consistent display
             response_html = _render_response_html(latest, self._client)
             if response_html:

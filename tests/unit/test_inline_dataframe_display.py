@@ -10,7 +10,7 @@ def test_render_response_html_with_dataframe():
     """Test that _render_response_html displays dataframes inline."""
     # Create a test dataframe
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    
+
     # Create response with dataframe element
     response = Response(
         thread_id="test",
@@ -19,10 +19,10 @@ def test_render_response_html_with_dataframe():
             {"type": "df", "id": "df_123", "table": df},
         ],
     )
-    
+
     # Render HTML
     html = _render_response_html(response)
-    
+
     # Verify dataframe HTML is included
     assert "<table" in html  # DataFrames render as HTML tables
     assert "<tr>" in html
@@ -45,10 +45,10 @@ def test_render_response_html_without_table():
             {"type": "df", "id": "df_123", "metadata": {"shape": [10, 5]}},
         ],
     )
-    
+
     # Render HTML
     html = _render_response_html(response)
-    
+
     # Should not have table HTML
     assert "<table" not in html
     # Should have text content
@@ -58,7 +58,7 @@ def test_render_response_html_without_table():
 def test_render_mixed_content():
     """Test rendering with text and dataframe together."""
     df = pd.DataFrame({"x": [10, 20], "y": [30, 40]})
-    
+
     response = Response(
         thread_id="test",
         elements=[
@@ -67,9 +67,9 @@ def test_render_mixed_content():
             {"type": "text", "value": "Total rows: 2"},
         ],
     )
-    
+
     html = _render_response_html(response)
-    
+
     # Check all content is present
     assert "Analysis complete!" in html
     assert "<table" in html
@@ -89,9 +89,9 @@ def test_render_graph_element_with_id():
             {"type": "graph", "value": {"dataset_id": "xyz456"}},
         ],
     )
-    
+
     html = _render_response_html(response)
-    
+
     # Check for iframes
     assert '<iframe' in html
     assert 'dataset=abc123' in html
@@ -113,12 +113,10 @@ def test_render_graph_element_without_id():
             {"type": "GraphElement"},  # No ID
         ],
     )
-    
+
     html = _render_response_html(response)
-    
+
     # Should not have iframe
     assert '<iframe' not in html
-    # Should have debug details
-    assert "No dataset_id found" in html
-    assert "<details" in html
-    assert "click to see element data" in html
+    # Should have placeholder message
+    assert "Graph visualization not available" in html

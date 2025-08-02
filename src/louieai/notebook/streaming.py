@@ -42,27 +42,23 @@ class StreamingDisplay:
             return str(text).replace("\n", "<br>")
 
         elif elem_type in ["DfElement", "df"]:
-            # Debug: Log the full element to understand structure
-            import logging
-
-            logging.getLogger("louieai.notebook").debug(f"DfElement: {elem}")
-
             # Try multiple possible field names for the dataframe ID
             df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
             shape = elem.get("metadata", {}).get("shape", ["?", "?"])
-            
+
             # If we have the actual dataframe, display it
             if "table" in elem and hasattr(elem["table"], "_repr_html_"):
                 df_html = elem["table"]._repr_html_()
                 if df_html:
                     return (
                         f"<div style='margin: 10px 0;'>"
-                        f"<div style='background: #f0f0f0; padding: 5px; margin-bottom: 5px;'>"
+                        f"<div style='background: #f0f0f0; padding: 5px; "
+                        f"margin-bottom: 5px;'>"
                         f"📊 DataFrame {df_id} (shape: {shape[0]} x {shape[1]})</div>"
                         f"{df_html}"
                         f"</div>"
                     )
-            
+
             # Otherwise show placeholder
             return (
                 f"<div style='background: #f0f0f0; padding: 5px; margin: 5px 0;'>"
@@ -115,34 +111,37 @@ class StreamingDisplay:
         elif elem_type in ["GraphElement", "graph"]:
             # Extract dataset_id - try multiple possible locations
             dataset_id = None
-            
+
             # First try: element['value']['dataset_id']
             value = elem.get("value", {})
             if isinstance(value, dict):
                 dataset_id = value.get("dataset_id")
-            
+
             # Second try: element['dataset_id'] directly
             if not dataset_id:
                 dataset_id = elem.get("dataset_id")
-            
+
             # Third try: element['id'] as fallback
             if not dataset_id:
                 dataset_id = elem.get("id")
-            
+
             # Get Graphistry server URL from client if available
             server_url = "https://hub.graphistry.com"  # default
             if self.client and hasattr(self.client, "_auth_manager"):
                 try:
                     g = self.client._auth_manager._graphistry_client
-                    if hasattr(g, "client_protocol_hostname") and hasattr(g, "protocol"):
+                    if (
+                        hasattr(g, "client_protocol_hostname")
+                        and hasattr(g, "protocol")
+                    ):
                         hostname = g.client_protocol_hostname()
                         protocol = g.protocol()
-                        
+
                         if hostname:
                             # Fix malformed protocols first
                             hostname = hostname.replace("https//", "https://")
                             hostname = hostname.replace("http//", "http://")
-                            
+
                             # Check if hostname already contains protocol
                             if hostname.startswith(("http://", "https://")):
                                 # It's a full URL already
@@ -163,7 +162,7 @@ class StreamingDisplay:
                                 server_url = f"{protocol}{hostname}"
                 except Exception:
                     pass  # Use default
-            
+
             if dataset_id:
                 # Create iframe for Graphistry visualization
                 iframe_url = f"{server_url}/graph/graph.html?dataset={dataset_id}"
@@ -181,16 +180,11 @@ class StreamingDisplay:
                     f'</div>'
                 )
             else:
-                # Show debug info about what was in the element
-                import json
-                elem_json = json.dumps(elem, indent=2, default=str)
+                # Show placeholder for missing dataset_id
                 return (
-                    "<details style='margin: 10px 0;'>"
-                    f"<summary style='color: gray; cursor: pointer;'>"
-                    f"[{elem_type}] No dataset_id found - click to see element data</summary>"
-                    f"<pre style='background: #f5f5f5; padding: 10px; margin-top: 5px; "
-                    f"font-size: 0.8em; overflow-x: auto;'>{elem_json}</pre>"
-                    "</details>"
+                    f"<div style='color: #888; padding: 10px; "
+                    f"background: #f5f5f5; margin: 5px 0;'>"
+                    f"[{elem_type}] Graph visualization not available</div>"
                 )
 
         else:
@@ -320,10 +314,12 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
 
     # Make streaming request
     try:
-        with httpx.Client(timeout=httpx.Timeout(300.0, read=120.0)) as stream_client:
-            with stream_client.stream(
+        with (
+            httpx.Client(timeout=httpx.Timeout(300.0, read=120.0)) as stream_client,
+            stream_client.stream(
                 "POST", f"{client.server_url}/api/chat/", headers=headers, params=params
-            ) as response:
+            ) as response,
+        ):
                 response.raise_for_status()
 
                 # Process streaming lines
@@ -371,30 +367,13 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     if actual_thread_id and result["elements"]:
         for elem in result["elements"]:
             if elem.get("type") in ["DfElement", "df"]:
-                # Debug logging
-                import logging
-
-                logger = logging.getLogger("louieai.notebook")
-                logger.debug(f"Processing DfElement: {elem}")
-
                 # Try multiple possible field names for the dataframe ID
                 df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
-                logger.debug(f"Extracted df_id: {df_id} from keys: {list(elem.keys())}")
 
                 if df_id:
                     # Fetch the actual dataframe via Arrow
-                    logger.info(
-                        f"Fetching dataframe {df_id} for thread {actual_thread_id}"
-                    )
                     df = client._fetch_dataframe_arrow(actual_thread_id, df_id)
                     if df is not None:
                         elem["table"] = df
-                        logger.info(
-                            f"Successfully fetched dataframe with shape {df.shape}"
-                        )
-                    else:
-                        logger.warning(f"Failed to fetch dataframe {df_id}")
-                else:
-                    logger.warning(f"DfElement missing df_id/block_id/id: {elem}")
 
     return result
