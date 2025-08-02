@@ -340,46 +340,48 @@ class LouieClient:
         start_time = time.time()
 
         # Use configured timeouts
-        with httpx.Client(
-            timeout=httpx.Timeout(
-                self._timeout,  # Overall timeout
-                read=self._streaming_timeout,  # Per-chunk timeout
-            )
-        ) as stream_client:
-            with stream_client.stream(
+        with (
+            httpx.Client(
+                timeout=httpx.Timeout(
+                    self._timeout,  # Overall timeout
+                    read=self._streaming_timeout,  # Per-chunk timeout
+                )
+            ) as stream_client,
+            stream_client.stream(
                 "POST", f"{self.server_url}/api/chat/", headers=headers, params=params
-            ) as response:
-                response.raise_for_status()
+            ) as response,
+        ):
+            response.raise_for_status()
 
-                # Collect streaming lines
-                try:
-                    for line in response.iter_lines():
-                        if line:
-                            response_text += line + "\n"
-                            lines_received += 1
+            # Collect streaming lines
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        response_text += line + "\n"
+                        lines_received += 1
 
-                            # Keep reading all elements until stream ends
-                            # Don't break early just because we got a text element
+                        # Keep reading all elements until stream ends
+                        # Don't break early just because we got a text element
 
-                        # Safety timeout - use configured timeout
-                        if time.time() - start_time > self._timeout:
-                            break
+                    # Safety timeout - use configured timeout
+                    if time.time() - start_time > self._timeout:
+                        break
 
-                except httpx.ReadTimeout as e:
-                    elapsed = time.time() - start_time
-                    # This is expected - the server keeps the connection open
-                    # If we have at least 2 lines, that's a valid response
-                    if lines_received >= 2:
-                        pass
-                    else:
-                        raise RuntimeError(
-                            f"Louie API timeout after {elapsed:.1f}s waiting for "
-                            f"response. Only received {lines_received} lines. "
-                            f"Agentic flows can take time - consider increasing "
-                            f"timeout (current: {self._streaming_timeout}s per chunk, "
-                            f"{self._timeout}s total). "
-                            f"Set timeout parameter when creating LouieClient."
-                        ) from e
+            except httpx.ReadTimeout as e:
+                elapsed = time.time() - start_time
+                # This is expected - the server keeps the connection open
+                # If we have at least 2 lines, that's a valid response
+                if lines_received >= 2:
+                    pass
+                else:
+                    raise RuntimeError(
+                        f"Louie API timeout after {elapsed:.1f}s waiting for "
+                        f"response. Only received {lines_received} lines. "
+                        f"Agentic flows can take time - consider increasing "
+                        f"timeout (current: {self._streaming_timeout}s per chunk, "
+                        f"{self._timeout}s total). "
+                        f"Set timeout parameter when creating LouieClient."
+                    ) from e
 
         # Log if request took a long time
         total_time = time.time() - start_time
