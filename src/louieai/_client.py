@@ -7,6 +7,7 @@ from typing import Any
 
 import httpx
 import pandas as pd
+import pyarrow as pa
 
 from .auth import AuthManager, auto_retry_auth
 
@@ -201,6 +202,37 @@ class LouieClient:
         """
         self._auth_manager._graphistry_client.register(**kwargs)
         return self
+    
+    @auto_retry_auth
+    def _fetch_dataframe_arrow(self, thread_id: str, block_id: str) -> pd.DataFrame | None:
+        """Fetch a dataframe using Arrow format.
+        
+        Args:
+            thread_id: The thread ID
+            block_id: The block ID for the dataframe
+            
+        Returns:
+            DataFrame or None if fetch fails
+        """
+        try:
+            headers = self._get_headers()
+            url = f"{self.server_url}/api/dthread/{thread_id}/df/block/{block_id}/arrow"
+            
+            response = self._client.get(url, headers=headers)
+            response.raise_for_status()
+            
+            # Parse Arrow format
+            reader = pa.ipc.open_stream(response.content)
+            table = reader.read_all()
+            
+            # Convert to pandas
+            df = table.to_pandas()
+            return df
+            
+        except Exception as e:
+            import warnings
+            warnings.warn(f"Failed to fetch dataframe {block_id}: {e}", RuntimeWarning)
+            return None
 
     def _get_headers(self) -> dict[str, str]:
         """Get authorization headers using auth manager."""
@@ -273,22 +305,7 @@ class LouieClient:
                 continue
 
         # Convert to list, preserving order
-        elements = list(elements_by_id.values())
-        
-        # Convert table dicts to DataFrames for DfElements
-        for elem in elements:
-            if elem.get("type") == "DfElement" and "table" in elem:
-                table = elem["table"]
-                if isinstance(table, dict) and "columns" in table and "data" in table:
-                    # Convert dict representation to pandas DataFrame
-                    df = pd.DataFrame(
-                        data=table["data"],
-                        columns=table["columns"],
-                        index=table.get("index")
-                    )
-                    elem["table"] = df
-        
-        result["elements"] = elements
+        result["elements"] = list(elements_by_id.values())
         return result
 
     def create_thread(
@@ -418,6 +435,14 @@ class LouieClient:
 
         # Get the thread ID
         actual_thread_id = result["dthread_id"]
+        
+        # Fetch dataframes for any DfElements
+        for elem in result["elements"]:
+            if elem.get("type") == "DfElement" and "block_id" in elem:
+                # Fetch the actual dataframe via Arrow
+                df = self._fetch_dataframe_arrow(actual_thread_id, elem["block_id"])
+                if df is not None:
+                    elem["table"] = df
 
         # Return Response with all elements
         return Response(thread_id=actual_thread_id, elements=result["elements"])
