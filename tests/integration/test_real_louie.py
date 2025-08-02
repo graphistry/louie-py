@@ -6,7 +6,7 @@ They will be skipped if credentials are not available.
 
 import pytest
 
-from louieai import LouieClient
+from louieai._client import LouieClient
 
 from ..utils import load_test_credentials
 
@@ -22,10 +22,9 @@ class TestRealLouieIntegration:
             pytest.skip("Test credentials not available")
 
         # Create GraphistryClient and register credentials
-        from graphistry.pygraphistry import GraphistryClient
+        import graphistry
 
-        graphistry_client = GraphistryClient()
-        graphistry_client.register(
+        graphistry_client = graphistry.register(
             api=creds["api_version"],
             server=creds["server"],
             username=creds["username"],
@@ -41,17 +40,47 @@ class TestRealLouieIntegration:
     def test_basic_query(self, client):
         """Test a simple query to verify connection."""
         # Test with new thread-based API
-        client.create_thread(name="Integration Test")
-        response = client.add_cell("", "Return the text 'Hello from Louie!'")
+        import time
+
+        print("\n=== Starting basic query test ===")
+        print(f"Server URL: {client.server_url}")
+        print(f"Auth token available: {bool(client._auth_manager.get_token())}")
+        print(f"Token preview: {client._auth_manager.get_token()[:30]}...")
+
+        # Create thread first
+        print("\nCreating thread...")
+        start_time = time.time()
+        try:
+            thread = client.create_thread(name="Integration Test")
+            print(f"Thread created in {time.time() - start_time:.2f}s")
+            print(f"Thread ID: {thread.id if hasattr(thread, 'id') else 'No ID'}")
+        except Exception as e:
+            print(f"Failed to create thread: {e}")
+            raise
+
+        # Now add a cell with a simple query
+        print("\nSending query...")
+        start_time = time.time()
+        try:
+            response = client.add_cell("", "Return the text 'Hello from Louie!'")
+            print(f"Query completed in {time.time() - start_time:.2f}s")
+        except Exception as e:
+            print(f"Query failed after {time.time() - start_time:.2f}s")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Error: {e}")
+            raise
 
         # Check response
         assert response is not None
         assert hasattr(response, "thread_id")
         assert hasattr(response, "elements")
-        print(f"Thread ID: {response.thread_id}")
+        print(f"\nResponse Thread ID: {response.thread_id}")
         print(f"Elements: {len(response.elements)}")
         if response.text_elements:
             print(f"Text elements: {len(response.text_elements)}")
+            for i, elem in enumerate(response.text_elements[:2]):
+                text = elem.get("content", elem.get("text", ""))[:100]
+                print(f"  Text {i}: {text}...")
         # Verify we got a valid thread ID
         assert response.thread_id.startswith("D_")
 

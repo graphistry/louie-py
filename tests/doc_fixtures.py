@@ -111,7 +111,7 @@ Key insights:
 
 def create_mock_client():
     """Create a mock LouieClient for testing documentation examples."""
-    from louieai import LouieClient
+    from louieai._client import LouieClient
 
     # Mock the client
     mock_client = Mock(spec=LouieClient)

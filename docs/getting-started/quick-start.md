@@ -1,87 +1,84 @@
 # Quick Start Guide
 
-Get up and running with LouieAI in minutes.
+Get up and running with LouieAI in minutes using the notebook-friendly API.
 
-## Basic Setup
-
-First, make sure you have LouieAI installed and a Graphistry account set up.
-
-### 1. Install LouieAI
+## 1. Install LouieAI
 
 See the [Installation Guide](installation.md) if you haven't installed LouieAI yet.
 
-### 2. Authenticate
+## 2. Set Up Authentication
 
-See the [Authentication Guide](authentication.md) for detailed authentication options. For a quick start:
+Set your Graphistry credentials as environment variables:
 
-```python
-import graphistry
-from louieai import LouieClient
-
-# Authenticate with PyGraphistry Hub
-graphistry.register(api=3, server="hub.graphistry.com", username="your_user", password="your_pass")
-
-# Connect to Louie Den (default detective AI service)
-client = LouieClient(server_url="https://den.louie.ai")
+```bash
+export GRAPHISTRY_USERNAME=your_username
+export GRAPHISTRY_PASSWORD=your_password
 ```
 
-### 3. Your First Query
+For other authentication methods, see the [Authentication Guide](authentication.md).
 
-#### Thread-based Conversation
+## 3. Start Using LouieAI
 
 ```python
-# Create a thread with an initial query
-thread = client.create_thread(
-    name="Data Analysis",
-    initial_prompt="What insights can you find about sales trends?"
-)
+from louieai.notebook import lui
 
-# Continue the conversation in the same thread
-response = client.add_cell(
-    thread.id,
-    "Can you create a visualization of the top 10 products?"
-)
+# Ask questions naturally
+lui("What insights can you find about sales trends?")
 
-# Access response data
-if response.type == "TextElement":
-    print(response.text)
-elif response.type == "DfElement":
-    df = response.to_dataframe()
+# Access the response immediately
+print(lui.text)  # Text response
+df = lui.df      # DataFrame (if any)
+
+# Continue the conversation
+lui("Can you create a visualization of the top 10 products?")
 ```
 
-Louie maintains conversation context within threads, allowing for sophisticated multi-step analyses.
-
-#### Simple One-Shot Query
-
-For quick queries without thread context:
+## Working with Data
 
 ```python
-# Simple ask() method for backward compatibility
-response = client.ask("What are the key metrics in the dataset?")
-print(response.text)
+# Generate some data
+lui("Create a sample sales dataset with 100 rows")
+
+# Access the data
+if lui.df is not None:
+    print(f"Generated {len(lui.df)} rows")
+    print(lui.df.head())
+    
+    # Work with the data
+    sales_by_region = lui.df.groupby('region')['sales'].sum()
 ```
 
 ## Error Handling
 
-The LouieClient provides comprehensive error handling:
+The notebook API returns None/empty instead of raising exceptions:
 
 ```python
-try:
-    thread = client.create_thread(
-        initial_prompt="Analyze customer churn patterns"
-    )
-    response = client.add_cell(thread.id, "Show me the top risk factors")
-except RuntimeError as e:
-    print(f"Error occurred: {e}")
+# Safe data access - no exceptions
+df = lui.df  # None if no dataframe
+texts = lui.texts  # Empty list if no text
+
+# Check for errors in response
+if lui.has_errors:
+    for error in lui.errors:
+        print(f"Error: {error['message']}")
 ```
 
-The client distinguishes between different error types:
-- **HTTP Errors (4xx/5xx)**: Extracts error messages from API responses
-- **Network Errors**: Provides connection failure details
-- **Authentication Errors**: Clear guidance when Graphistry token is missing
+## Advanced Features
+
+```python
+# Enable AI reasoning traces
+lui.traces = True
+lui("Complex analysis query")
+
+# Access response history
+previous_df = lui[-1].df  # Previous response's dataframe
+for i in range(-3, 0):
+    print(f"Query {i}: {lui[i].text[:50]}...")
+```
 
 ## Next Steps
 
+- **[Notebook Examples](notebooks/)** - Interactive Jupyter notebooks
 - **[Examples Guide](../guides/examples.md)** - Practical examples and use cases
 - **[Query Patterns](../guides/query-patterns.md)** - Advanced query techniques
 - **[Authentication Guide](authentication.md)** - Multi-tenant usage, API keys, and more
