@@ -6,6 +6,30 @@
 
 AI-powered investigation platform for natural language data analysis.
 
+## 🚀 Get Started in 30 Seconds
+
+```python
+# 1. Install
+# pip install louieai
+
+# 2. Authenticate with your PyGraphistry server
+import graphistry
+graphistry.register(
+    api=3,
+    server="hub.graphistry.com",  # or your enterprise server
+    username="bob@company.com",   # your actual username
+    password="MySecurePass456!"   # your actual password
+)
+
+# 3. Start analyzing with natural language
+from louieai.notebook import lui
+lui("Show me all suspicious transactions from the last week")
+
+# 4. Access the results
+print(lui.text)  # Natural language explanation
+df = lui.df      # Pandas DataFrame with the data
+```
+
 ## Install & Authenticate
 
 ```bash
@@ -20,13 +44,13 @@ LouieAI uses PyGraphistry for authentication. You'll need a free account:
 2. **Set environment variables** or authenticate in code:
 
 ```bash
-# Option 1: Environment variables (recommended)
-export GRAPHISTRY_USERNAME="your_username"
-export GRAPHISTRY_PASSWORD="your_password"
+# Option 1: Environment variables (recommended for notebooks/scripts)
+export GRAPHISTRY_USERNAME="sarah@analytics.com"
+export GRAPHISTRY_PASSWORD="Analytics2024!"
+export GRAPHISTRY_SERVER="hub.graphistry.com"  # or "my-company.graphistry.com"
 
-# Optional: Specify servers (defaults shown)
-export GRAPHISTRY_SERVER="hub.graphistry.com"  # PyGraphistry server
-export LOUIE_URL="https://louie.ai"           # Louie service endpoint
+# Optional: Custom Louie endpoint (defaults to https://louie.ai)
+export LOUIE_URL="https://louie-enterprise.company.com"
 ```
 
 ```python
@@ -34,9 +58,9 @@ export LOUIE_URL="https://louie.ai"           # Louie service endpoint
 import graphistry
 graphistry.register(
     api=3, 
-    server="hub.graphistry.com",  # PyGraphistry server
-    username="your_username", 
-    password="your_password"
+    server="hub.graphistry.com",  # or your enterprise server
+    username="mike@investigations.org", 
+    password="Secure123!"
 )
 
 # Optional: Use custom Louie server
@@ -50,6 +74,16 @@ client = LouieClient(
 ### Quick Start
 
 ```python
+# First, authenticate with your PyGraphistry server
+import graphistry
+graphistry.register(
+    api=3,
+    server="hub.graphistry.com",  # or your private server
+    username="alice@example.com",
+    password="SecurePassword123!"
+)
+
+# Now import and use LouieAI
 from louieai.notebook import lui
 
 # Ask questions in natural language  
