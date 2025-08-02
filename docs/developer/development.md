@@ -58,10 +58,10 @@ pyproject.toml       # Project configuration
 uv pip install -e ".[dev]"        # Dev install with all tools
 uv pip install -e ".[docs]"       # Just docs dependencies
 
-# Run commands (modern approach)
-uv run pytest                     # Auto-manages environment
-uv run ruff check .               # No activation needed
-uv run mypy .                     # Handles dependencies automatically
+# Run commands (project uses ./bin/uv wrapper)
+./bin/uv run pytest               # Auto-manages environment
+./bin/uv run ruff check .         # No activation needed
+./bin/uv run mypy .               # Handles dependencies automatically
 
 # Environment management
 uv venv --python 3.12 .venv       # Create virtual environment
@@ -96,27 +96,27 @@ mypy --no-error-summary .        # Less verbose output
 
 ### pytest (Test Runner)
 ```bash
-# Run tests (always use uv run for correct environment)
-uv run pytest                    # All tests
-uv run pytest -v                 # Verbose output
-uv run pytest -x                 # Stop on first failure
-uv run pytest -q                 # Quiet output
+# Run tests (always use ./bin/uv for correct environment)
+./bin/uv run pytest              # All tests
+./bin/uv run pytest -v           # Verbose output
+./bin/uv run pytest -x           # Stop on first failure
+./bin/uv run pytest -q           # Quiet output
 
 # Or use the smart script (recommended)
 ./scripts/pytest.sh              # Includes coverage + threshold
 ./scripts/pytest.sh -v           # Your args + smart defaults
 
 # Parallel testing (faster)
-uv run pytest -n auto            # Use all CPU cores
-uv run pytest -n 4               # Use 4 processes
+./bin/uv run pytest -n auto      # Use all CPU cores
+./bin/uv run pytest -n 4         # Use 4 processes
 
 # Specific tests
-uv run pytest tests/test_louie_client.py # Single file
-uv run pytest -k "test_error"    # Tests matching pattern
+./bin/uv run pytest tests/test_louie_client.py # Single file
+./bin/uv run pytest -k "test_error"    # Tests matching pattern
 ```
 
 **Important Python Environment Note:**
-- Always use `uv run` or our smart scripts to ensure correct Python version
+- Always use `./bin/uv run` or our smart scripts to ensure correct Python version
 - The project requires Python 3.10+ (we use 3.12 in development)
 - A `.python-version` file pins the version for consistency
 - If you see Python 3.8 errors, you're likely using global Python instead of venv
