@@ -4,7 +4,6 @@ Tests to ensure we handle both old (CamelCase) and new (lowercase) element forma
 """
 
 import pandas as pd
-import pytest
 
 from louieai._client import Response
 
@@ -19,7 +18,7 @@ class TestElementTypeCompatibility:
             {"type": "TextElement", "content": "Another text"},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.text_elements) == 2
         assert response.has_dataframes is False
         assert response.has_errors is False
@@ -31,7 +30,7 @@ class TestElementTypeCompatibility:
             {"type": "text", "text": "Another text"},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.text_elements) == 2
         assert response.has_dataframes is False
 
@@ -42,7 +41,7 @@ class TestElementTypeCompatibility:
             {"type": "text", "value": "New format"},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.text_elements) == 2
 
     def test_df_element_camelcase(self):
@@ -51,7 +50,7 @@ class TestElementTypeCompatibility:
             {"type": "DfElement", "df_id": "df_123", "metadata": {"shape": [10, 5]}},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.dataframe_elements) == 1
         assert response.has_dataframes is True
         assert response.has_graphs is False
@@ -63,7 +62,7 @@ class TestElementTypeCompatibility:
             {"type": "df", "block_id": "block_456"},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.dataframe_elements) == 2
         assert response.has_dataframes is True
 
@@ -74,7 +73,7 @@ class TestElementTypeCompatibility:
             {"type": "graph", "id": "g2"},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.graph_elements) == 2
         assert response.has_graphs is True
 
@@ -86,14 +85,14 @@ class TestElementTypeCompatibility:
             {"type": "error", "message": "Error 3"},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert response.has_errors is True
         # Error elements are not exposed via a property, just has_errors
 
     def test_empty_response(self):
         """Test response with no elements."""
         response = Response(thread_id="test", elements=[])
-        
+
         assert len(response.text_elements) == 0
         assert len(response.dataframe_elements) == 0
         assert len(response.graph_elements) == 0
@@ -112,7 +111,7 @@ class TestElementTypeCompatibility:
             {"type": "exception", "message": "Warning: Some data missing"},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.text_elements) == 2
         assert len(response.dataframe_elements) == 2
         assert len(response.graph_elements) == 1
@@ -127,7 +126,7 @@ class TestElementTypeCompatibility:
             {"type": "df", "id": "df_123", "table": df},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.dataframe_elements) == 1
         assert "table" in response.dataframe_elements[0]
         assert isinstance(response.dataframe_elements[0]["table"], pd.DataFrame)
@@ -140,7 +139,7 @@ class TestElementTypeCompatibility:
             {"type": "df", "id": "df_123"},
         ]
         response = Response(thread_id="test", elements=elements)
-        
+
         assert len(response.text_elements) == 1
         assert len(response.dataframe_elements) == 1
         # Unknown elements are kept in elements list but not categorized

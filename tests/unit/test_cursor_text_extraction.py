@@ -1,7 +1,5 @@
 """Unit tests for cursor text extraction with multiple field names."""
 
-import pytest
-
 from louieai._client import Response
 from louieai.notebook.cursor import ResponseProxy
 
@@ -16,10 +14,10 @@ class TestCursorTextExtraction:
             elements=[
                 {"type": "TextElement", "text": "Hello from text field"},
                 {"type": "text", "text": "Another text field"},
-            ]
+            ],
         )
         proxy = ResponseProxy(response)
-        
+
         texts = proxy.texts
         assert len(texts) == 2
         assert texts[0] == "Hello from text field"
@@ -33,10 +31,10 @@ class TestCursorTextExtraction:
             elements=[
                 {"type": "text", "value": "Hello from value field"},
                 {"type": "text", "value": "Another value field"},
-            ]
+            ],
         )
         proxy = ResponseProxy(response)
-        
+
         texts = proxy.texts
         assert len(texts) == 2
         assert texts[0] == "Hello from value field"
@@ -48,10 +46,10 @@ class TestCursorTextExtraction:
             thread_id="test",
             elements=[
                 {"type": "TextElement", "content": "Hello from content field"},
-            ]
+            ],
         )
         proxy = ResponseProxy(response)
-        
+
         texts = proxy.texts
         assert len(texts) == 1
         assert texts[0] == "Hello from content field"
@@ -62,15 +60,20 @@ class TestCursorTextExtraction:
             thread_id="test",
             elements=[
                 # content takes priority
-                {"type": "text", "content": "Content wins", "text": "Text loses", "value": "Value loses"},
+                {
+                    "type": "text",
+                    "content": "Content wins",
+                    "text": "Text loses",
+                    "value": "Value loses",
+                },
                 # text takes priority over value
                 {"type": "text", "text": "Text wins", "value": "Value loses"},
                 # value is used when others missing
                 {"type": "text", "value": "Value only"},
-            ]
+            ],
         )
         proxy = ResponseProxy(response)
-        
+
         texts = proxy.texts
         assert len(texts) == 3
         assert texts[0] == "Content wins"
@@ -86,10 +89,10 @@ class TestCursorTextExtraction:
                 {"type": "text"},  # No text field
                 {"type": "text", "value": "Valid text"},
                 {"type": "text", "text": None},  # None value
-            ]
+            ],
         )
         proxy = ResponseProxy(response)
-        
+
         texts = proxy.texts
         assert len(texts) == 4
         assert texts[0] == ""  # Empty string preserved
@@ -106,10 +109,10 @@ class TestCursorTextExtraction:
                 {"type": "df", "id": "df_123"},  # Should be ignored
                 {"type": "TextElement", "text": "Text 2"},
                 {"type": "graph", "id": "g_123"},  # Should be ignored
-            ]
+            ],
         )
         proxy = ResponseProxy(response)
-        
+
         texts = proxy.texts
         assert len(texts) == 2
         assert texts[0] == "Text 1"
@@ -122,10 +125,10 @@ class TestCursorTextExtraction:
             elements=[
                 {"type": "df", "id": "df_123"},
                 {"type": "graph", "id": "g_123"},
-            ]
+            ],
         )
         proxy = ResponseProxy(response)
-        
+
         assert proxy.texts == []
         assert proxy.text is None
 
@@ -138,10 +141,10 @@ class TestCursorTextExtraction:
                 {"type": "text", "value": "New format with value"},
                 {"type": "TextElement", "content": "Old format with content"},
                 {"type": "text", "text": "New format with text"},
-            ]
+            ],
         )
         proxy = ResponseProxy(response)
-        
+
         texts = proxy.texts
         assert len(texts) == 4
         assert all(isinstance(t, str) for t in texts)
