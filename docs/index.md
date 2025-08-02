@@ -24,7 +24,7 @@ from louieai.notebook import lui
 # lui will automatically use the environment variables
 
 # Option 2: Direct authentication
-graphistry.register(
+g = graphistry.register(
     api=3, 
     server="hub.graphistry.com",  # or your enterprise server
     username="your_username", 
@@ -41,8 +41,9 @@ except Exception as e:
     print(f"Authentication failed: {e}")
     # Check your credentials and server URL
 
-# Now import and use LouieAI
-from louieai.notebook import lui
+# Now import and use LouieAI with the authenticated client
+from louieai import louie
+lui = louie(g)  # Pass the authenticated graphistry client
 
 # Ask questions in natural language
 lui("Show me users with unusual ordering patterns or velocity")
