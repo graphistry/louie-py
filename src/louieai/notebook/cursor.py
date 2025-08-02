@@ -699,28 +699,11 @@ class Cursor:
         # Show latest response content if available
         if self._history:
             latest = self._history[-1]
-
-            # Display text elements
-            if hasattr(latest, "text_elements") and latest.text_elements:
-                for elem in latest.text_elements:
-                    content = (elem.get("content") or elem.get("text", "")).strip()
-                    if content:
-                        # Escape HTML but preserve newlines
-                        import html
-
-                        escaped_content = html.escape(content).replace("\n", "<br>")
-                        html_parts.append(
-                            f"<div style='margin: 10px 0; white-space: pre-wrap;'>"
-                            f"{escaped_content}</div>"
-                        )
-
-            # Note about dataframes
-            if hasattr(latest, "dataframe_elements") and latest.dataframe_elements:
-                df_count = len(latest.dataframe_elements)
-                html_parts.append(
-                    f"<p><em>📊 {df_count} dataframe(s) available via "
-                    f"<code>lui.df</code></em></p>"
-                )
+            
+            # Use the shared renderer for consistent display
+            response_html = _render_response_html(latest)
+            if response_html:
+                html_parts.append(response_html)
 
         # Session info footer
         html_parts.append("<hr style='margin: 10px 0;'>")

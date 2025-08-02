@@ -48,6 +48,20 @@ class StreamingDisplay:
             # Try multiple possible field names for the dataframe ID
             df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
             shape = elem.get("metadata", {}).get("shape", ["?", "?"])
+            
+            # If we have the actual dataframe, display it
+            if "table" in elem and hasattr(elem["table"], "_repr_html_"):
+                df_html = elem["table"]._repr_html_()
+                if df_html:
+                    return (
+                        f"<div style='margin: 10px 0;'>"
+                        f"<div style='background: #f0f0f0; padding: 5px; margin-bottom: 5px;'>"
+                        f"📊 DataFrame {df_id} (shape: {shape[0]} x {shape[1]})</div>"
+                        f"{df_html}"
+                        f"</div>"
+                    )
+            
+            # Otherwise show placeholder
             return (
                 f"<div style='background: #f0f0f0; padding: 5px; margin: 5px 0;'>"
                 f"📊 DataFrame: {df_id} (shape: {shape[0]} x {shape[1]})</div>"
