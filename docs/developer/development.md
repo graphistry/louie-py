@@ -111,7 +111,7 @@ mypy --no-error-summary .        # Less verbose output
 ./bin/uv run pytest -n 4         # Use 4 processes
 
 # Specific tests
-./bin/uv run pytest tests/test_louie_client.py # Single file
+./bin/uv run pytest tests/unit/test_client.py # Single file
 ./bin/uv run pytest -k "test_error"    # Tests matching pattern
 ```
 
@@ -282,7 +282,7 @@ Types: `feat`, `fix`, `docs`, `chore`, `test`, `refactor`
 
 ### Test Organization
 ```python
-# tests/test_louie_client.py structure:
+# tests/unit/test_client.py structure:
 def test_feature_success():           # Happy path
 def test_feature_error_handling():    # Error conditions  
 def test_feature_edge_cases():        # Boundary conditions
@@ -305,7 +305,7 @@ def test_api_call(monkeypatch):
 ### Coverage Goals
 - Aim for >90% code coverage
 - Focus on critical paths and error handling
-- Use `pytest --cov=louieai` to check coverage
+- Use `./scripts/pytest.sh` to check coverage
 
 ## Troubleshooting
 
