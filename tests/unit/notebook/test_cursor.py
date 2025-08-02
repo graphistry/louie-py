@@ -170,9 +170,11 @@ class TestCursor:
         cursor = Cursor(client=mock_client)
 
         # Mock _in_jupyter to return False so it uses add_cell instead of streaming
-        with patch.object(cursor, "_in_jupyter", return_value=False):
-            with pytest.raises(ValueError, match="API Error"):
-                cursor("Test query")
+        with (
+            patch.object(cursor, "_in_jupyter", return_value=False),
+            pytest.raises(ValueError, match="API Error"),
+        ):
+            cursor("Test query")
 
     @patch("louieai.notebook.cursor.logger")
     def test_error_logging(self, mock_logger):
@@ -183,9 +185,11 @@ class TestCursor:
         cursor = Cursor(client=mock_client)
 
         # Mock _in_jupyter to return False so it uses add_cell instead of streaming
-        with patch.object(cursor, "_in_jupyter", return_value=False):
-            with pytest.raises(ValueError):
-                cursor("Test query")
+        with (
+            patch.object(cursor, "_in_jupyter", return_value=False),
+            pytest.raises(ValueError),
+        ):
+            cursor("Test query")
 
         mock_logger.error.assert_called_once()
         assert "Query failed" in str(mock_logger.error.call_args)

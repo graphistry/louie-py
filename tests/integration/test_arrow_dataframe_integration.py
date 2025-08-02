@@ -286,7 +286,8 @@ class TestArrowDataFrameRealIntegration:
         # Create a query that should return a dataframe
         response = real_client.add_cell(
             "",
-            "Create a sample dataframe with 5 rows containing user_id, score, and status columns",
+            "Create a sample dataframe with 5 rows containing user_id, score, "
+            "and status columns",
         )
 
         # Check if we got dataframes

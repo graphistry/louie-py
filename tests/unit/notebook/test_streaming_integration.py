@@ -27,10 +27,22 @@ class TestStreamingIntegration:
         # Mock streaming response lines that simulate progressive updates
         mock_lines = [
             '{"dthread_id": "D_test123"}',
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Starting..."}}',
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Starting...\\nProcessing..."}}',
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Starting...\\nProcessing...\\nAnalyzing..."}}',
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Starting...\\nProcessing...\\nAnalyzing...\\nComplete!"}}',
+            (
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Starting..."}}'
+            ),
+            (
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Starting...\\nProcessing..."}}'
+            ),
+            (
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Starting...\\nProcessing...\\nAnalyzing..."}}'
+            ),
+            (
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Starting...\\nProcessing...\\nAnalyzing...\\nComplete!"}}'
+            ),
         ]
 
         # Create mock response that yields lines with delays
@@ -90,8 +102,14 @@ class TestStreamingIntegration:
         """Test streaming with dataframe elements."""
         mock_lines = [
             '{"dthread_id": "D_test123"}',
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Here is your data:"}}',
-            '{"payload": {"id": "B_002", "type": "DfElement", "df_id": "df_456", "metadata": {"shape": [5, 3]}}}',
+            (
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Here is your data:"}}'
+            ),
+            (
+                '{"payload": {"id": "B_002", "type": "DfElement", '
+                '"df_id": "df_456", "metadata": {"shape": [5, 3]}}}'
+            ),
         ]
 
         mock_response = Mock()
@@ -176,7 +194,8 @@ class TestStreamingIntegration:
         for i in range(50):
             text = "Line " + " ".join([f"{j}" for j in range(i + 1)])
             lines.append(
-                f'{{"payload": {{"id": "B_001", "type": "TextElement", "text": "{text}"}}}}'
+                f'{{"payload": {{"id": "B_001", "type": "TextElement", '
+                f'"text": "{text}"}}}}'
             )
 
         display_times = []

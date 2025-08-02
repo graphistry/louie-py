@@ -67,6 +67,15 @@ def _extract_org_name_from_graphistry(graphistry_client) -> str | None:
         except Exception:
             pass  # Ignore errors from get_auth_info
 
+    # Method 5: Check if client has org_name() method
+    if hasattr(graphistry_client, "org_name") and callable(graphistry_client.org_name):
+        try:
+            org_name = graphistry_client.org_name()
+            if org_name and not str(org_name).startswith("<MagicMock"):
+                return str(org_name)
+        except Exception:
+            pass  # Ignore errors from org_name()
+
     return None
 
 
@@ -166,6 +175,7 @@ def louie(
                 extracted_org = _extract_org_name_from_graphistry(graphistry_client)
                 if extracted_org:
                     kwargs["org_name"] = extracted_org
+
         client = LouieClient(graphistry_client=graphistry_client, **kwargs)
         return Cursor(client=client, share_mode=share_mode)
 

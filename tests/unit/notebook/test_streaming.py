@@ -33,7 +33,7 @@ class TestStreamingDisplay:
 
         formatted = display._format_element(elem)
         assert "DataFrame: df_123" in formatted
-        assert "10 × 3" in formatted
+        assert "10 x 3" in formatted
 
     def test_format_error_element(self):
         """Test formatting error elements."""
@@ -99,43 +99,45 @@ class TestStreamingDisplay:
         """Test that updates are throttled."""
         display = StreamingDisplay()
 
-        with patch("louieai.notebook.streaming.HAS_IPYTHON", True):
-            with patch("louieai.notebook.streaming.clear_output") as mock_clear:
-                with patch("time.time") as mock_time:
-                    # Set initial time
-                    display.start_time = 0
-                    display.last_update_time = 0
+        with (
+            patch("louieai.notebook.streaming.HAS_IPYTHON", True),
+            patch("louieai.notebook.streaming.clear_output") as mock_clear,
+            patch("time.time") as mock_time,
+        ):
+            # Set initial time
+            display.start_time = 0
+            display.last_update_time = 0
 
-                    # First update at time 0.5
-                    mock_time.return_value = 0.5
-                    display.update({"dthread_id": "D_test"})
-                    assert mock_clear.call_count == 1
+            # First update at time 0.5
+            mock_time.return_value = 0.5
+            display.update({"dthread_id": "D_test"})
+            assert mock_clear.call_count == 1
 
-                    # Second update at 0.55 (too soon - only 0.05s later)
-                    mock_time.return_value = 0.55
-                    display.update(
-                        {
-                            "payload": {
-                                "id": "B_001",
-                                "type": "TextElement",
-                                "text": "Hi",
-                            }
-                        }
-                    )
-                    assert mock_clear.call_count == 1  # Should not update
+            # Second update at 0.55 (too soon - only 0.05s later)
+            mock_time.return_value = 0.55
+            display.update(
+                {
+                    "payload": {
+                        "id": "B_001",
+                        "type": "TextElement",
+                        "text": "Hi",
+                    }
+                }
+            )
+            assert mock_clear.call_count == 1  # Should not update
 
-                    # Third update at 0.65 (0.15s after first - should update)
-                    mock_time.return_value = 0.65
-                    display.update(
-                        {
-                            "payload": {
-                                "id": "B_002",
-                                "type": "TextElement",
-                                "text": "Hello",
-                            }
-                        }
-                    )
-                    assert mock_clear.call_count == 2  # Should update
+            # Third update at 0.65 (0.15s after first - should update)
+            mock_time.return_value = 0.65
+            display.update(
+                {
+                    "payload": {
+                        "id": "B_002",
+                        "type": "TextElement",
+                        "text": "Hello",
+                    }
+                }
+            )
+            assert mock_clear.call_count == 2  # Should update
 
 
 class TestStreamResponse:
@@ -156,7 +158,8 @@ class TestStreamResponse:
         lines = [
             '{"dthread_id": "D_test123"}',
             '{"payload": {"id": "B_001", "type": "TextElement", "text": "Hello"}}',
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Hello World"}}',
+            '{"payload": {"id": "B_001", "type": "TextElement", '
+            '"text": "Hello World"}}',
         ]
 
         # Mock httpx
@@ -238,7 +241,8 @@ class TestStreamResponse:
         lines = [
             '{"dthread_id": "D_test123"}',
             '{"payload": {"id": "B_001", "type": "TextElement", "text": "Line 1"}}',
-            '{"payload": {"id": "B_001", "type": "TextElement", "text": "Line 1\\nLine 2"}}',
+            '{"payload": {"id": "B_001", "type": "TextElement", '
+            '"text": "Line 1\\nLine 2"}}',
         ]
 
         mock_response = Mock()

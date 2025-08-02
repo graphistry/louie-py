@@ -28,7 +28,7 @@ class TestElementRendering:
 
         html = _render_response_html(response)
         assert "Info: Processing started" in html
-        assert "ℹ️" in html
+        assert "i " in html
 
     def test_warning_line_rendering(self):
         """Test WarningLine elements are rendered with their text."""
@@ -107,7 +107,7 @@ class TestElementRendering:
 
         formatted = display._format_element(elem)
         assert "Information" in formatted
-        assert "ℹ️" in formatted
+        assert "i " in formatted
 
     def test_unknown_element_with_text(self):
         """Test unknown elements show their text."""
