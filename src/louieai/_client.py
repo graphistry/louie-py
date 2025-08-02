@@ -326,18 +326,8 @@ class LouieClient:
                         response_text += line + "\n"
                         lines_received += 1
 
-                        # Check if we got a complete response
-                        # (thread ID + at least one element)
-                        if lines_received >= 2:
-                            # Parse to check if we have a text element
-                            try:
-                                data = json.loads(line)
-                                payload = data.get("payload", {})
-                                if payload.get("type") == "TextElement":
-                                    # We have a complete response, stop reading
-                                    break
-                            except json.JSONDecodeError:
-                                pass
+                        # Keep reading all elements until stream ends
+                        # Don't break early just because we got a text element
 
                     # Safety timeout - use configured timeout
                     if time.time() - start_time > self._timeout:

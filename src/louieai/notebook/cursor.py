@@ -414,7 +414,12 @@ class Cursor:
             # Use the shared rendering function
             html_content = _render_response_html(response)
             if html_content:
-                display(HTML(html_content))
+                # Generate a unique display ID for this response
+                display_id = f"louie_response_{response.thread_id}_{id(response)}"
+                display(HTML(html_content), display_id=display_id)
+                
+                # Store display ID for potential updates
+                self._last_display_id = display_id
 
         except ImportError:
             # IPython not available, skip display
