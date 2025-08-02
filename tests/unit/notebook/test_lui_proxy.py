@@ -31,8 +31,8 @@ class TestLuiProxy:
         result = lui("Test query")
 
         # Now cursor returns self, not the response
-        assert hasattr(result, 'text')  # It's a cursor
-        assert hasattr(result, 'df')
+        assert hasattr(result, "text")  # It's a cursor
+        assert hasattr(result, "df")
         mock_client.add_cell.assert_called_once()
 
     @patch("louieai.notebook.cursor.LouieClient")

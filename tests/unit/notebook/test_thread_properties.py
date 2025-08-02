@@ -23,7 +23,7 @@ class TestThreadProperties:
         mock_client.server_url = "https://den.louie.ai"
         mock_response = Response(
             thread_id="abc123def456",
-            elements=[{"type": "TextElement", "content": "Test"}]
+            elements=[{"type": "TextElement", "content": "Test"}],
         )
         mock_client.add_cell.return_value = mock_response
 
@@ -33,19 +33,36 @@ class TestThreadProperties:
         assert cursor.thread_id == "abc123def456"
         assert cursor.url == "https://den.louie.ai/threads/abc123def456"
 
-    @pytest.mark.parametrize("server_url,thread_id,expected_url", [
-        # Production server
-        ("https://den.louie.ai", "abc123", "https://den.louie.ai/threads/abc123"),
-        ("https://den.louie.ai/", "abc123", "https://den.louie.ai/threads/abc123"),
-
-        # Dev server
-        ("https://louie-dev.grph.xyz", "xyz789", "https://louie-dev.grph.xyz/threads/xyz789"),
-        ("https://louie-dev.grph.xyz/", "xyz789", "https://louie-dev.grph.xyz/threads/xyz789"),
-
-        # Custom/enterprise servers
-        ("https://custom.example.com", "test1", "https://custom.example.com/threads/test1"),
-        ("https://louie.internal.corp", "corp123", "https://louie.internal.corp/threads/corp123"),
-    ])
+    @pytest.mark.parametrize(
+        "server_url,thread_id,expected_url",
+        [
+            # Production server
+            ("https://den.louie.ai", "abc123", "https://den.louie.ai/threads/abc123"),
+            ("https://den.louie.ai/", "abc123", "https://den.louie.ai/threads/abc123"),
+            # Dev server
+            (
+                "https://louie-dev.grph.xyz",
+                "xyz789",
+                "https://louie-dev.grph.xyz/threads/xyz789",
+            ),
+            (
+                "https://louie-dev.grph.xyz/",
+                "xyz789",
+                "https://louie-dev.grph.xyz/threads/xyz789",
+            ),
+            # Custom/enterprise servers
+            (
+                "https://custom.example.com",
+                "test1",
+                "https://custom.example.com/threads/test1",
+            ),
+            (
+                "https://louie.internal.corp",
+                "corp123",
+                "https://louie.internal.corp/threads/corp123",
+            ),
+        ],
+    )
     def test_url_generation(self, server_url, thread_id, expected_url):
         """Test URL generation for different server configurations."""
         mock_client = MagicMock()
@@ -73,12 +90,12 @@ class TestThreadProperties:
         # First response sets thread
         response1 = Response(
             thread_id="thread-123",
-            elements=[{"type": "TextElement", "content": "First"}]
+            elements=[{"type": "TextElement", "content": "First"}],
         )
         # Subsequent responses use same thread
         response2 = Response(
             thread_id="thread-123",
-            elements=[{"type": "TextElement", "content": "Second"}]
+            elements=[{"type": "TextElement", "content": "Second"}],
         )
 
         mock_client.add_cell.side_effect = [response1, response2]
@@ -94,4 +111,3 @@ class TestThreadProperties:
         cursor("second query")
         assert cursor.thread_id == "thread-123"
         assert cursor.url == "https://den.louie.ai/threads/thread-123"  # Same URL
-

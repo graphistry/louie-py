@@ -16,9 +16,7 @@ class TestCursorDisplay:
         mock_client = MagicMock()
         mock_response = Response(
             thread_id="test-thread",
-            elements=[
-                {"type": "TextElement", "content": "Test response"}
-            ]
+            elements=[{"type": "TextElement", "content": "Test response"}],
         )
         mock_client.add_cell.return_value = mock_response
 
@@ -52,8 +50,8 @@ class TestCursorDisplay:
             thread_id="test-thread",
             elements=[
                 {"type": "TextElement", "content": "Hello"},
-                {"type": "DfElement", "table": MagicMock()}
-            ]
+                {"type": "DfElement", "table": MagicMock()},
+            ],
         )
         cursor._history.append(mock_response)
         cursor._current_thread = "test-thread"
@@ -72,7 +70,7 @@ class TestCursorDisplay:
             thread_id="test-thread",
             elements=[
                 {"type": "TextElement", "content": "Here is your song:\n\nLa la la!"}
-            ]
+            ],
         )
         cursor._history.append(mock_response)
         cursor._current_thread = "test-thread"
@@ -100,7 +98,7 @@ class TestCursorDisplay:
             thread_id="test-thread",
             elements=[
                 {"type": "TextElement", "content": "<script>alert('xss')</script>"}
-            ]
+            ],
         )
         cursor._history.append(mock_response)
 
@@ -116,13 +114,14 @@ class TestCursorDisplay:
 
         # Add response with dataframe
         import pandas as pd
+
         test_df = pd.DataFrame({"col": [1, 2, 3]})
         mock_response = Response(
             thread_id="test-thread",
             elements=[
                 {"type": "TextElement", "content": "Here's your data:"},
-                {"type": "DfElement", "table": test_df}
-            ]
+                {"type": "DfElement", "table": test_df},
+            ],
         )
         cursor._history.append(mock_response)
 
@@ -132,7 +131,7 @@ class TestCursorDisplay:
         assert "dataframe(s) available" in html
         assert "lui.df" in html
 
-    @patch('louieai.notebook.cursor.Cursor._in_jupyter')
+    @patch("louieai.notebook.cursor.Cursor._in_jupyter")
     def test_display_called_in_jupyter(self, mock_in_jupyter):
         """Test that _display is called when in Jupyter."""
         mock_in_jupyter.return_value = True
@@ -141,17 +140,19 @@ class TestCursorDisplay:
         mock_display = MagicMock()
         mock_markdown = MagicMock()
 
-        with patch.dict(sys.modules, {'IPython.display': MagicMock(
-            display=mock_display,
-            Markdown=mock_markdown
-        )}):
+        with patch.dict(
+            sys.modules,
+            {
+                "IPython.display": MagicMock(
+                    display=mock_display, Markdown=mock_markdown
+                )
+            },
+        ):
             # Create cursor and make query
             mock_client = MagicMock()
             mock_response = Response(
                 thread_id="test-thread",
-                elements=[
-                    {"type": "TextElement", "content": "Response text"}
-                ]
+                elements=[{"type": "TextElement", "content": "Response text"}],
             )
             mock_client.add_cell.return_value = mock_response
 
@@ -162,7 +163,7 @@ class TestCursorDisplay:
             mock_markdown.assert_called_with("Response text")
             mock_display.assert_called()
 
-    @patch('louieai.notebook.cursor.Cursor._in_jupyter')
+    @patch("louieai.notebook.cursor.Cursor._in_jupyter")
     def test_display_not_called_outside_jupyter(self, mock_in_jupyter):
         """Test that _display is not called outside Jupyter."""
         mock_in_jupyter.return_value = False
@@ -171,7 +172,7 @@ class TestCursorDisplay:
         mock_client = MagicMock()
         mock_response = Response(
             thread_id="test-thread",
-            elements=[{"type": "TextElement", "content": "Response text"}]
+            elements=[{"type": "TextElement", "content": "Response text"}],
         )
         mock_client.add_cell.return_value = mock_response
 
@@ -186,13 +187,13 @@ class TestCursorDisplay:
         cursor = Cursor(client=MagicMock())
         mock_response = Response(
             thread_id="test-thread",
-            elements=[{"type": "TextElement", "content": "Test"}]
+            elements=[{"type": "TextElement", "content": "Test"}],
         )
 
         # Remove IPython from modules
-        ipython_backup = sys.modules.get('IPython')
-        if 'IPython' in sys.modules:
-            del sys.modules['IPython']
+        ipython_backup = sys.modules.get("IPython")
+        if "IPython" in sys.modules:
+            del sys.modules["IPython"]
 
         try:
             # Should not raise
@@ -200,20 +201,21 @@ class TestCursorDisplay:
         finally:
             # Restore IPython
             if ipython_backup:
-                sys.modules['IPython'] = ipython_backup
+                sys.modules["IPython"] = ipython_backup
 
     def test_cursor_properties_after_call(self):
         """Test that cursor properties work after calling."""
         mock_client = MagicMock()
         mock_client.server_url = "https://den.louie.ai"
         import pandas as pd
+
         test_df = pd.DataFrame({"data": [1, 2, 3]})
         mock_response = Response(
             thread_id="test-thread-123",
             elements=[
                 {"type": "TextElement", "content": "Song lyrics here"},
-                {"type": "DfElement", "table": test_df}
-            ]
+                {"type": "DfElement", "table": test_df},
+            ],
         )
         mock_client.add_cell.return_value = mock_response
 

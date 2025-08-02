@@ -25,9 +25,9 @@ class TestNotebookExperience:
             elements=[
                 {
                     "type": "TextElement",
-                    "content": "Here's a song for you:\n\nTwinkle twinkle little star"
+                    "content": "Here's a song for you:\n\nTwinkle twinkle little star",
                 }
-            ]
+            ],
         )
 
         # Second response - with dataframe
@@ -36,8 +36,8 @@ class TestNotebookExperience:
             thread_id="test-thread",
             elements=[
                 {"type": "TextElement", "content": "Here's your data analysis:"},
-                {"type": "DfElement", "table": test_df}
-            ]
+                {"type": "DfElement", "table": test_df},
+            ],
         )
 
         mock_client.add_cell.side_effect = [mock_response1, mock_response2]
@@ -79,14 +79,12 @@ class TestNotebookExperience:
         mock_html = MagicMock()
 
         mock_ipython.display = MagicMock(
-            display=mock_display,
-            Markdown=mock_markdown,
-            HTML=mock_html
+            display=mock_display, Markdown=mock_markdown, HTML=mock_html
         )
 
         with patch.dict(
             sys.modules,
-            {'IPython': mock_ipython, 'IPython.display': mock_ipython.display}
+            {"IPython": mock_ipython, "IPython.display": mock_ipython.display},
         ):
             # Create cursor
             mock_client = MagicMock()
@@ -95,9 +93,9 @@ class TestNotebookExperience:
                 elements=[
                     {
                         "type": "TextElement",
-                        "content": "# Markdown Header\n\nSome **bold** text"
+                        "content": "# Markdown Header\n\nSome **bold** text",
                     }
-                ]
+                ],
             )
             mock_client.add_cell.return_value = mock_response
 
@@ -105,7 +103,7 @@ class TestNotebookExperience:
             lui._client = mock_client
 
             # Query should trigger display
-            with patch.object(lui, '_in_jupyter', return_value=True):
+            with patch.object(lui, "_in_jupyter", return_value=True):
                 lui("test markdown")
 
                 # Should have called Markdown display
@@ -124,9 +122,9 @@ class TestNotebookExperience:
                 {
                     "type": "ExceptionElement",
                     "message": "API rate limit exceeded",
-                    "error_type": "RateLimitError"
-                }
-            ]
+                    "error_type": "RateLimitError",
+                },
+            ],
         )
         mock_client.add_cell.return_value = mock_response
 
@@ -157,10 +155,10 @@ class TestNotebookExperience:
             elements=[
                 {
                     "type": "TextElement",
-                    "content": "Test content with <html> tags & symbols"
+                    "content": "Test content with <html> tags & symbols",
                 },
-                {"type": "DfElement", "table": pd.DataFrame({"a": [1, 2]})}
-            ]
+                {"type": "DfElement", "table": pd.DataFrame({"a": [1, 2]})},
+            ],
         )
         mock_client.add_cell.return_value = mock_response
 
@@ -188,42 +186,45 @@ class TestNotebookExperience:
             "GRAPHISTRY_USERNAME": "test_user",
             "GRAPHISTRY_PASSWORD": "test_pass",
             "GRAPHISTRY_SERVER": "test.graphistry.com",
-            "LOUIE_URL": "https://test.louie.ai"
+            "LOUIE_URL": "https://test.louie.ai",
         }
 
         with (
             patch.dict(os.environ, test_env),
-            patch('louieai.notebook.cursor.LouieClient') as mock_client_class
+            patch("louieai.notebook.cursor.LouieClient") as mock_client_class,
         ):
-                mock_client_instance = MagicMock()
-                mock_client_instance.server_url = "https://test.louie.ai"
-                mock_client_class.return_value = mock_client_instance
+            mock_client_instance = MagicMock()
+            mock_client_instance.server_url = "https://test.louie.ai"
+            mock_client_class.return_value = mock_client_instance
 
-                # Import fresh to pick up env vars
-                from louieai.notebook.cursor import Cursor
+            # Import fresh to pick up env vars
+            from louieai.notebook.cursor import Cursor
 
-                # Create cursor without arguments
-                Cursor()
+            # Create cursor without arguments
+            Cursor()
 
-                # Should have created client with env vars
-                mock_client_class.assert_called_once()
-                call_kwargs = mock_client_class.call_args[1]
-                assert call_kwargs['server_url'] == "https://test.louie.ai"
-                assert call_kwargs['username'] == "test_user"
-                assert call_kwargs['password'] == "test_pass"
-                assert call_kwargs['server'] == "test.graphistry.com"
+            # Should have created client with env vars
+            mock_client_class.assert_called_once()
+            call_kwargs = mock_client_class.call_args[1]
+            assert call_kwargs["server_url"] == "https://test.louie.ai"
+            assert call_kwargs["username"] == "test_user"
+            assert call_kwargs["password"] == "test_pass"
+            assert call_kwargs["server"] == "test.graphistry.com"
 
-    @pytest.mark.parametrize("query,expected_text", [
-        ("simple query", "Simple response"),
-        ("query with\nnewlines", "Response with\nmultiple\nlines"),
-        ("", "Empty query response"),
-    ])
+    @pytest.mark.parametrize(
+        "query,expected_text",
+        [
+            ("simple query", "Simple response"),
+            ("query with\nnewlines", "Response with\nmultiple\nlines"),
+            ("", "Empty query response"),
+        ],
+    )
     def test_various_query_responses(self, query, expected_text):
         """Test handling various types of responses."""
         mock_client = MagicMock()
         mock_response = Response(
             thread_id="test-thread",
-            elements=[{"type": "TextElement", "content": expected_text}]
+            elements=[{"type": "TextElement", "content": expected_text}],
         )
         mock_client.add_cell.return_value = mock_response
 

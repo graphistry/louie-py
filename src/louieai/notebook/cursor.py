@@ -23,7 +23,7 @@ def _render_response_html(response) -> str:
 
     try:
         # Display text elements
-        if hasattr(response, 'text_elements') and response.text_elements:
+        if hasattr(response, "text_elements") and response.text_elements:
             for elem in response.text_elements:
                 if isinstance(elem, dict):
                     content = (elem.get("content") or elem.get("text", "")).strip()
@@ -31,9 +31,11 @@ def _render_response_html(response) -> str:
                         # Use IPython's Markdown renderer for consistency
                         try:
                             from IPython.display import Markdown
+
                             md = Markdown(content)
                             # Get the actual markdown-rendered HTML
                             from IPython.core.formatters import HTMLFormatter
+
                             formatter = HTMLFormatter()
                             html_content = formatter(md)
                             if html_content:
@@ -41,27 +43,29 @@ def _render_response_html(response) -> str:
                             else:
                                 # Fallback: basic markdown-like conversion
                                 import html
+
                                 escaped = html.escape(content)
                                 # Basic markdown-like formatting
-                                escaped = escaped.replace('\n\n', '</p><p>')
-                                escaped = escaped.replace('\n', '<br>')
-                                if escaped.startswith('## '):
+                                escaped = escaped.replace("\n\n", "</p><p>")
+                                escaped = escaped.replace("\n", "<br>")
+                                if escaped.startswith("## "):
                                     escaped = f"<h2>{escaped[3:]}</h2>"
-                                elif escaped.startswith('# '):
+                                elif escaped.startswith("# "):
                                     escaped = f"<h1>{escaped[2:]}</h1>"
                                 html_parts.append(f"<div>{escaped}</div>")
                         except ImportError:
                             # No IPython, use basic HTML
                             import html
-                            escaped = html.escape(content).replace('\n', '<br>')
+
+                            escaped = html.escape(content).replace("\n", "<br>")
                             html_parts.append(f"<div>{escaped}</div>")
 
         # Display dataframes
-        if hasattr(response, 'dataframe_elements') and response.dataframe_elements:
+        if hasattr(response, "dataframe_elements") and response.dataframe_elements:
             for elem in response.dataframe_elements:
                 if isinstance(elem, dict) and "table" in elem:
                     df = elem["table"]
-                    if hasattr(df, '_repr_html_'):
+                    if hasattr(df, "_repr_html_"):
                         df_html = df._repr_html_()
                         if df_html:
                             html_parts.append(df_html)
@@ -72,7 +76,7 @@ def _render_response_html(response) -> str:
             "<div style='color: #888;'><em>Response content unavailable</em></div>"
         )
 
-    return '\n'.join(html_parts)
+    return "\n".join(html_parts)
 
 
 class ResponseProxy:
@@ -439,7 +443,7 @@ class Cursor:
         """Get the URL for the current thread."""
         if not self._current_thread:
             return None
-        base_url = self._client.server_url.rstrip('/')
+        base_url = self._client.server_url.rstrip("/")
         return f"{base_url}/threads/{self._current_thread}"
 
     @property
@@ -576,7 +580,8 @@ class Cursor:
                     if content:
                         # Escape HTML but preserve newlines
                         import html
-                        escaped_content = html.escape(content).replace('\n', '<br>')
+
+                        escaped_content = html.escape(content).replace("\n", "<br>")
                         html_parts.append(
                             f"<div style='margin: 10px 0; white-space: pre-wrap;'>"
                             f"{escaped_content}</div>"
