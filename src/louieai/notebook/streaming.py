@@ -36,7 +36,7 @@ class StreamingDisplay:
         if elem_type == "TextElement":
             text = elem.get("text", "")
             # Convert newlines to HTML breaks
-            return text.replace("\n", "<br>")
+            return str(text).replace("\n", "<br>")
 
         elif elem_type == "DfElement":
             df_id = elem.get("df_id") or elem.get("block_id")
@@ -190,7 +190,7 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     display_handler = StreamingDisplay()
 
     # Result to return
-    result = {"dthread_id": None, "elements": []}
+    result: dict[str, Any] = {"dthread_id": None, "elements": []}
     elements_by_id = {}
 
     # Make streaming request
@@ -243,7 +243,7 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
 
     # Fetch dataframes if needed
     actual_thread_id = result["dthread_id"]
-    if actual_thread_id:
+    if actual_thread_id and result["elements"]:
         for elem in result["elements"]:
             if elem.get("type") == "DfElement":
                 df_id = elem.get("df_id") or elem.get("block_id")
