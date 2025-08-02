@@ -258,37 +258,35 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
 
     # Make streaming request
     try:
-        with (
-            httpx.Client(timeout=httpx.Timeout(300.0, read=120.0)) as stream_client,
-            stream_client.stream(
+        with httpx.Client(timeout=httpx.Timeout(300.0, read=120.0)) as stream_client:
+            with stream_client.stream(
                 "POST", f"{client.server_url}/api/chat/", headers=headers, params=params
-            ) as response,
-        ):
-            response.raise_for_status()
+            ) as response:
+                response.raise_for_status()
 
-            # Process streaming lines
-            for line in response.iter_lines():
-                if not line:
-                    continue
+                # Process streaming lines
+                for line in response.iter_lines():
+                    if not line:
+                        continue
 
-                try:
-                    data = json.loads(line)
+                    try:
+                        data = json.loads(line)
 
-                    # Update display
-                    display_handler.update(data)
+                        # Update display
+                        display_handler.update(data)
 
-                    # Track data for result
-                    if "dthread_id" in data:
-                        result["dthread_id"] = data["dthread_id"]
+                        # Track data for result
+                        if "dthread_id" in data:
+                            result["dthread_id"] = data["dthread_id"]
 
-                    elif "payload" in data:
-                        elem = data["payload"]
-                        elem_id = elem.get("id")
-                        if elem_id:
-                            elements_by_id[elem_id] = elem
+                        elif "payload" in data:
+                            elem = data["payload"]
+                            elem_id = elem.get("id")
+                            if elem_id:
+                                elements_by_id[elem_id] = elem
 
-                except json.JSONDecodeError:
-                    continue
+                    except json.JSONDecodeError:
+                        continue
 
     except httpx.ReadTimeout:
         # This is expected - server keeps connection open
