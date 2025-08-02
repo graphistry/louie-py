@@ -4,21 +4,21 @@ The main client class for interacting with the Louie.ai service.
 
 ## API Documentation
 
-::: louieai.LouieClient
+::: louieai._client.LouieClient
 
 ## Usage Examples
 
 ### Thread-Based Conversations
 
 ```python
-import louieai
+from louieai._client import LouieClient
 import graphistry
 
 # First authenticate with Graphistry
 graphistry.register(api=3, username="your_user", password="your_pass")
 
 # Create client
-client = louieai.LouieClient()
+client = LouieClient()
 
 # Start a new thread with a query
 thread = client.create_thread(
@@ -56,7 +56,7 @@ LouieClient instances can now be called directly, providing a more ergonomic API
 
 ```python
 # Create client
-client = louieai.LouieClient()
+client = LouieClient()
 
 # Call it like a function
 response = client("What patterns do you see in the data?")
@@ -75,7 +75,7 @@ response4 = client("Complex analysis", traces=True)
 
 ```python
 # Use a different Louie.ai endpoint
-client = louieai.LouieClient(server_url="https://custom.louie.ai")
+client = LouieClient(server_url="https://custom.louie.ai")
 ```
 
 ### Managing Threads

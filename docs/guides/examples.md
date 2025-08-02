@@ -231,10 +231,10 @@ for query in queries:
 
 For hands-on examples, check out our example notebooks:
 
-- **[Getting Started](../notebooks/01-getting-started.ipynb)** - Basic usage tutorial
-- **[Data Science Workflow](../notebooks/02-data-science-workflow.ipynb)** - Complete analysis workflow
-- **[Fraud Investigation](../notebooks/03-fraud-investigation.ipynb)** - Real-world use case
-- **[Error Handling](../notebooks/04-error-handling.ipynb)** - Robust error handling patterns
+- **[Getting Started](../getting-started/notebooks/01-getting-started.ipynb)** - Basic usage tutorial
+- **[Data Science Workflow](../getting-started/notebooks/02-data-science-workflow.ipynb)** - Complete analysis workflow
+- **[Fraud Investigation](../getting-started/notebooks/03-fraud-investigation.ipynb)** - Real-world use case
+- **[Error Handling](../getting-started/notebooks/04-error-handling.ipynb)** - Robust error handling patterns
 
 ## Next Steps
 

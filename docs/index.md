@@ -66,7 +66,7 @@ Ready to dive deeper? These guides cover common use cases and advanced features:
 - **[Examples](guides/examples.md)** - Practical examples for both notebook and client APIs
 - **[Query Patterns](guides/query-patterns.md)** - Advanced query techniques and best practices
 - **[Authentication Guide](guides/authentication.md)** - Multi-tenant usage, API keys, and troubleshooting
-- **[Interactive Notebooks](notebooks/)** - Hands-on Jupyter notebook examples
+- **[Interactive Notebooks](getting-started/notebooks/)** - Hands-on Jupyter notebook examples
 
 ## API Reference
 

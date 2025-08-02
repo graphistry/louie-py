@@ -246,7 +246,7 @@ print(cursor.text)
 For more control, you can create a client directly:
 
 ```python
-from louieai import LouieClient
+from louieai._client import LouieClient
 from louieai.notebook import Cursor
 
 # Create custom client with personal key auth
@@ -328,6 +328,6 @@ print(lui.text)
 
 ## See Also
 
-- [Getting Started Notebook](../notebooks/01-getting-started.ipynb)
+- [Getting Started Notebook](../getting-started/notebooks/01-getting-started.ipynb)
 - [Examples Guide](../guides/examples.md)
 - [Traditional Client API](client.md)

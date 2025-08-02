@@ -153,7 +153,7 @@ for i in range(-3, 0):
 
 ## Next Steps
 
-- **[Notebook Examples](../notebooks/)** - Interactive Jupyter notebooks
+- **[Notebook Examples](notebooks/)** - Interactive Jupyter notebooks
 - **[Examples Guide](../guides/examples.md)** - Practical examples and use cases
 - **[Query Patterns](../guides/query-patterns.md)** - Advanced query techniques
 - **[Authentication Guide](authentication.md)** - Multi-tenant usage, API keys, and more
