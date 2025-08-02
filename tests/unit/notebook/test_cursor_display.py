@@ -3,8 +3,6 @@
 import sys
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from louieai._client import Response
 from louieai.notebook.cursor import Cursor
 
@@ -23,17 +21,17 @@ class TestCursorDisplay:
             ]
         )
         mock_client.add_cell.return_value = mock_response
-        
+
         cursor = Cursor(client=mock_client)
-        
+
         # Call cursor
         result = cursor("test query")
-        
+
         # Should return cursor itself, not Response
         assert result is cursor
         assert isinstance(result, Cursor)
         assert not isinstance(result, Response)
-        
+
         # Should be able to access properties
         assert cursor.text == "Test response"
         assert len(cursor._history) == 1
@@ -41,14 +39,14 @@ class TestCursorDisplay:
     def test_repr_shows_useful_info(self):
         """Test __repr__ shows session status."""
         cursor = Cursor(client=MagicMock())
-        
+
         # Initial state
         repr_str = repr(cursor)
         assert "LouieAI Notebook Interface" in repr_str
         assert "Session: Not started" in repr_str
         assert "History: 0 responses" in repr_str
         assert "Traces: Disabled" in repr_str
-        
+
         # After a query
         mock_response = Response(
             thread_id="test-thread",
@@ -59,7 +57,7 @@ class TestCursorDisplay:
         )
         cursor._history.append(mock_response)
         cursor._current_thread = "test-thread"
-        
+
         repr_str = repr(cursor)
         assert "Session: Active" in repr_str
         assert "History: 1 responses" in repr_str
@@ -68,7 +66,7 @@ class TestCursorDisplay:
     def test_repr_html_displays_response_content(self):
         """Test _repr_html_ shows actual response content."""
         cursor = Cursor(client=MagicMock())
-        
+
         # Add a response
         mock_response = Response(
             thread_id="test-thread",
@@ -78,25 +76,25 @@ class TestCursorDisplay:
         )
         cursor._history.append(mock_response)
         cursor._current_thread = "test-thread"
-        
+
         html = cursor._repr_html_()
-        
+
         # Check structure
         assert "<h4" in html
         assert "LouieAI Response" in html
-        
+
         # Check content is displayed
         assert "Here is your song:" in html
         assert "La la la!" in html
-        
+
         # Check metadata
         assert "Session:</b> Active" in html
         assert "History:</b> 1 responses" in html
-        
+
     def test_repr_html_escapes_content(self):
         """Test that HTML content is properly escaped."""
         cursor = Cursor(client=MagicMock())
-        
+
         # Add response with HTML-like content
         mock_response = Response(
             thread_id="test-thread",
@@ -105,17 +103,17 @@ class TestCursorDisplay:
             ]
         )
         cursor._history.append(mock_response)
-        
+
         html = cursor._repr_html_()
-        
+
         # Should escape the script tag
         assert "&lt;script&gt;" in html
         assert "<script>" not in html
-        
+
     def test_repr_html_shows_dataframe_notice(self):
         """Test that dataframe availability is noted."""
         cursor = Cursor(client=MagicMock())
-        
+
         # Add response with dataframe
         import pandas as pd
         test_df = pd.DataFrame({"col": [1, 2, 3]})
@@ -127,9 +125,9 @@ class TestCursorDisplay:
             ]
         )
         cursor._history.append(mock_response)
-        
+
         html = cursor._repr_html_()
-        
+
         # Should mention dataframe
         assert "dataframe(s) available" in html
         assert "lui.df" in html
@@ -138,11 +136,11 @@ class TestCursorDisplay:
     def test_display_called_in_jupyter(self, mock_in_jupyter):
         """Test that _display is called when in Jupyter."""
         mock_in_jupyter.return_value = True
-        
+
         # Mock IPython display
         mock_display = MagicMock()
         mock_markdown = MagicMock()
-        
+
         with patch.dict(sys.modules, {'IPython.display': MagicMock(
             display=mock_display,
             Markdown=mock_markdown
@@ -156,10 +154,10 @@ class TestCursorDisplay:
                 ]
             )
             mock_client.add_cell.return_value = mock_response
-            
+
             cursor = Cursor(client=mock_client)
             cursor("test query")
-            
+
             # Display should have been called
             mock_markdown.assert_called_with("Response text")
             mock_display.assert_called()
@@ -168,7 +166,7 @@ class TestCursorDisplay:
     def test_display_not_called_outside_jupyter(self, mock_in_jupyter):
         """Test that _display is not called outside Jupyter."""
         mock_in_jupyter.return_value = False
-        
+
         # Create cursor and make query
         mock_client = MagicMock()
         mock_response = Response(
@@ -176,9 +174,9 @@ class TestCursorDisplay:
             elements=[{"type": "TextElement", "content": "Response text"}]
         )
         mock_client.add_cell.return_value = mock_response
-        
+
         cursor = Cursor(client=mock_client)
-        
+
         # Should not raise even without IPython
         result = cursor("test query")
         assert result is cursor
@@ -190,12 +188,12 @@ class TestCursorDisplay:
             thread_id="test-thread",
             elements=[{"type": "TextElement", "content": "Test"}]
         )
-        
+
         # Remove IPython from modules
         ipython_backup = sys.modules.get('IPython')
         if 'IPython' in sys.modules:
             del sys.modules['IPython']
-        
+
         try:
             # Should not raise
             cursor._display(mock_response)
@@ -217,10 +215,10 @@ class TestCursorDisplay:
             ]
         )
         mock_client.add_cell.return_value = mock_response
-        
+
         cursor = Cursor(client=mock_client)
         result = cursor("sing me a song")
-        
+
         # Check we can access properties on returned cursor
         assert result.text == "Song lyrics here"
         assert result.texts == ["Song lyrics here"]

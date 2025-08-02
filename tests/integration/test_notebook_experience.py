@@ -2,10 +2,10 @@
 
 import os
 import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-import pytest
 import pandas as pd
+import pytest
 
 from louieai import louie
 from louieai._client import Response
@@ -18,7 +18,7 @@ class TestNotebookExperience:
         """Test the basic notebook workflow from import to results."""
         # Mock client that returns predictable responses
         mock_client = MagicMock()
-        
+
         # First response - text only
         mock_response1 = Response(
             thread_id="test-thread",
@@ -26,7 +26,7 @@ class TestNotebookExperience:
                 {"type": "TextElement", "content": "Here's a song for you:\n\nTwinkle twinkle little star"}
             ]
         )
-        
+
         # Second response - with dataframe
         test_df = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
         mock_response2 = Response(
@@ -36,32 +36,32 @@ class TestNotebookExperience:
                 {"type": "DfElement", "table": test_df}
             ]
         )
-        
+
         mock_client.add_cell.side_effect = [mock_response1, mock_response2]
-        
+
         # Create cursor using factory function
         lui = louie(graphistry_client=MagicMock())
         lui._client = mock_client
-        
+
         # First query - returns cursor, not Response
         result1 = lui("sing me a song")
         assert result1 is lui
         assert isinstance(result1, type(lui))
-        
+
         # Can access text directly
         assert lui.text == "Here's a song for you:\n\nTwinkle twinkle little star"
         assert lui.df is None
-        
+
         # Second query with data
         result2 = lui("show me some data")
         assert result2 is lui
-        
+
         # Can access both text and dataframe
         assert lui.text == "Here's your data analysis:"
         assert lui.df is not None
         assert isinstance(lui.df, pd.DataFrame)
         assert len(lui.df) == 3
-        
+
         # History access works
         # lui[-1] gives ResponseProxy for the latest response
         assert lui[-1].text == "Here's your data analysis:"
@@ -74,13 +74,13 @@ class TestNotebookExperience:
         mock_display = MagicMock()
         mock_markdown = MagicMock()
         mock_html = MagicMock()
-        
+
         mock_ipython.display = MagicMock(
             display=mock_display,
             Markdown=mock_markdown,
             HTML=mock_html
         )
-        
+
         with patch.dict(sys.modules, {'IPython': mock_ipython, 'IPython.display': mock_ipython.display}):
             # Create cursor
             mock_client = MagicMock()
@@ -91,14 +91,14 @@ class TestNotebookExperience:
                 ]
             )
             mock_client.add_cell.return_value = mock_response
-            
+
             lui = louie(graphistry_client=MagicMock())
             lui._client = mock_client
-            
+
             # Query should trigger display
             with patch.object(lui, '_in_jupyter', return_value=True):
                 result = lui("test markdown")
-                
+
                 # Should have called Markdown display
                 mock_markdown.assert_called()
                 mock_display.assert_called()
@@ -106,7 +106,7 @@ class TestNotebookExperience:
     def test_notebook_error_handling(self):
         """Test error display in notebooks."""
         mock_client = MagicMock()
-        
+
         # Response with errors
         mock_response = Response(
             thread_id="test-thread",
@@ -116,21 +116,21 @@ class TestNotebookExperience:
             ]
         )
         mock_client.add_cell.return_value = mock_response
-        
+
         lui = louie(graphistry_client=MagicMock())
         lui._client = mock_client
-        
+
         # Query with error
         result = lui("complex query")
-        
+
         # Should still return cursor
         assert result is lui
-        
+
         # Can check for errors
         assert lui.has_errors
         assert len(lui.errors) == 1
         assert lui.errors[0]["message"] == "API rate limit exceeded"
-        
+
         # HTML representation should show errors
         html = lui._repr_html_()
         assert "Latest Response Contains Errors" in html
@@ -147,17 +147,17 @@ class TestNotebookExperience:
             ]
         )
         mock_client.add_cell.return_value = mock_response
-        
+
         lui = louie(graphistry_client=MagicMock())
         lui._client = mock_client
         lui("test")
-        
+
         # Plain repr
         plain = repr(lui)
         assert "LouieAI Notebook Interface" in plain
         assert "Session: Active" in plain
         assert "1 text, 1 dataframe" in plain
-        
+
         # HTML repr
         html = lui._repr_html_()
         assert "🤖 LouieAI Response" in html
@@ -174,20 +174,20 @@ class TestNotebookExperience:
             "GRAPHISTRY_SERVER": "test.graphistry.com",
             "LOUIE_URL": "https://test.louie.ai"
         }
-        
+
         with patch.dict(os.environ, test_env):
             # Mock the LouieClient to avoid actual connection
             with patch('louieai.notebook.cursor.LouieClient') as mock_client_class:
                 mock_client_instance = MagicMock()
                 mock_client_instance.server_url = "https://test.louie.ai"
                 mock_client_class.return_value = mock_client_instance
-                
+
                 # Import fresh to pick up env vars
                 from louieai.notebook.cursor import Cursor
-                
+
                 # Create cursor without arguments
                 cursor = Cursor()
-                
+
                 # Should have created client with env vars
                 mock_client_class.assert_called_once()
                 call_kwargs = mock_client_class.call_args[1]
@@ -209,14 +209,14 @@ class TestNotebookExperience:
             elements=[{"type": "TextElement", "content": expected_text}]
         )
         mock_client.add_cell.return_value = mock_response
-        
+
         lui = louie(graphistry_client=MagicMock())
         lui._client = mock_client
-        
+
         result = lui(query)
         assert result is lui
         assert lui.text == expected_text
-        
+
         # HTML should preserve newlines as <br>
         if "\n" in expected_text:
             html = lui._repr_html_()
@@ -230,16 +230,16 @@ class TestNotebookExperience:
             for i in range(3)
         ]
         mock_client.add_cell.side_effect = responses
-        
+
         lui = louie(graphistry_client=MagicMock())
         lui._client = mock_client
-        
+
         # Should be able to chain calls
         result = lui("query1")("query2")("query3")
-        
+
         # All should return same cursor
         assert result is lui
-        
+
         # Should have all responses in history
         assert len(lui._history) == 3
         assert lui.text == "Response 2"  # Latest
