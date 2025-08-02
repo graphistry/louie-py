@@ -1,6 +1,9 @@
 """Example of accessing graph elements from Louie responses."""
 
-import louieai as lui
+from louieai import louie
+
+# Create a cursor instance
+lui = louie()
 
 # Make a query that returns graphs
 lui("Show me a graph of the network connections")
