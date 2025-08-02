@@ -42,13 +42,10 @@ repo_name: graphistry/louie-py
 plugins:
   - search
   - mkdocs-jupyter:
+      execute: false  # Don't execute notebooks during build
       include_source: false  # Don't show notebook source JSON
       ignore_h1_titles: true  # Use the nav title instead of notebook H1
-      execute: false  # Don't execute notebooks during build
       allow_errors: true  # Continue if notebook has errors
-      remove_tag_config:
-        remove_input_tags:
-          - remove_input  # Hide cells tagged with "remove_input"
   - mkdocstrings:
       default_handler: python
       handlers:
