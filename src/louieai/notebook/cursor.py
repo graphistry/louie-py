@@ -301,7 +301,7 @@ class ResponseProxy:
         # Use the graph_elements property which already filters elements
         if hasattr(self._response, "graph_elements"):
             return self._response.graph_elements
-        
+
         return []
 
     @property

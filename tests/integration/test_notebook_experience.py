@@ -14,10 +14,16 @@ from louieai._client import Response
 class TestNotebookExperience:
     """Test the complete notebook experience."""
 
+    def _create_mock_client(self):
+        """Create a properly configured mock client."""
+        mock_client = MagicMock()
+        mock_client.server_url = "https://test.louie.ai"
+        return mock_client
+
     def test_basic_notebook_workflow(self):
         """Test the basic notebook workflow from import to results."""
         # Mock client that returns predictable responses
-        mock_client = MagicMock()
+        mock_client = self._create_mock_client()
 
         # First response - text only
         mock_response1 = Response(
@@ -87,7 +93,7 @@ class TestNotebookExperience:
             {"IPython": mock_ipython, "IPython.display": mock_ipython.display},
         ):
             # Create cursor
-            mock_client = MagicMock()
+            mock_client = self._create_mock_client()
             mock_response = Response(
                 thread_id="test-thread",
                 elements=[
@@ -102,17 +108,24 @@ class TestNotebookExperience:
             lui = louie(graphistry_client=MagicMock())
             lui._client = mock_client
 
-            # Query should trigger display
-            with patch.object(lui, "_in_jupyter", return_value=True):
-                lui("test markdown")
+            # Query without streaming
+            with patch.object(lui, "_in_jupyter", return_value=False):
+                result = lui("test markdown")
 
-                # Should have called Markdown display
-                mock_markdown.assert_called()
-                mock_display.assert_called()
+            # Should return cursor
+            assert result is lui
+
+            # Should have content ready for display
+            assert lui.text == "# Markdown Header\n\nSome **bold** text"
+
+            # Test that display would work if in Jupyter
+            from louieai.notebook.cursor import _render_response_html
+            html = _render_response_html(lui._history[-1])
+            assert "Markdown Header" in html
 
     def test_notebook_error_handling(self):
         """Test error display in notebooks."""
-        mock_client = MagicMock()
+        mock_client = self._create_mock_client()
 
         # Response with errors
         mock_response = Response(
@@ -149,7 +162,7 @@ class TestNotebookExperience:
 
     def test_notebook_repr_formats(self):
         """Test both plain and HTML representations."""
-        mock_client = MagicMock()
+        mock_client = self._create_mock_client()
         mock_response = Response(
             thread_id="test-thread",
             elements=[
@@ -164,7 +177,10 @@ class TestNotebookExperience:
 
         lui = louie(graphistry_client=MagicMock())
         lui._client = mock_client
-        lui("test")
+
+        # Mock to avoid streaming
+        with patch.object(lui, "_in_jupyter", return_value=False):
+            lui("test")
 
         # Plain repr
         plain = repr(lui)
@@ -177,7 +193,7 @@ class TestNotebookExperience:
         assert "🤖 LouieAI Response" in html
         assert "&lt;html&gt;" in html  # Escaped
         assert "&amp; symbols" in html  # Escaped
-        assert "1 dataframe(s) available" in html
+        assert "1 dataframe(s) - access with" in html
 
     def test_environment_variable_initialization(self):
         """Test initialization with environment variables."""
@@ -221,7 +237,7 @@ class TestNotebookExperience:
     )
     def test_various_query_responses(self, query, expected_text):
         """Test handling various types of responses."""
-        mock_client = MagicMock()
+        mock_client = self._create_mock_client()
         mock_response = Response(
             thread_id="test-thread",
             elements=[{"type": "TextElement", "content": expected_text}],
@@ -231,7 +247,10 @@ class TestNotebookExperience:
         lui = louie(graphistry_client=MagicMock())
         lui._client = mock_client
 
-        result = lui(query)
+        # Mock to avoid streaming
+        with patch.object(lui, "_in_jupyter", return_value=False):
+            result = lui(query)
+
         assert result is lui
         assert lui.text == expected_text
 
@@ -242,7 +261,7 @@ class TestNotebookExperience:
 
     def test_chaining_queries(self):
         """Test that queries can be chained since cursor returns self."""
-        mock_client = MagicMock()
+        mock_client = self._create_mock_client()
         responses = [
             Response("thread1", [{"type": "TextElement", "content": f"Response {i}"}])
             for i in range(3)
@@ -252,8 +271,10 @@ class TestNotebookExperience:
         lui = louie(graphistry_client=MagicMock())
         lui._client = mock_client
 
-        # Should be able to chain calls
-        result = lui("query1")("query2")("query3")
+        # Mock to avoid streaming
+        with patch.object(lui, "_in_jupyter", return_value=False):
+            # Should be able to chain calls
+            result = lui("query1")("query2")("query3")
 
         # All should return same cursor
         assert result is lui

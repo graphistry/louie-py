@@ -35,7 +35,7 @@ lui("Analyze the data and show me graphs and tables")
 
 # Access different element types
 print(f"Text: {lui.text}")
-print(f"Dataframes: {len(lui.dfs)}")  
+print(f"Dataframes: {len(lui.dfs)}")
 print(f"Graphs: {len(lui.gs)}")
 
 # Iterate through all elements
