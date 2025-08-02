@@ -111,12 +111,18 @@ __all__ = [
 
 
 # Make the module itself callable
-class CallableModule:
+import types
+
+
+class CallableModule(types.ModuleType):
+    """A module that can be called like a function."""
+    
     def __init__(self, module):
         self.__dict__.update(module.__dict__)
+        super().__init__(module.__name__)
 
     def __call__(self, *args, **kwargs):
         return louie(*args, **kwargs)
 
 
-sys.modules[__name__] = CallableModule(sys.modules[__name__])  # type: ignore[assignment]
+sys.modules[__name__] = CallableModule(sys.modules[__name__])

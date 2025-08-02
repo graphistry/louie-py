@@ -774,6 +774,8 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "ipython", version = "8.37.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "ipython", version = "9.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mypy" },
@@ -797,6 +799,7 @@ requires-dist = [
     { name = "graphistry", specifier = ">=0.41.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "ipykernel", marker = "extra == 'docs'", specifier = ">=6.0.0" },
+    { name = "ipython", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.6.0" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6.0" },
     { name = "mkdocs-jupyter", marker = "extra == 'docs'", specifier = ">=0.24.0" },
