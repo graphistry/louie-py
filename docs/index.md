@@ -74,40 +74,39 @@ lui("analyze my data", share_mode="Public")  # Override for this query
 #                        org_name="your-org", ...)
 # lui = louieai(g, server_url="https://louie.your-company.com")
 
-# Minimal example - just ask a question
+## Example 1: Minimal Usage
+# Just ask questions and get answers
 lui("What are the key patterns in this data?")
 print(lui.text)  # "I found 3 key patterns: ..."
 
-# Advanced example with traces and organization sharing
+## Example 2: Full Features
+# Configure session defaults
+lui = louieai(g, server_url="https://den.louie.ai", share_mode="Organization")
 lui.traces = True  # Show AI reasoning steps
-lui("Show me users with unusual ordering patterns or velocity", share_mode="Organization")
 
-# The response now includes reasoning traces
-print(lui.text)
-# Output: "Identified 34 accounts with suspicious ordering behavior:
-# 
-# **High Velocity Orders**:
-# • user_78234: 47 orders in 2 hours (avg basket: $67)
-# • user_45891: 23 orders from same IP, different payment methods
-# 
-# **Geographic Inconsistencies**:
-# • 12 accounts: Billing in NYC, shipping to warehouse addresses in TX
-# • 8 accounts: VPN usage combined with expedited shipping
-# 
-# **Pattern Analysis**: 73% likely reseller activity, 18% promotional abuse"
+# Ask complex questions
+lui("Show me users with unusual ordering patterns or velocity")
 
-# Access results implicitly
-lui("Create a summary dataframe")
-summary_df = lui.df  # Access the dataframe that was just created
-analysis = lui.text  # Access the text explanation
+# Access multiple result types
+print(lui.text)     # Text explanation
+fraud_df = lui.df   # Generated dataframe
+all_dfs = lui.dfs   # All dataframes in response
 
 # Continue the conversation (maintains context)
-lui("Now filter for high-risk users")
-high_risk_df = lui.df  # The new filtered dataframe
+lui("Now show me geographic anomalies")
+geo_df = lui.df
 
-# Access history
-lui[-1].df  # Previous response's dataframe
-lui[-2].text  # Text from two queries ago
+# Override settings per query
+lui("Create a private analysis", share_mode="Private", traces=False)
+
+# Access conversation history
+previous = lui[-1]  # Previous response
+print(previous.text)
+older_df = lui[-2].df  # Dataframe from 2 queries ago
+
+# Thread management
+print(lui.thread_id)  # Current thread ID
+print(lui.url)        # URL to view thread
 ```
 
 ## Key Features
