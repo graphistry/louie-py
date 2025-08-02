@@ -350,7 +350,7 @@ def _create_comprehensive_mock_lui(client=None):
     mock_lui.errors = []
     mock_lui.has_errors = False
     mock_lui.traces = False
-    
+
     # Add history attribute for accessing previous results
     mock_history = []
     for i in range(5):  # Create some mock history
@@ -393,7 +393,7 @@ def _create_comprehensive_mock_lui(client=None):
     )
     hist_response.dfs = [hist_response.df]
     hist_response.texts = ["Historical text"]
-    
+
     # Configure the mock to support indexing
     mock_lui.__getitem__ = Mock(return_value=hist_response)
 
