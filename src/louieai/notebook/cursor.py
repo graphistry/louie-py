@@ -164,9 +164,8 @@ def _render_response_html(response, client=None) -> str:
                     if client and hasattr(client, "_auth_manager"):
                         try:
                             g = client._auth_manager._graphistry_client
-                            if (
-                                hasattr(g, "client_protocol_hostname")
-                                and hasattr(g, "protocol")
+                            if hasattr(g, "client_protocol_hostname") and hasattr(
+                                g, "protocol"
                             ):
                                 hostname = g.client_protocol_hostname()
                                 protocol = g.protocol()
@@ -200,21 +199,20 @@ def _render_response_html(response, client=None) -> str:
                     if dataset_id:
                         # Create iframe for Graphistry visualization
                         iframe_url = (
-                            f"{server_url}/graph/graph.html?"
-                            f"dataset={dataset_id}"
+                            f"{server_url}/graph/graph.html?dataset={dataset_id}"
                         )
                         html_parts.append(
                             f'<div style="margin: 10px 0;">'
                             f'<iframe src="{iframe_url}" '
                             f'width="100%" height="600" '
                             f'style="border: 1px solid #ddd; border-radius: 5px;">'
-                            f'</iframe>'
+                            f"</iframe>"
                             f'<div style="text-align: center; margin-top: 5px;">'
                             f'<a href="{iframe_url}" target="_blank" '
                             f'style="color: #0066cc; text-decoration: none;">'
-                            f'🔗 Open graph in new tab</a>'
-                            f'</div>'
-                            f'</div>'
+                            f"🔗 Open graph in new tab</a>"
+                            f"</div>"
+                            f"</div>"
                         )
                     else:
                         # Show placeholder for missing dataset_id

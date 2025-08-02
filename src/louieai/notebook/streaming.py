@@ -130,9 +130,8 @@ class StreamingDisplay:
             if self.client and hasattr(self.client, "_auth_manager"):
                 try:
                     g = self.client._auth_manager._graphistry_client
-                    if (
-                        hasattr(g, "client_protocol_hostname")
-                        and hasattr(g, "protocol")
+                    if hasattr(g, "client_protocol_hostname") and hasattr(
+                        g, "protocol"
                     ):
                         hostname = g.client_protocol_hostname()
                         protocol = g.protocol()
@@ -171,13 +170,13 @@ class StreamingDisplay:
                     f'<iframe src="{iframe_url}" '
                     f'width="100%" height="600" '
                     f'style="border: 1px solid #ddd; border-radius: 5px;">'
-                    f'</iframe>'
+                    f"</iframe>"
                     f'<div style="text-align: center; margin-top: 5px;">'
                     f'<a href="{iframe_url}" target="_blank" '
                     f'style="color: #0066cc; text-decoration: none;">'
-                    f'🔗 Open graph in new tab</a>'
-                    f'</div>'
-                    f'</div>'
+                    f"🔗 Open graph in new tab</a>"
+                    f"</div>"
+                    f"</div>"
                 )
             else:
                 # Show placeholder for missing dataset_id
@@ -320,31 +319,31 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                 "POST", f"{client.server_url}/api/chat/", headers=headers, params=params
             ) as response,
         ):
-                response.raise_for_status()
+            response.raise_for_status()
 
-                # Process streaming lines
-                for line in response.iter_lines():
-                    if not line:
-                        continue
+            # Process streaming lines
+            for line in response.iter_lines():
+                if not line:
+                    continue
 
-                    try:
-                        data = json.loads(line)
+                try:
+                    data = json.loads(line)
 
-                        # Update display
-                        display_handler.update(data)
+                    # Update display
+                    display_handler.update(data)
 
-                        # Track data for result
-                        if "dthread_id" in data:
-                            result["dthread_id"] = data["dthread_id"]
+                    # Track data for result
+                    if "dthread_id" in data:
+                        result["dthread_id"] = data["dthread_id"]
 
-                        elif "payload" in data:
-                            elem = data["payload"]
-                            elem_id = elem.get("id")
-                            if elem_id:
-                                elements_by_id[elem_id] = elem
+                    elif "payload" in data:
+                        elem = data["payload"]
+                        elem_id = elem.get("id")
+                        if elem_id:
+                            elements_by_id[elem_id] = elem
 
-                    except json.JSONDecodeError:
-                        continue
+                except json.JSONDecodeError:
+                    continue
 
     except httpx.ReadTimeout:
         # This is expected - server keeps connection open

@@ -93,15 +93,15 @@ def test_render_graph_element_with_id():
     html = _render_response_html(response)
 
     # Check for iframes
-    assert '<iframe' in html
-    assert 'dataset=abc123' in html
-    assert 'dataset=xyz456' in html
-    assert 'https://hub.graphistry.com/graph/graph.html?dataset=abc123' in html
-    assert 'https://hub.graphistry.com/graph/graph.html?dataset=xyz456' in html
+    assert "<iframe" in html
+    assert "dataset=abc123" in html
+    assert "dataset=xyz456" in html
+    assert "https://hub.graphistry.com/graph/graph.html?dataset=abc123" in html
+    assert "https://hub.graphistry.com/graph/graph.html?dataset=xyz456" in html
     assert 'width="100%"' in html
     assert 'height="600"' in html
     # Check for links below iframes
-    assert 'Open graph in new tab' in html
+    assert "Open graph in new tab" in html
     assert 'target="_blank"' in html
 
 
@@ -117,6 +117,6 @@ def test_render_graph_element_without_id():
     html = _render_response_html(response)
 
     # Should not have iframe
-    assert '<iframe' not in html
+    assert "<iframe" not in html
     # Should have placeholder message
     assert "Graph visualization not available" in html

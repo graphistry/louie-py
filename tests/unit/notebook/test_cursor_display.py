@@ -128,7 +128,7 @@ class TestCursorDisplay:
         html = cursor._repr_html_()
 
         # Should mention dataframe
-        assert "dataframe(s) available" in html
+        assert "dataframe(s) - access with" in html
         assert "lui.df" in html
 
     @patch("louieai.notebook.cursor.Cursor._in_jupyter")

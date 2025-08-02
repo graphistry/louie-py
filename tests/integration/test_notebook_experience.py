@@ -120,6 +120,7 @@ class TestNotebookExperience:
 
             # Test that display would work if in Jupyter
             from louieai.notebook.cursor import _render_response_html
+
             html = _render_response_html(lui._history[-1])
             assert "Markdown Header" in html
 
