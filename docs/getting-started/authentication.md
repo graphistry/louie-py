@@ -14,13 +14,28 @@ import louieai
 # Set these in your environment:
 # export GRAPHISTRY_USERNAME="your_user"
 # export GRAPHISTRY_PASSWORD="your_pass"
+# export GRAPHISTRY_SERVER="hub.graphistry.com"  # Optional: defaults to hub.graphistry.com
 lui = louieai()  # Automatically uses environment variables
 
-# Option 2: Direct authentication
-g = graphistry.register(api=3, username="your_user", password="your_pass")
-lui = louieai(g)  # Pass the authenticated graphistry client
+# Option 2: Direct authentication with Graphistry Hub
+g = graphistry.register(
+    api=3, 
+    server="hub.graphistry.com",  # Graphistry Hub (free tier)
+    username="your_user", 
+    password="your_pass"
+)
+lui = louieai(g, server_url="https://den.louie.ai")  # Louie cloud server
 
-# Option 3: Pass credentials directly
+# Option 3: Direct authentication with Enterprise Server
+g = graphistry.register(
+    api=3,
+    server="your-company.graphistry.com",  # Your enterprise server
+    username="your_user",
+    password="your_pass"
+)
+lui = louieai(g, server_url="https://louie.your-company.com")  # Your Louie server
+
+# Option 4: Pass credentials directly (uses default servers)
 lui = louieai(username="your_user", password="your_pass")
 
 # Now you can make queries with any method
@@ -29,6 +44,17 @@ print(lui.text)
 ```
 
 That's it! LouieAI will automatically use your PyGraphistry credentials.
+
+## Server Configuration
+
+LouieAI requires both a Graphistry server (for authentication) and a Louie server (for AI queries):
+
+| Setup | Graphistry Server | Louie Server |
+|-------|------------------|--------------|
+| **Graphistry Hub (Free)** | `hub.graphistry.com` | `https://den.louie.ai` |
+| **Enterprise** | `your-company.graphistry.com` | `https://louie.your-company.com` |
+
+**Important**: The servers must match - use Hub servers together or enterprise servers together.
 
 ## How It Works
 

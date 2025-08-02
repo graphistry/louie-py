@@ -20,30 +20,24 @@ import graphistry
 # export GRAPHISTRY_PASSWORD="your_password"
 
 # Then in Python:
-from louieai.notebook import lui
-# lui will automatically use the environment variables
+import louieai
+lui = louieai()  # Automatically uses the environment variables
 
 # Option 2: Direct authentication
 g = graphistry.register(
     api=3, 
-    server="hub.graphistry.com",  # or your enterprise server
+    server="hub.graphistry.com",  # Graphistry Hub (free tier)
     username="your_username", 
     password="your_password"
 )
 
-# Verify authentication worked (optional)
-try:
-    import pandas as pd
-    # This will trigger authentication if not already done
-    graphistry.nodes(pd.DataFrame({'id': [1]})).plot(render=False)
-    print("Authentication successful!")
-except Exception as e:
-    print(f"Authentication failed: {e}")
-    # Check your credentials and server URL
-
 # Now import and use LouieAI with the authenticated client
 import louieai
-lui = louieai(g)  # Pass the authenticated graphistry client
+lui = louieai(g, server_url="https://den.louie.ai")  # Specify Louie server
+
+# For enterprise users:
+# g = graphistry.register(api=3, server="your-company.graphistry.com", ...)
+# lui = louieai(g, server_url="https://louie.your-company.com")
 
 # Ask questions in natural language
 lui("Show me users with unusual ordering patterns or velocity")

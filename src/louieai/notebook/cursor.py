@@ -273,7 +273,8 @@ class Cursor:
             if self._in_jupyter() and kwargs.get("display", True):
                 self._display(response)
 
-            return response
+            # Return self for chaining and property access
+            return self
 
         except Exception as e:
             logger.error(f"Query failed: {e}")
@@ -296,9 +297,27 @@ class Cursor:
 
     def _display(self, response: Response) -> None:
         """Display response in Jupyter."""
-        # For now, skip display functionality
-        # This will be properly implemented when IPython is added as optional dependency
-        pass
+        try:
+            from IPython.display import display, Markdown, HTML
+            
+            # Display text elements
+            if hasattr(response, 'text_elements') and response.text_elements:
+                for elem in response.text_elements:
+                    if isinstance(elem, dict) and (content := elem.get("content", "").strip()):
+                        display(Markdown(content))
+            
+            # Display dataframes
+            if hasattr(response, 'dataframe_elements') and response.dataframe_elements:
+                for elem in response.dataframe_elements:
+                    if isinstance(elem, dict) and "table" in elem:
+                        display(elem["table"])
+                    
+        except ImportError:
+            # IPython not available, skip display
+            pass
+        except Exception:
+            # Any other error in display, just skip
+            pass
 
     @property
     def traces(self) -> bool:
@@ -423,22 +442,43 @@ class Cursor:
     def _repr_html_(self) -> str:
         """HTML representation for Jupyter notebooks."""
         html_parts = [
-            "<div style='border: 1px solid #ddd; padding: 10px; border-radius: 5px;'>",
-            "<h4 style='margin-top: 0;'>🤖 LouieAI Notebook Interface</h4>",
+            "<div style='border: 1px solid #ddd; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>",
+            "<h4 style='margin-top: 0;'>🤖 LouieAI Response</h4>",
         ]
 
+        # Show latest response content if available
+        if self._history:
+            latest = self._history[-1]
+            
+            # Display text elements
+            if hasattr(latest, "text_elements") and latest.text_elements:
+                for elem in latest.text_elements:
+                    if content := elem.get("content", "").strip():
+                        # Escape HTML but preserve newlines
+                        import html
+                        escaped_content = html.escape(content).replace('\n', '<br>')
+                        html_parts.append(f"<div style='margin: 10px 0; white-space: pre-wrap;'>{escaped_content}</div>")
+            
+            # Note about dataframes
+            if hasattr(latest, "dataframe_elements") and latest.dataframe_elements:
+                df_count = len(latest.dataframe_elements)
+                html_parts.append(f"<p><em>📊 {df_count} dataframe(s) available via <code>lui.df</code></em></p>")
+        
+        # Session info footer
+        html_parts.append("<hr style='margin: 10px 0;'>")
+        
         # Session status
         if self._current_thread:
-            html_parts.append("<p>✅ <b>Session:</b> Active</p>")
+            html_parts.append("<p style='margin: 5px 0; font-size: 0.9em;'>✅ <b>Session:</b> Active</p>")
         else:
             html_parts.append(
-                "<p>⚪ <b>Session:</b> Not started "
+                "<p style='margin: 5px 0; font-size: 0.9em;'>⚪ <b>Session:</b> Not started "
                 "(use <code>lui('your query')</code>)</p>"
             )
 
         # History
         history_count = len(self._history)
-        html_parts.append(f"<p>📚 <b>History:</b> {history_count} responses")
+        html_parts.append(f"<p style='margin: 5px 0; font-size: 0.9em;'>📚 <b>History:</b> {history_count} responses")
         if history_count > 0:
             html_parts.append(
                 " (access with <code>lui[-1]</code>, <code>lui[-2]</code>, etc.)</p>"
@@ -448,10 +488,10 @@ class Cursor:
 
         # Traces
         if self._traces:
-            html_parts.append("<p>🔍 <b>Traces:</b> Enabled (showing AI reasoning)</p>")
+            html_parts.append("<p style='margin: 5px 0; font-size: 0.9em;'>🔍 <b>Traces:</b> Enabled (showing AI reasoning)</p>")
         else:
             html_parts.append(
-                "<p>🔍 <b>Traces:</b> Disabled "
+                "<p style='margin: 5px 0; font-size: 0.9em;'>🔍 <b>Traces:</b> Disabled "
                 "(use <code>lui.traces = True</code> to enable)</p>"
             )
 

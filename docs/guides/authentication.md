@@ -10,6 +10,14 @@ This guide covers all authentication options for LouieAI, from basic setup to ad
 - **Use Graphistry Hub** - Free account at [hub.graphistry.com](https://hub.graphistry.com)
 - **Run your own server** - Deploy PyGraphistry on your infrastructure
 
+**Important: Server Pairing**
+| Graphistry Server | Louie Server | Usage |
+|------------------|--------------|-------|
+| `hub.graphistry.com` | `https://den.louie.ai` | Public cloud (free tier) |
+| `your-company.graphistry.com` | `https://louie.your-company.com` | Enterprise deployment |
+
+⚠️ **The servers must match** - tokens from hub.graphistry.com only work with den.louie.ai, and enterprise tokens only work with your enterprise Louie server.
+
 ### How It Works
 
 The authentication flow is simple:
@@ -26,24 +34,44 @@ The simplest approach - authenticate once with PyGraphistry and LouieAI uses tho
 
 ```python
 import graphistry
-import louieai as lui
+import louieai
 
-# Authenticate with PyGraphistry
-graphistry.register(api=3, username="your_user", password="your_pass")
+# For Graphistry Hub (free tier)
+g = graphistry.register(
+    api=3, 
+    server="hub.graphistry.com",
+    username="your_user", 
+    password="your_pass"
+)
+lui = louieai(g, server_url="https://den.louie.ai")
 
-# LouieAI automatically uses the PyGraphistry authentication
-client = lui.LouieClient()
+# For Enterprise deployments
+g = graphistry.register(
+    api=3,
+    server="your-company.graphistry.com",
+    username="your_user",
+    password="your_pass"
+)
+lui = louieai(g, server_url="https://louie.your-company.com")
 ```
 
 ### Method 2: Direct Credentials
 
-Pass credentials directly to LouieClient:
+Pass credentials directly to louieai:
 
 ```python
-client = lui.LouieClient(
+# Uses default servers (hub.graphistry.com + den.louie.ai)
+lui = louieai(
+    username="your_user",
+    password="your_pass"
+)
+
+# Or specify custom servers
+lui = louieai(
     username="your_user",
     password="your_pass",
-    server="hub.graphistry.com"  # Optional: specify server
+    server="your-company.graphistry.com",
+    server_url="https://louie.your-company.com"
 )
 ```
 

@@ -18,6 +18,8 @@ class TestLuiProxy:
         mock_client = Mock()
         mock_client_class.return_value = mock_client
         mock_response = Mock(spec=Response, thread_id="test-123")
+        mock_response.text_elements = []
+        mock_response.dataframe_elements = []
         mock_client.add_cell.return_value = mock_response
 
         # Reset singleton
@@ -28,7 +30,9 @@ class TestLuiProxy:
         # Test calling lui
         result = lui("Test query")
 
-        assert result == mock_response
+        # Now cursor returns self, not the response
+        assert hasattr(result, 'text')  # It's a cursor
+        assert hasattr(result, 'df')
         mock_client.add_cell.assert_called_once()
 
     @patch("louieai.notebook.cursor.LouieClient")

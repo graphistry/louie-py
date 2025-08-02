@@ -30,6 +30,8 @@ class TestTraceControl:
         """Test traces setting is passed to client.add_cell."""
         mock_client = Mock()
         mock_response = Mock(spec=Response, thread_id="test-thread")
+        mock_response.text_elements = []
+        mock_response.dataframe_elements = []
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
@@ -51,6 +53,8 @@ class TestTraceControl:
         """Test per-query trace override."""
         mock_client = Mock()
         mock_response = Mock(spec=Response, thread_id="test-thread")
+        mock_response.text_elements = []
+        mock_response.dataframe_elements = []
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
@@ -80,6 +84,8 @@ class TestTraceControl:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
             mock_response = Mock(spec=Response, thread_id="test-123")
+            mock_response.text_elements = []
+            mock_response.dataframe_elements = []
             mock_client.add_cell.return_value = mock_response
 
             # Reset singleton

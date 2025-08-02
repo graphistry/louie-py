@@ -55,7 +55,7 @@ class TestHelpDiscovery:
         html = cursor._repr_html_()
 
         assert "<h4" in html
-        assert "LouieAI Notebook Interface" in html
+        assert "LouieAI Response" in html
         assert "Session:</b> Not started" in html
         assert "lui('your query')" in html
         assert "<details>" in html  # Quick help section
@@ -99,7 +99,7 @@ class TestHelpDiscovery:
 
             # Test _repr_html_ delegation
             html = lui._repr_html_()
-            assert "LouieAI Notebook Interface" in html
+            assert "LouieAI Response" in html
 
     def test_help_function_works(self):
         """Test Python's help() function provides useful info."""

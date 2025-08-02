@@ -85,8 +85,9 @@ class TestCursor:
         assert len(cursor._history) == 2
         assert cursor._history[0] == response1
         assert cursor._history[1] == response2
-        assert resp1 == response1
-        assert resp2 == response2
+        # Cursor now returns self, not the response
+        assert resp1 is cursor
+        assert resp2 is cursor
 
     def test_history_maxlen(self):
         """Test history respects max length."""
