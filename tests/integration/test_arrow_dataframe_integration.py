@@ -194,7 +194,7 @@ class TestArrowDataFrameIntegration:
                 patch.object(lui._client, "_client", mock_httpx_instance),
                 pytest.warns(RuntimeWarning, match="Failed to fetch dataframe"),
             ):
-                    result = lui("Show data that will fail to fetch")
+                result = lui("Show data that will fail to fetch")
 
         # Should still return cursor
         assert result is lui

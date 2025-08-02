@@ -33,20 +33,27 @@ class StreamingDisplay:
         """Format an element for display."""
         elem_type = elem.get("type", "")
 
-        if elem_type == "TextElement":
-            text = elem.get("text", "")
+        if elem_type in ["TextElement", "text"]:
+            # Handle both 'text' and 'value' fields
+            text = elem.get("text", "") or elem.get("value", "")
             # Convert newlines to HTML breaks
             return str(text).replace("\n", "<br>")
 
-        elif elem_type == "DfElement":
-            df_id = elem.get("df_id") or elem.get("block_id")
+        elif elem_type in ["DfElement", "df"]:
+            # Debug: Log the full element to understand structure
+            import logging
+
+            logging.getLogger("louieai.notebook").debug(f"DfElement: {elem}")
+
+            # Try multiple possible field names for the dataframe ID
+            df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
             shape = elem.get("metadata", {}).get("shape", ["?", "?"])
             return (
                 f"<div style='background: #f0f0f0; padding: 5px; margin: 5px 0;'>"
                 f"📊 DataFrame: {df_id} (shape: {shape[0]} x {shape[1]})</div>"
             )
 
-        elif elem_type == "ExceptionElement":
+        elif elem_type in ["ExceptionElement", "exception", "error"]:
             msg = elem.get("message", "Unknown error")
             return (
                 f"<div style='color: red; background: #ffe0e0; padding: 10px; "
@@ -268,12 +275,31 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     actual_thread_id = result["dthread_id"]
     if actual_thread_id and result["elements"]:
         for elem in result["elements"]:
-            if elem.get("type") == "DfElement":
-                df_id = elem.get("df_id") or elem.get("block_id")
+            if elem.get("type") in ["DfElement", "df"]:
+                # Debug logging
+                import logging
+
+                logger = logging.getLogger("louieai.notebook")
+                logger.debug(f"Processing DfElement: {elem}")
+
+                # Try multiple possible field names for the dataframe ID
+                df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
+                logger.debug(f"Extracted df_id: {df_id} from keys: {list(elem.keys())}")
+
                 if df_id:
                     # Fetch the actual dataframe via Arrow
+                    logger.info(
+                        f"Fetching dataframe {df_id} for thread {actual_thread_id}"
+                    )
                     df = client._fetch_dataframe_arrow(actual_thread_id, df_id)
                     if df is not None:
                         elem["table"] = df
+                        logger.info(
+                            f"Successfully fetched dataframe with shape {df.shape}"
+                        )
+                    else:
+                        logger.warning(f"Failed to fetch dataframe {df_id}")
+                else:
+                    logger.warning(f"DfElement missing df_id/block_id/id: {elem}")
 
     return result

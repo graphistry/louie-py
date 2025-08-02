@@ -31,8 +31,13 @@ def _render_response_html(response) -> str:
                 elem_type = elem.get("type", "")
 
                 # TextElement
-                if elem_type == "TextElement":
-                    content = (elem.get("content") or elem.get("text", "")).strip()
+                if elem_type in ["TextElement", "text"]:
+                    # Handle both old and new field names
+                    content = (
+                        elem.get("content")
+                        or elem.get("text", "")
+                        or elem.get("value", "")
+                    ).strip()
                     if content:
                         # Use IPython's Markdown renderer for consistency
                         try:
@@ -67,7 +72,7 @@ def _render_response_html(response) -> str:
                             html_parts.append(f"<div>{escaped}</div>")
 
                 # DfElement
-                elif elem_type == "DfElement" and "table" in elem:
+                elif elem_type in ["DfElement", "df"] and "table" in elem:
                     df = elem["table"]
                     if hasattr(df, "_repr_html_"):
                         df_html = df._repr_html_()
@@ -183,9 +188,9 @@ class ResponseProxy:
             or not self._response.text_elements
         ):
             return []
-        # Handle both 'content' and 'text' keys for backward compatibility
+        # Handle 'content', 'text', and 'value' keys for backward compatibility
         return [
-            elem.get("content") or elem.get("text", "")
+            elem.get("content") or elem.get("text", "") or elem.get("value", "")
             for elem in self._response.text_elements
         ]
 

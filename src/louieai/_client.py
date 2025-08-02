@@ -36,17 +36,17 @@ class Response:
     @property
     def text_elements(self) -> list[dict[str, Any]]:
         """Get all text elements from the response."""
-        return [e for e in self.elements if e.get("type") == "TextElement"]
+        return [e for e in self.elements if e.get("type") in ["TextElement", "text"]]
 
     @property
     def dataframe_elements(self) -> list[dict[str, Any]]:
         """Get all dataframe elements from the response."""
-        return [e for e in self.elements if e.get("type") == "DfElement"]
+        return [e for e in self.elements if e.get("type") in ["DfElement", "df"]]
 
     @property
     def graph_elements(self) -> list[dict[str, Any]]:
         """Get all graph elements from the response."""
-        return [e for e in self.elements if e.get("type") == "GraphElement"]
+        return [e for e in self.elements if e.get("type") in ["GraphElement", "graph"]]
 
     @property
     def has_dataframes(self) -> bool:
@@ -61,7 +61,10 @@ class Response:
     @property
     def has_errors(self) -> bool:
         """Check if response contains any error elements."""
-        return any(e.get("type") == "ExceptionElement" for e in self.elements)
+        return any(
+            e.get("type") in ["ExceptionElement", "exception", "error"]
+            for e in self.elements
+        )
 
 
 class LouieClient:
@@ -391,37 +394,37 @@ class LouieClient:
                 "POST", f"{self.server_url}/api/chat/", headers=headers, params=params
             ) as response,
         ):
-                response.raise_for_status()
+            response.raise_for_status()
 
-                # Collect streaming lines
-                try:
-                    for line in response.iter_lines():
-                        if line:
-                            response_text += line + "\n"
-                            lines_received += 1
+            # Collect streaming lines
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        response_text += line + "\n"
+                        lines_received += 1
 
-                            # Keep reading all elements until stream ends
-                            # Don't break early just because we got a text element
+                        # Keep reading all elements until stream ends
+                        # Don't break early just because we got a text element
 
-                        # Safety timeout - use configured timeout
-                        if time.time() - start_time > self._timeout:
-                            break
+                    # Safety timeout - use configured timeout
+                    if time.time() - start_time > self._timeout:
+                        break
 
-                except httpx.ReadTimeout as e:
-                    elapsed = time.time() - start_time
-                    # This is expected - the server keeps the connection open
-                    # If we have at least 2 lines, that's a valid response
-                    if lines_received >= 2:
-                        pass
-                    else:
-                        raise RuntimeError(
-                            f"Louie API timeout after {elapsed:.1f}s waiting for "
-                            f"response. Only received {lines_received} lines. "
-                            f"Agentic flows can take time - consider increasing "
-                            f"timeout (current: {self._streaming_timeout}s per chunk, "
-                            f"{self._timeout}s total). "
-                            f"Set timeout parameter when creating LouieClient."
-                        ) from e
+            except httpx.ReadTimeout as e:
+                elapsed = time.time() - start_time
+                # This is expected - the server keeps the connection open
+                # If we have at least 2 lines, that's a valid response
+                if lines_received >= 2:
+                    pass
+                else:
+                    raise RuntimeError(
+                        f"Louie API timeout after {elapsed:.1f}s waiting for "
+                        f"response. Only received {lines_received} lines. "
+                        f"Agentic flows can take time - consider increasing "
+                        f"timeout (current: {self._streaming_timeout}s per chunk, "
+                        f"{self._timeout}s total). "
+                        f"Set timeout parameter when creating LouieClient."
+                    ) from e
 
         # Log if request took a long time
         total_time = time.time() - start_time
@@ -445,14 +448,20 @@ class LouieClient:
 
         # Fetch dataframes for any DfElements
         for elem in result["elements"]:
-            if elem.get("type") == "DfElement":
-                # Check for df_id or block_id
-                df_id = elem.get("df_id") or elem.get("block_id")
+            if elem.get("type") in ["DfElement", "df"]:
+                # Check for df_id, block_id, or id
+                df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
                 if df_id:
                     # Fetch the actual dataframe via Arrow
                     df = self._fetch_dataframe_arrow(actual_thread_id, df_id)
                     if df is not None:
                         elem["table"] = df
+                    else:
+                        logger.warning(
+                            f"Failed to fetch dataframe {df_id} for DfElement"
+                        )
+                else:
+                    logger.warning(f"DfElement missing identifier: {elem}")
 
         # Return Response with all elements
         return Response(thread_id=actual_thread_id, elements=result["elements"])
