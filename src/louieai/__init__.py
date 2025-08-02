@@ -1,4 +1,5 @@
 import sys
+import types
 from typing import Any
 
 try:
@@ -111,12 +112,9 @@ __all__ = [
 
 
 # Make the module itself callable
-import types
-
-
 class CallableModule(types.ModuleType):
     """A module that can be called like a function."""
-    
+
     def __init__(self, module):
         self.__dict__.update(module.__dict__)
         super().__init__(module.__name__)
