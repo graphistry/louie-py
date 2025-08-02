@@ -19,11 +19,32 @@ nav:
     - Agent Selection: guides/agent-selection.md
     - Agent Guides:
       - Overview: guides/agents/index.md
-      - Databricks: guides/agents/databricks.md
-      - Splunk: guides/agents/splunk.md
-      - PostgreSQL: guides/agents/postgresql.md
-      - Python Code: guides/agents/code.md
-      - Graph Visualization: guides/agents/graph.md
+      - Database Agents:
+        - Databricks: guides/agents/databricks.md
+        - PostgreSQL: guides/agents/postgresql.md
+        - MySQL: guides/agents/mysql.md
+        - Snowflake: guides/agents/snowflake.md
+        - BigQuery: guides/agents/bigquery.md
+        - MSSQL: guides/agents/mssql.md
+        - CockroachDB: guides/agents/cockroachdb.md
+        - Spanner: guides/agents/spanner.md
+        - Athena: guides/agents/athena.md
+        - Neptune: guides/agents/neptune.md
+      - Search & Analytics:
+        - OpenSearch: guides/agents/opensearch.md
+        - Splunk: guides/agents/splunk.md
+        - Kusto: guides/agents/kusto.md
+      - Visualization:
+        - Graph Networks: guides/agents/graph.md
+        - Interactive Tables: guides/agents/perspective.md
+        - Geospatial Maps: guides/agents/kepler.md
+        - Diagrams: guides/agents/mermaid.md
+      - Code & Development:
+        - Python Code: guides/agents/code.md
+        - Jupyter Notebooks: guides/agents/notebook.md
+      - Data Processing:
+        - Table Analysis: guides/agents/tableai.md
+        - Web Scraping: guides/agents/firecrawl.md
   - API Reference:
     - Overview: api/index.md
     - Notebook API: api/notebook.md
