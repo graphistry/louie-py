@@ -49,8 +49,6 @@ nav:
     - Notebook API: api/notebook.md
     - LouieClient: api/client.md
     - Response Types: api/response-types.md
-  - Reference:
-    - Available Agents: reference/agents.md
   - Developer:
     - Architecture: developer/architecture.md
     - Development: developer/development.md
