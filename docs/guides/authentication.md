@@ -4,33 +4,22 @@ This guide covers all authentication options for LouieAI, from basic setup to ad
 
 ## Overview
 
-**LouieAI uses PyGraphistry for authentication** - you don't need separate credentials. When you authenticate with PyGraphistry, LouieAI automatically uses those credentials to connect to the Louie.ai service.
+LouieAI uses PyGraphistry authentication - no separate credentials needed. Servers must be paired:
 
-**Server Options:**
-- **Use Graphistry Hub** - Free account at [hub.graphistry.com](https://hub.graphistry.com)
-- **Run your own server** - Deploy PyGraphistry on your infrastructure
-
-**Important: Server Pairing**
 | Graphistry Server | Louie Server | Usage |
 |------------------|--------------|-------|
 | `hub.graphistry.com` | `https://den.louie.ai` | Public cloud (free tier) |
 | `your-company.graphistry.com` | `https://louie.your-company.com` | Enterprise deployment |
 
-⚠️ **The servers must match** - tokens from hub.graphistry.com only work with den.louie.ai, and enterprise tokens only work with your enterprise Louie server.
+LouieAI automatically extracts JWT tokens from PyGraphistry and refreshes them as needed.
 
-### How It Works
-
-The authentication flow is simple:
-
-1. **Authenticate with PyGraphistry** (via `graphistry.register()` or client objects)
-2. **LouieAI extracts the JWT token** from PyGraphistry automatically
-3. **Token is refreshed** when needed without user intervention
+**Resources:**
+- [PyGraphistry Authentication](https://pygraphistry.readthedocs.io/en/latest/server/register.html) - All authentication methods
+- [PyGraphistry Concurrency](https://pygraphistry.readthedocs.io/en/latest/server/concurrency.html) - Multi-tenant patterns
 
 ## Basic Authentication
 
 ### Method 1: Using Existing PyGraphistry Authentication
-
-The simplest approach - authenticate once with PyGraphistry and LouieAI uses those credentials:
 
 ```python
 import graphistry
@@ -57,8 +46,6 @@ lui = louieai(g, server_url="https://louie.your-company.com")
 
 ### Method 2: Direct Credentials
 
-Pass credentials directly to louieai:
-
 ```python
 # Uses default servers (hub.graphistry.com + den.louie.ai)
 lui = louieai(
@@ -77,8 +64,6 @@ lui = louieai(
 
 ### Method 3: Using the Register Method
 
-Register after creating the client:
-
 ```python
 client = lui.LouieClient()
 client.register(
@@ -90,8 +75,6 @@ client.register(
 
 ### Method 4: Using PyGraphistry Client Objects
 
-For isolated authentication contexts:
-
 ```python
 # Create an isolated PyGraphistry client
 g = graphistry.client()
@@ -102,8 +85,6 @@ client = lui.LouieClient(graphistry_client=g)
 ```
 
 ### Method 5: API Key Authentication
-
-Use PyGraphistry API keys for programmatic access:
 
 ```python
 # Using legacy API key
@@ -122,8 +103,6 @@ client = lui.LouieClient(
 ```
 
 ### Method 6: Environment Variables
-
-Set authentication credentials via environment variables:
 
 ```bash
 # Username/password authentication
@@ -153,11 +132,7 @@ client = lui.LouieClient()  # Uses env vars automatically
 
 ## Multi-tenant Authentication
 
-For applications serving multiple users or requiring concurrent sessions with different credentials.
-
 ### Isolated Client Instances
-
-Create separate LouieClient instances with distinct PyGraphistry clients to ensure complete isolation:
 
 ```python
 import graphistry
@@ -182,52 +157,10 @@ print(f"Alice's thread: {alice_response.thread_id}")
 print(f"Bob's thread: {bob_response.thread_id}")
 ```
 
-### Multi-server Support
-
-Connect different users to different Graphistry servers:
-
-```python
-# Production server for Alice
-alice_g = graphistry.client()
-alice_g.register(
-    api=3, 
-    server="prod.graphistry.com",
-    username="alice",
-    password="alice_pass"
-)
-alice_client = lui.LouieClient(graphistry_client=alice_g)
-
-# Staging server for Bob
-bob_g = graphistry.client()
-bob_g.register(
-    api=3,
-    server="staging.graphistry.com", 
-    username="bob",
-    password="bob_pass"
-)
-bob_client = lui.LouieClient(graphistry_client=bob_g)
-```
-
-### Concurrent Usage Patterns
-
-The isolated client pattern ensures:
-- **No confused deputy issues**: Each client maintains its own authentication state
-- **Thread safety**: Safe for concurrent use in web applications
-- **Session isolation**: User sessions don't interfere with each other
-
-Example in a web application:
-
-```python
-def handle_user_request(user_credentials):
-    # Create isolated client for this user
-    user_g = graphistry.client()
-    user_g.register(api=3, **user_credentials)
-    user_client = lui.LouieClient(graphistry_client=user_g)
-    
-    # Process user's request
-    response = user_client.add_cell("", user_query)
-    return response
-```
+**Key benefits:**
+- Thread-safe concurrent usage
+- Session isolation 
+- Multi-server support
 
 ## Authentication Options Reference
 
@@ -243,49 +176,13 @@ def handle_user_request(user_credentials):
 | `api` | int | API version (usually 3) | `3` |
 | `graphistry_client` | Any | Existing PyGraphistry client or plottable | `graphistry.client()` |
 
-## Error Handling & Troubleshooting
-
-### Common Authentication Errors
-
-- **401 Unauthorized**: JWT token expired - LouieAI automatically refreshes, but if refresh fails, check credentials
-- **Connection Errors**: Verify server URL and network connectivity (default server: hub.graphistry.com)
-- **Invalid Credentials**: Double-check username/password or API key format
-- **Server Mismatch**: Ensure your Graphistry and Louie servers are properly paired
-
-### JWT Token Management
-
-LouieAI automatically:
-- Extracts JWT tokens from PyGraphistry
-- Refreshes expired tokens
-- Retries failed requests after token refresh
-
-Manual token refresh (rarely needed):
-```python
-client.auth_manager.refresh_token()
-```
-
 ## Security Best Practices
 
-- **Never hardcode credentials** - Use environment variables or secure vaults
-- **Use isolated clients** for multi-tenant applications
-- **Regularly rotate credentials** in production
-- **Monitor authentication logs** for suspicious activity
-- **Use personal keys** for service accounts instead of username/password
-- **Enable MFA** on your Graphistry account when available
-
-Example using environment variables:
-```python
-import os
-import louieai as lui
-
-client = lui.LouieClient(
-    username=os.environ["GRAPHISTRY_USERNAME"],
-    password=os.environ["GRAPHISTRY_PASSWORD"]
-)
-```
+- Never hardcode credentials - use environment variables
+- Use isolated clients for multi-tenant applications  
+- Use personal keys for service accounts
+- Regularly rotate credentials in production
 
 ## Additional Resources
 
-- [PyGraphistry Authentication Guide](https://pygraphistry.readthedocs.io/en/latest/server/register.html) - Comprehensive guide to PyGraphistry authentication options
-- [PyGraphistry Concurrency Guide](https://pygraphistry.readthedocs.io/en/latest/server/concurrency.html) - Best practices for concurrent PyGraphistry usage
 - [LouieAI API Reference](../api/client.md) - Complete API documentation for LouieClient
