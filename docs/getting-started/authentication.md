@@ -8,20 +8,20 @@ LouieAI integrates seamlessly with PyGraphistry's authentication system:
 
 ```python
 import graphistry
-from louieai import louie
+import louieai
 
 # Option 1: Using environment variables (recommended)
 # Set these in your environment:
 # export GRAPHISTRY_USERNAME="your_user"
 # export GRAPHISTRY_PASSWORD="your_pass"
-lui = louie()  # Automatically uses environment variables
+lui = louieai()  # Automatically uses environment variables
 
 # Option 2: Direct authentication
 g = graphistry.register(api=3, username="your_user", password="your_pass")
-lui = louie(g)  # Pass the authenticated graphistry client
+lui = louieai(g)  # Pass the authenticated graphistry client
 
-# Option 3: Pass credentials directly to louie
-lui = louie(username="your_user", password="your_pass")
+# Option 3: Pass credentials directly
+lui = louieai(username="your_user", password="your_pass")
 
 # Now you can make queries with any method
 response = lui("What insights can you find in my data?")

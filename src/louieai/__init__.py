@@ -107,3 +107,16 @@ __all__ = [
     "__version__",
     "louie",
 ]
+
+
+# Make the module itself callable
+class CallableModule:
+    def __init__(self, module):
+        self.__dict__.update(module.__dict__)
+        
+    def __call__(self, *args, **kwargs):
+        return louie(*args, **kwargs)
+
+
+import sys
+sys.modules[__name__] = CallableModule(sys.modules[__name__])

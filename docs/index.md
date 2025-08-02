@@ -42,8 +42,8 @@ except Exception as e:
     # Check your credentials and server URL
 
 # Now import and use LouieAI with the authenticated client
-from louieai import louie
-lui = louie(g)  # Pass the authenticated graphistry client
+import louieai
+lui = louieai(g)  # Pass the authenticated graphistry client
 
 # Ask questions in natural language
 lui("Show me users with unusual ordering patterns or velocity")
