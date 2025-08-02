@@ -68,11 +68,13 @@ class TestOrgAuthFlow:
         auth_manager = lui._client._auth_manager
         stored_org = auth_manager._credentials.get("org_name")
 
-        # This is the key test: Does LouieAI extract org from existing graphistry client?
+        # This is the key test: Does LouieAI extract org from existing 
+        # graphistry client?
         if stored_org != target_org:
             pytest.fail(
                 f"CONFUSED DEPUTY DETECTED: "
-                f"Expected org_name='{target_org}', but LouieAI client has '{stored_org}'. "
+                f"Expected org_name='{target_org}', but LouieAI client has "
+                f"'{stored_org}'. "
                 f"This means API calls will be made with wrong organization context!"
             )
 
@@ -81,13 +83,15 @@ class TestOrgAuthFlow:
         if "X-Graphistry-Org" not in headers:
             pytest.fail(
                 "CONFUSED DEPUTY DETECTED: "
-                "No X-Graphistry-Org header found. API calls will be made as 'personal' instead of specified org!"
+                "No X-Graphistry-Org header found. API calls will be made as "
+                "'personal' instead of specified org!"
             )
 
         if headers["X-Graphistry-Org"] != target_org:
             pytest.fail(
                 f"CONFUSED DEPUTY DETECTED: "
-                f"Wrong org in headers. Expected '{target_org}', got '{headers['X-Graphistry-Org']}'"
+                f"Wrong org in headers. Expected '{target_org}', got "
+                f"'{headers['X-Graphistry-Org']}'"
             )
 
     def test_org_slug_conversion(self):
@@ -116,7 +120,8 @@ class TestOrgAuthFlow:
 
                 headers = client._get_headers()
                 assert headers["X-Graphistry-Org"] == expected_slug, (
-                    f"org_name '{org_input}' should become slug '{expected_slug}', got '{headers['X-Graphistry-Org']}'"
+                    f"org_name '{org_input}' should become slug '{expected_slug}', "
+                    f"got '{headers['X-Graphistry-Org']}'"
                 )
 
     def test_auth_manager_org_passthrough(self):
@@ -159,7 +164,8 @@ class TestOrgAuthFlow:
         )
 
     @pytest.mark.skip(
-        reason="This test demonstrates the confused deputy problem - will fail until fixed"
+        reason="This test demonstrates the confused deputy problem - will fail "
+        "until fixed"
     )
     def test_reproduction_of_user_scenario(self):
         """Reproduce the exact user scenario to demonstrate the confused deputy problem."""
