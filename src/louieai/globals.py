@@ -4,7 +4,7 @@ This module provides a pre-configured global cursor instance that uses
 environment variables for authentication.
 
 Example:
-    >>> from louieai.global import lui
+    >>> from louieai.globals import lui
     >>> lui("What insights can you find in my data?")
     >>> print(lui.text)
     >>> df = lui.df
