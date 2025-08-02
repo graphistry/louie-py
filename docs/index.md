@@ -69,7 +69,7 @@ older_df = lui[-2].df      # DataFrame from 2 queries ago
 - **Thread-based conversations**: Maintain context across multiple queries
 - **Multiple response types**: Handle text, DataFrames, visualizations, and more
 - **40+ Specialized Agents**: Choose from database-specific, visualization, and analysis agents
-- **Streaming support**: Responses stream in real-time via JSONL
+- **Real-time streaming**: See responses as they're generated in Jupyter notebooks
 - **Natural language interface**: Access all Louie capabilities through simple prompts
 - **Auto-refresh authentication**: Automatically handles JWT token expiration
 - **Multiple auth methods**: Works with existing Graphistry sessions or direct credentials

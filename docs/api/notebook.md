@@ -237,6 +237,26 @@ lui?  # Shows docstring with examples
 help(lui)
 ```
 
+### Real-time Streaming Display
+
+When running in Jupyter notebooks, the notebook API automatically streams responses as they're generated, providing a better user experience for long-running queries:
+
+```python
+# This query will show progressive updates in Jupyter
+lui("Write a detailed analysis of customer behavior patterns")
+
+# You'll see the response building up in real-time
+# instead of waiting for the complete response
+```
+
+**Features of streaming display:**
+- ⚡ **Faster time-to-first-content** - See initial response immediately
+- 📊 **Progressive updates** - Watch as the AI builds its response
+- 🔄 **Automatic refresh** - Display updates smoothly without flicker
+- 📈 **Works with all response types** - Text, dataframes, and errors
+
+**Note**: Streaming display is only active in Jupyter environments. In regular Python scripts, the full response is returned after completion.
+
 ## Advanced Usage
 
 ### Using the louie() Factory Function

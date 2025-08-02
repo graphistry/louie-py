@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Environment variables: `LOUIE_TIMEOUT` and `LOUIE_STREAMING_TIMEOUT`
 - Clear timeout error messages with guidance for increasing limits
 - Warning messages for requests taking longer than 30 seconds
+- Real-time streaming display for Jupyter notebooks:
+  - Progressive response updates as content is generated
+  - Automatic display refresh without flicker
+  - Faster time-to-first-content for better user experience
+  - Works seamlessly with text, dataframes, and error responses
+- Arrow dataframe fetching support:
+  - Automatic fetching via `/api/dthread/{thread_id}/df/block/{block_id}/arrow` endpoint
+  - Support for both `df_id` and `block_id` fields
+  - Graceful error handling when dataframe fetch fails
 
 ### Changed
 - Updated documentation dependencies to latest versions

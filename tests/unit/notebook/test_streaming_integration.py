@@ -9,11 +9,20 @@ from louieai import louie
 from louieai._client import Response
 
 
-@pytest.mark.integration
+@pytest.mark.unit
 class TestStreamingIntegration:
     """Test streaming functionality in notebook context."""
     
-    def test_streaming_updates_display_progressively(self):
+    @pytest.fixture
+    def mock_graphistry(self):
+        """Mock graphistry client for tests."""
+        mock = Mock()
+        mock.api_token = Mock(return_value="fake-token-123")
+        mock.register = Mock()
+        mock.refresh = Mock()
+        return mock
+    
+    def test_streaming_updates_display_progressively(self, mock_graphistry):
         """Test that streaming updates display multiple times during response."""
         # Mock streaming response lines that simulate progressive updates
         mock_lines = [
@@ -49,8 +58,8 @@ class TestStreamingIntegration:
                 with patch('louieai.notebook.streaming.clear_output') as mock_clear:
                     with patch('louieai.notebook.streaming.display') as mock_display:
                         with patch('louieai.notebook.streaming.HTML') as mock_html:
-                            # Create cursor
-                            lui = louie()
+                            # Create cursor with mocked auth
+                            lui = louie(graphistry_client=mock_graphistry)
                             
                             # Execute query (should trigger streaming)
                             lui("Test query")
@@ -72,7 +81,7 @@ class TestStreamingIntegration:
                             # Verify final state
                             assert lui.text == "Starting...\nProcessing...\nAnalyzing...\nComplete!"
     
-    def test_streaming_with_dataframe_element(self):
+    def test_streaming_with_dataframe_element(self, mock_graphistry):
         """Test streaming with dataframe elements."""
         mock_lines = [
             '{"dthread_id": "D_test123"}',
@@ -95,7 +104,7 @@ class TestStreamingIntegration:
             
             with patch('louieai.notebook.streaming.HAS_IPYTHON', True):
                 with patch('louieai.notebook.streaming.HTML') as mock_html:
-                    lui = louie()
+                    lui = louie(graphistry_client=mock_graphistry)
                     
                     # Mock arrow fetch
                     with patch.object(lui._client, '_fetch_dataframe_arrow', return_value=None):
@@ -108,7 +117,7 @@ class TestStreamingIntegration:
                     assert "DataFrame: df_456" in final_html
                     assert "5 × 3" in final_html
     
-    def test_streaming_error_display(self):
+    def test_streaming_error_display(self, mock_graphistry):
         """Test that errors are displayed properly during streaming."""
         # Mock httpx to fail
         with patch('httpx.Client') as mock_httpx:
@@ -119,7 +128,7 @@ class TestStreamingIntegration:
             with patch('louieai.notebook.streaming.HAS_IPYTHON', True):
                 with patch('louieai.notebook.streaming.HTML') as mock_html:
                     with patch('louieai.notebook.streaming.update_display') as mock_update:
-                        lui = louie()
+                        lui = louie(graphistry_client=mock_graphistry)
                         
                         # Should raise but also display error
                         with pytest.raises(Exception, match="Network error"):
@@ -131,11 +140,11 @@ class TestStreamingIntegration:
                         assert "Error: Network error" in error_html
                         assert "color: red" in error_html
     
-    def test_non_jupyter_falls_back_to_regular(self):
+    def test_non_jupyter_falls_back_to_regular(self, mock_graphistry):
         """Test that non-Jupyter environments use regular add_cell."""
         # Mock to simulate non-Jupyter
         with patch('sys.modules', {}):  # No IPython
-            lui = louie()
+            lui = louie(graphistry_client=mock_graphistry)
             
             # Mock regular add_cell
             mock_response = Response(
@@ -151,7 +160,7 @@ class TestStreamingIntegration:
                 assert result is lui
                 assert lui.text == "Regular response"
     
-    def test_streaming_performance(self):
+    def test_streaming_performance(self, mock_graphistry):
         """Test that streaming provides faster time-to-first-display."""
         # Create many lines to simulate long response
         lines = ['{"dthread_id": "D_test123"}']
@@ -187,7 +196,7 @@ class TestStreamingIntegration:
                 with patch('louieai.notebook.streaming.clear_output', side_effect=track_display):
                     with patch('louieai.notebook.streaming.display'):
                         with patch('louieai.notebook.streaming.HTML'):
-                            lui = louie()
+                            lui = louie(graphistry_client=mock_graphistry)
                             
                             start_time = time.time()
                             lui("Long query")

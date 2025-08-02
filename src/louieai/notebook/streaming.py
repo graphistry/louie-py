@@ -48,8 +48,34 @@ class StreamingDisplay:
             msg = elem.get("message", "Unknown error")
             return f"<div style='color: red; background: #ffe0e0; padding: 10px; margin: 5px 0;'>⚠️ Error: {msg}</div>"
             
+        elif elem_type == "DebugLine":
+            text = elem.get("text", "")
+            return f"<div style='color: #666; font-family: monospace; font-size: 0.9em;'>🐛 {text}</div>"
+            
+        elif elem_type == "InfoLine":
+            text = elem.get("text", "")
+            return f"<div style='color: #0066cc; font-family: monospace; font-size: 0.9em;'>ℹ️ {text}</div>"
+            
+        elif elem_type == "WarningLine":
+            text = elem.get("text", "")
+            return f"<div style='color: #ff8800; font-family: monospace; font-size: 0.9em;'>⚠️ {text}</div>"
+            
+        elif elem_type == "ErrorLine":
+            text = elem.get("text", "")
+            return f"<div style='color: #cc0000; font-family: monospace; font-size: 0.9em;'>❌ {text}</div>"
+            
+        elif elem_type == "CodeElement":
+            code = elem.get("code", "") or elem.get("text", "")
+            lang = elem.get("language", "")
+            return f"<pre style='background: #f5f5f5; padding: 10px; border-radius: 5px;'><code>{code}</code></pre>"
+            
         else:
-            return f"<div style='color: gray;'>[{elem_type}]</div>"
+            # For unknown types, try to extract text or show raw content
+            text = elem.get("text", "") or elem.get("content", "") or str(elem.get("value", ""))
+            if text:
+                return f"<div style='color: gray;'>[{elem_type}] {text}</div>"
+            else:
+                return f"<div style='color: gray;'>[{elem_type}]</div>"
     
     def _render_html(self) -> str:
         """Render current state as HTML."""
