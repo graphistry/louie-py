@@ -178,12 +178,39 @@ def _render_response_html(response, client=None) -> str:
                             g = client._auth_manager._graphistry_client
                             if hasattr(g, "client_protocol_hostname") and hasattr(g, "protocol"):
                                 hostname = g.client_protocol_hostname()
-                                # Only prepend protocol if hostname doesn't already include it
-                                if hostname and not hostname.startswith(("http://", "https://")):
-                                    server_url = f"{g.protocol()}{hostname}"
-                                elif hostname:
-                                    server_url = hostname
-                        except Exception:
+                                print(f"Raw hostname from client: {hostname}")
+                                
+                                if hostname:
+                                    # Check if hostname already has protocol
+                                    existing_protocol = None
+                                    clean_hostname = hostname
+                                    
+                                    if hostname.startswith("http://"):
+                                        existing_protocol = "http://"
+                                        clean_hostname = hostname[7:]
+                                    elif hostname.startswith("https://"):
+                                        existing_protocol = "https://"
+                                        clean_hostname = hostname[8:]
+                                    elif hostname.startswith("https//"):  # Handle malformed URLs
+                                        existing_protocol = "https://"
+                                        clean_hostname = hostname[7:]
+                                    elif hostname.startswith("http//"):
+                                        existing_protocol = "http://"
+                                        clean_hostname = hostname[6:]
+                                    
+                                    # Get protocol from client, fall back to existing or default
+                                    protocol = g.protocol()
+                                    if not protocol and existing_protocol:
+                                        protocol = existing_protocol
+                                    elif not protocol:
+                                        protocol = "https://"
+                                    
+                                    server_url = f"{protocol}{clean_hostname}"
+                                    print(f"Protocol from client: {g.protocol()}")
+                                    print(f"Existing protocol: {existing_protocol}")
+                                    print(f"Final server URL: {server_url}")
+                        except Exception as e:
+                            print(f"Error getting Graphistry URL: {e}")
                             pass  # Use default
                     
                     if dataset_id:
