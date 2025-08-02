@@ -79,7 +79,8 @@ def _render_response_html(response) -> str:
                     text = elem.get("text", "")
                     if text:
                         html_parts.append(
-                            f"<div style='color: #666; font-family: monospace; font-size: 0.9em;'>🐛 {text}</div>"
+                            f"<div style='color: #666; font-family: monospace; "
+                            f"font-size: 0.9em;'>🐛 {text}</div>"
                         )
 
                 # InfoLine
@@ -87,7 +88,8 @@ def _render_response_html(response) -> str:
                     text = elem.get("text", "")
                     if text:
                         html_parts.append(
-                            f"<div style='color: #0066cc; font-family: monospace; font-size: 0.9em;'>ℹ️ {text}</div>"
+                            f"<div style='color: #0066cc; font-family: monospace; "
+                            f"font-size: 0.9em;'>ℹ️ {text}</div>"
                         )
 
                 # WarningLine
@@ -95,7 +97,8 @@ def _render_response_html(response) -> str:
                     text = elem.get("text", "")
                     if text:
                         html_parts.append(
-                            f"<div style='color: #ff8800; font-family: monospace; font-size: 0.9em;'>⚠️ {text}</div>"
+                            f"<div style='color: #ff8800; font-family: monospace; "
+                            f"font-size: 0.9em;'>⚠️ {text}</div>"
                         )
 
                 # ErrorLine
@@ -103,14 +106,16 @@ def _render_response_html(response) -> str:
                     text = elem.get("text", "")
                     if text:
                         html_parts.append(
-                            f"<div style='color: #cc0000; font-family: monospace; font-size: 0.9em;'>❌ {text}</div>"
+                            f"<div style='color: #cc0000; font-family: monospace; "
+                            f"font-size: 0.9em;'>❌ {text}</div>"
                         )
 
                 # ExceptionElement
                 elif elem_type == "ExceptionElement":
                     msg = elem.get("message", "Unknown error")
                     html_parts.append(
-                        f"<div style='color: red; background: #ffe0e0; padding: 10px; margin: 5px 0;'>⚠️ Error: {msg}</div>"
+                        f"<div style='color: red; background: #ffe0e0; padding: 10px; "
+                        f"margin: 5px 0;'>⚠️ Error: {msg}</div>"
                     )
 
                 # CodeElement
