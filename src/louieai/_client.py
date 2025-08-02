@@ -438,11 +438,14 @@ class LouieClient:
         
         # Fetch dataframes for any DfElements
         for elem in result["elements"]:
-            if elem.get("type") == "DfElement" and "block_id" in elem:
-                # Fetch the actual dataframe via Arrow
-                df = self._fetch_dataframe_arrow(actual_thread_id, elem["block_id"])
-                if df is not None:
-                    elem["table"] = df
+            if elem.get("type") == "DfElement":
+                # Check for df_id or block_id
+                df_id = elem.get("df_id") or elem.get("block_id")
+                if df_id:
+                    # Fetch the actual dataframe via Arrow
+                    df = self._fetch_dataframe_arrow(actual_thread_id, df_id)
+                    if df is not None:
+                        elem["table"] = df
 
         # Return Response with all elements
         return Response(thread_id=actual_thread_id, elements=result["elements"])

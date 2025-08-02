@@ -269,7 +269,9 @@ class TestLouieClient:
 
         with patch("louieai._client.httpx.Client") as mock_client_class:
             mock_client_class.return_value.__enter__.return_value = mock_httpx_client
-            response = client.add_cell("D_001", "Query data and analyze")
+            # Mock the _fetch_dataframe_arrow method to prevent actual network calls
+            with patch.object(client, '_fetch_dataframe_arrow', return_value=None):
+                response = client.add_cell("D_001", "Query data and analyze")
 
         assert response.thread_id == "D_001"
         # The streaming now continues to read all elements
