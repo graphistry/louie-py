@@ -178,37 +178,35 @@ def _render_response_html(response, client=None) -> str:
                             g = client._auth_manager._graphistry_client
                             if hasattr(g, "client_protocol_hostname") and hasattr(g, "protocol"):
                                 hostname = g.client_protocol_hostname()
-                                print(f"Raw hostname from client: {hostname}")
+                                protocol = g.protocol()
+                                print(f"Raw hostname from client: '{hostname}'")
+                                print(f"g.protocol(): '{protocol}'")
                                 
                                 if hostname:
-                                    # Check if hostname already has protocol
-                                    existing_protocol = None
-                                    clean_hostname = hostname
+                                    # Fix malformed protocols first
+                                    hostname = hostname.replace("https//", "https://")
+                                    hostname = hostname.replace("http//", "http://")
                                     
-                                    if hostname.startswith("http://"):
-                                        existing_protocol = "http://"
-                                        clean_hostname = hostname[7:]
-                                    elif hostname.startswith("https://"):
-                                        existing_protocol = "https://"
-                                        clean_hostname = hostname[8:]
-                                    elif hostname.startswith("https//"):  # Handle malformed URLs
-                                        existing_protocol = "https://"
-                                        clean_hostname = hostname[7:]
-                                    elif hostname.startswith("http//"):
-                                        existing_protocol = "http://"
-                                        clean_hostname = hostname[6:]
-                                    
-                                    # Get protocol from client, fall back to existing or default
-                                    protocol = g.protocol()
-                                    if not protocol and existing_protocol:
-                                        protocol = existing_protocol
-                                    elif not protocol:
-                                        protocol = "https://"
-                                    
-                                    server_url = f"{protocol}{clean_hostname}"
-                                    print(f"Protocol from client: {g.protocol()}")
-                                    print(f"Existing protocol: {existing_protocol}")
-                                    print(f"Final server URL: {server_url}")
+                                    # Check if hostname already contains protocol
+                                    if hostname.startswith(("http://", "https://")):
+                                        # It's a full URL already
+                                        server_url = hostname
+                                        print(f"Using full URL from hostname: {server_url}")
+                                    else:
+                                        # It's just a hostname, need to add protocol
+                                        # Use protocol from g.protocol() if available
+                                        if not protocol:
+                                            protocol = "https://"
+                                        # Ensure protocol ends with ://
+                                        if protocol and not protocol.endswith("://"):
+                                            if protocol.endswith(":/"):
+                                                protocol = protocol + "/"
+                                            elif protocol.endswith(":"):
+                                                protocol = protocol + "//"
+                                            else:
+                                                protocol = protocol + "://"
+                                        server_url = f"{protocol}{hostname}"
+                                        print(f"Constructed URL: {server_url}")
                         except Exception as e:
                             print(f"Error getting Graphistry URL: {e}")
                             pass  # Use default

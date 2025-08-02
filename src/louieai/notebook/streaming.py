@@ -136,33 +136,31 @@ class StreamingDisplay:
                     g = self.client._auth_manager._graphistry_client
                     if hasattr(g, "client_protocol_hostname") and hasattr(g, "protocol"):
                         hostname = g.client_protocol_hostname()
+                        protocol = g.protocol()
                         
                         if hostname:
-                            # Check if hostname already has protocol
-                            existing_protocol = None
-                            clean_hostname = hostname
+                            # Fix malformed protocols first
+                            hostname = hostname.replace("https//", "https://")
+                            hostname = hostname.replace("http//", "http://")
                             
-                            if hostname.startswith("http://"):
-                                existing_protocol = "http://"
-                                clean_hostname = hostname[7:]
-                            elif hostname.startswith("https://"):
-                                existing_protocol = "https://"
-                                clean_hostname = hostname[8:]
-                            elif hostname.startswith("https//"):  # Handle malformed URLs
-                                existing_protocol = "https://"
-                                clean_hostname = hostname[7:]
-                            elif hostname.startswith("http//"):
-                                existing_protocol = "http://"
-                                clean_hostname = hostname[6:]
-                            
-                            # Get protocol from client, fall back to existing or default
-                            protocol = g.protocol()
-                            if not protocol and existing_protocol:
-                                protocol = existing_protocol
-                            elif not protocol:
-                                protocol = "https://"
-                            
-                            server_url = f"{protocol}{clean_hostname}"
+                            # Check if hostname already contains protocol
+                            if hostname.startswith(("http://", "https://")):
+                                # It's a full URL already
+                                server_url = hostname
+                            else:
+                                # It's just a hostname, need to add protocol
+                                # Use protocol from g.protocol() if available
+                                if not protocol:
+                                    protocol = "https://"
+                                # Ensure protocol ends with ://
+                                if protocol and not protocol.endswith("://"):
+                                    if protocol.endswith(":/"):
+                                        protocol = protocol + "/"
+                                    elif protocol.endswith(":"):
+                                        protocol = protocol + "//"
+                                    else:
+                                        protocol = protocol + "://"
+                                server_url = f"{protocol}{hostname}"
                 except Exception:
                     pass  # Use default
             
