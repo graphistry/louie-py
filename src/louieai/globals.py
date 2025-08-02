@@ -12,4 +12,4 @@ Example:
 
 from .notebook import lui
 
-__all__ = ['lui']
+__all__ = ["lui"]

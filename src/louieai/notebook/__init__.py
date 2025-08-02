@@ -57,5 +57,4 @@ class _LuiProxy:
 lui = _LuiProxy()
 
 # Also export for direct access if needed
-__all__ = ['Cursor']
-
+__all__ = ["Cursor"]

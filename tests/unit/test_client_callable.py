@@ -14,8 +14,8 @@ class TestClientCallable:
         client = LouieClient()
         assert callable(client), "LouieClient instance should be callable"
 
-    @patch('louieai._client.httpx.Client')
-    @patch('louieai._client.AuthManager')
+    @patch("louieai._client.httpx.Client")
+    @patch("louieai._client.AuthManager")
     def test_call_creates_new_thread(self, mock_auth_manager_class, mock_httpx_class):
         """Test that calling client without thread_id creates new thread."""
         # Setup mocks
@@ -44,10 +44,11 @@ class TestClientCallable:
         call_args = mock_httpx.post.call_args
         assert "dthread_id" not in call_args[1]["params"]
 
-    @patch('louieai._client.httpx.Client')
-    @patch('louieai._client.AuthManager')
-    def test_call_maintains_thread_context(self, mock_auth_manager_class,
-                                           mock_httpx_class):
+    @patch("louieai._client.httpx.Client")
+    @patch("louieai._client.AuthManager")
+    def test_call_maintains_thread_context(
+        self, mock_auth_manager_class, mock_httpx_class
+    ):
         """Test that subsequent calls maintain thread context."""
         # Setup mocks
         mock_auth_manager = Mock()
@@ -82,10 +83,11 @@ class TestClientCallable:
         second_call_args = mock_httpx.post.call_args_list[1]
         assert second_call_args[1]["params"]["dthread_id"] == "thread_123"
 
-    @patch('louieai._client.httpx.Client')
-    @patch('louieai._client.AuthManager')
-    def test_call_with_explicit_thread_id(self, mock_auth_manager_class,
-                                         mock_httpx_class):
+    @patch("louieai._client.httpx.Client")
+    @patch("louieai._client.AuthManager")
+    def test_call_with_explicit_thread_id(
+        self, mock_auth_manager_class, mock_httpx_class
+    ):
         """Test calling with explicit thread_id."""
         # Setup mocks
         mock_auth_manager = Mock()
@@ -110,8 +112,8 @@ class TestClientCallable:
         call_args = mock_httpx.post.call_args
         assert call_args[1]["params"]["dthread_id"] == "custom_thread"
 
-    @patch('louieai._client.httpx.Client')
-    @patch('louieai._client.AuthManager')
+    @patch("louieai._client.httpx.Client")
+    @patch("louieai._client.AuthManager")
     def test_call_with_traces(self, mock_auth_manager_class, mock_httpx_class):
         """Test calling with traces enabled."""
         # Setup mocks
@@ -136,8 +138,8 @@ class TestClientCallable:
         call_args = mock_httpx.post.call_args
         assert call_args[1]["params"]["ignore_traces"] == "false"
 
-    @patch('louieai._client.httpx.Client')
-    @patch('louieai._client.AuthManager')
+    @patch("louieai._client.httpx.Client")
+    @patch("louieai._client.AuthManager")
     def test_call_with_custom_agent(self, mock_auth_manager_class, mock_httpx_class):
         """Test calling with custom agent."""
         # Setup mocks
@@ -174,4 +176,4 @@ class TestClientCallable:
 
         # All of these should work without errors (won't actually make requests)
         assert callable(client)
-        assert callable(getattr(client, 'add_cell', None))
+        assert callable(getattr(client, "add_cell", None))

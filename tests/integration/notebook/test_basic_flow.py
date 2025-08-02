@@ -10,11 +10,11 @@ import pytest
 from louieai.globals import lui
 
 # Skip if no credentials provided
-has_username = os.environ.get('GRAPHISTRY_USERNAME') is not None
-has_password = os.environ.get('GRAPHISTRY_PASSWORD') is not None
+has_username = os.environ.get("GRAPHISTRY_USERNAME") is not None
+has_password = os.environ.get("GRAPHISTRY_PASSWORD") is not None
 pytestmark = pytest.mark.skipif(
     not (has_username and has_password),
-    reason="Integration tests require GRAPHISTRY_USERNAME and GRAPHISTRY_PASSWORD"
+    reason="Integration tests require GRAPHISTRY_USERNAME and GRAPHISTRY_PASSWORD",
 )
 
 
@@ -30,6 +30,7 @@ def output_dir():
 def reset_lui():
     """Reset lui singleton before each test."""
     import louieai.notebook
+
     louieai.notebook._global_cursor = None
     yield
     # Cleanup after test
@@ -46,14 +47,19 @@ class TestBasicFlow:
 
         # Save response for analysis
         with open(output_dir / "simple_query_response.json", "w") as f:
-            json.dump({
-                "thread_id": response.thread_id,
-                "text_elements": response.text_elements,
-                "dataframe_elements": response.dataframe_elements,
-                "graph_elements": getattr(response, 'graph_elements', []),
-                "markdown_elements": getattr(response, 'markdown_elements', []),
-                "all_attributes": dir(response)
-            }, f, indent=2, default=str)
+            json.dump(
+                {
+                    "thread_id": response.thread_id,
+                    "text_elements": response.text_elements,
+                    "dataframe_elements": response.dataframe_elements,
+                    "graph_elements": getattr(response, "graph_elements", []),
+                    "markdown_elements": getattr(response, "markdown_elements", []),
+                    "all_attributes": dir(response),
+                },
+                f,
+                indent=2,
+                default=str,
+            )
 
         # Basic assertions
         assert response is not None
@@ -75,28 +81,33 @@ class TestBasicFlow:
 
         # Save response
         with open(output_dir / "dataframe_query_response.json", "w") as f:
-            json.dump({
-                "thread_id": response.thread_id,
-                "text_elements": response.text_elements,
-                "dataframe_elements": [
-                    {
-                        "type": elem.get("type"),
-                        "has_table": "table" in elem,
-                        "table_type": type(elem.get("table", None)).__name__,
-                        "shape": (
-                            elem.get("table").shape
-                            if hasattr(elem.get("table", None), "shape")
-                            else None
-                        )
-                    }
-                    for elem in response.dataframe_elements
-                ],
-                "element_keys": (
-                    list(response.dataframe_elements[0].keys())
-                    if response.dataframe_elements
-                    else []
-                )
-            }, f, indent=2, default=str)
+            json.dump(
+                {
+                    "thread_id": response.thread_id,
+                    "text_elements": response.text_elements,
+                    "dataframe_elements": [
+                        {
+                            "type": elem.get("type"),
+                            "has_table": "table" in elem,
+                            "table_type": type(elem.get("table", None)).__name__,
+                            "shape": (
+                                elem.get("table").shape
+                                if hasattr(elem.get("table", None), "shape")
+                                else None
+                            ),
+                        }
+                        for elem in response.dataframe_elements
+                    ],
+                    "element_keys": (
+                        list(response.dataframe_elements[0].keys())
+                        if response.dataframe_elements
+                        else []
+                    ),
+                },
+                f,
+                indent=2,
+                default=str,
+            )
 
         # Check dataframe access
         df = lui.df
@@ -115,16 +126,21 @@ class TestBasicFlow:
 
         # Save response with traces
         with open(output_dir / "traces_response.json", "w") as f:
-            json.dump({
-                "thread_id": response.thread_id,
-                "text_elements": response.text_elements,
-                "trace_elements": getattr(response, 'trace_elements', []),
-                "reasoning_elements": getattr(response, 'reasoning_elements', []),
-                "has_traces": (
-                    hasattr(response, 'trace_elements') or
-                    hasattr(response, 'reasoning_elements')
-                )
-            }, f, indent=2, default=str)
+            json.dump(
+                {
+                    "thread_id": response.thread_id,
+                    "text_elements": response.text_elements,
+                    "trace_elements": getattr(response, "trace_elements", []),
+                    "reasoning_elements": getattr(response, "reasoning_elements", []),
+                    "has_traces": (
+                        hasattr(response, "trace_elements")
+                        or hasattr(response, "reasoning_elements")
+                    ),
+                },
+                f,
+                indent=2,
+                default=str,
+            )
 
         # Traces should be enabled
         assert lui.traces is True
@@ -138,17 +154,22 @@ class TestBasicFlow:
 
         # Access history
         assert lui[-1].text == lui.text  # Latest
-        assert lui[-2].text is not None   # Second to last
-        assert lui[-3].text is not None   # Third to last
+        assert lui[-2].text is not None  # Second to last
+        assert lui[-3].text is not None  # Third to last
 
         # Save history info
         with open(output_dir / "history_test.json", "w") as f:
-            json.dump({
-                "history_length": len(lui._get_cursor()._history),
-                "latest_text": lui.text,
-                "previous_text": lui[-2].text,
-                "all_texts": [lui[i].text for i in range(-3, 0)]
-            }, f, indent=2, default=str)
+            json.dump(
+                {
+                    "history_length": len(lui._get_cursor()._history),
+                    "latest_text": lui.text,
+                    "previous_text": lui[-2].text,
+                    "all_texts": [lui[i].text for i in range(-3, 0)],
+                },
+                f,
+                indent=2,
+                default=str,
+            )
 
     def test_element_types_discovery(self, output_dir):
         """Discover what element types are available."""
@@ -158,7 +179,7 @@ class TestBasicFlow:
             "Create a markdown table with 3 columns",
             "Plot a simple line graph",
             "Show me some **bold** and *italic* markdown text",
-            "Display an image or visualization"
+            "Display an image or visualization",
         ]
 
         all_element_types = set()
@@ -169,8 +190,9 @@ class TestBasicFlow:
 
                 # Collect all attributes that look like elements
                 element_attrs = [
-                    attr for attr in dir(response)
-                    if attr.endswith('_elements') and not attr.startswith('_')
+                    attr
+                    for attr in dir(response)
+                    if attr.endswith("_elements") and not attr.startswith("_")
                 ]
 
                 all_element_types.update(element_attrs)
@@ -193,30 +215,39 @@ class TestBasicFlow:
                                         if isinstance(elem, dict)
                                         else None
                                     ),
-                                    "sample": str(elem)[:200]
+                                    "sample": str(elem)[:200],
                                 }
                                 for elem in elements[:2]  # Just first 2 samples
                             ]
 
-                    json.dump({
-                        "query": query,
-                        "element_types_found": element_attrs,
-                        "element_details": element_info,
-                        "text_response": lui.text[:500] if lui.text else None
-                    }, f, indent=2, default=str)
+                    json.dump(
+                        {
+                            "query": query,
+                            "element_types_found": element_attrs,
+                            "element_details": element_info,
+                            "text_response": lui.text[:500] if lui.text else None,
+                        },
+                        f,
+                        indent=2,
+                        default=str,
+                    )
 
             except Exception as e:
                 print(f"Query failed: {query} - {e}")
 
         # Save summary
         with open(output_dir / "element_types_summary.json", "w") as f:
-            json.dump({
-                "all_element_types_discovered": list(all_element_types),
-                "notes": (
-                    "These are all the *_elements attributes found "
-                    "across different queries"
-                )
-            }, f, indent=2)
+            json.dump(
+                {
+                    "all_element_types_discovered": list(all_element_types),
+                    "notes": (
+                        "These are all the *_elements attributes found "
+                        "across different queries"
+                    ),
+                },
+                f,
+                indent=2,
+            )
 
         print(f"Discovered element types: {all_element_types}")
 
@@ -233,4 +264,3 @@ class TestBasicFlow:
         # After a query, should have data
         lui("Hello")
         assert lui.text is not None
-

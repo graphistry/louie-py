@@ -19,7 +19,7 @@ class TestDataFrameAccess:
         # Add response without dataframes
         mock_response = Mock(spec=Response)
         mock_response.dataframe_elements = []
-        mock_response.text_elements = [{'type': 'TextElement', 'content': 'Hello'}]
+        mock_response.text_elements = [{"type": "TextElement", "content": "Hello"}]
         cursor._history.append(mock_response)
 
         assert cursor.df is None
@@ -29,14 +29,14 @@ class TestDataFrameAccess:
         cursor = Cursor()
 
         # Create test dataframes
-        df1 = pd.DataFrame({'a': [1, 2, 3]})
-        df2 = pd.DataFrame({'b': [4, 5, 6]})
+        df1 = pd.DataFrame({"a": [1, 2, 3]})
+        df2 = pd.DataFrame({"b": [4, 5, 6]})
 
         # Mock response with dataframes
         mock_response = Mock(spec=Response)
         mock_response.dataframe_elements = [
-            {'type': 'DfElement', 'table': df1},
-            {'type': 'DfElement', 'table': df2}
+            {"type": "DfElement", "table": df1},
+            {"type": "DfElement", "table": df2},
         ]
         cursor._history.append(mock_response)
 
@@ -62,14 +62,14 @@ class TestDataFrameAccess:
         cursor = Cursor()
 
         # Create test dataframes
-        df1 = pd.DataFrame({'a': [1, 2, 3]})
-        df2 = pd.DataFrame({'b': [4, 5, 6]})
+        df1 = pd.DataFrame({"a": [1, 2, 3]})
+        df2 = pd.DataFrame({"b": [4, 5, 6]})
 
         # Mock response
         mock_response = Mock(spec=Response)
         mock_response.dataframe_elements = [
-            {'type': 'DfElement', 'table': df1},
-            {'type': 'DfElement', 'table': df2}
+            {"type": "DfElement", "table": df1},
+            {"type": "DfElement", "table": df2},
         ]
         cursor._history.append(mock_response)
 
@@ -96,12 +96,12 @@ class TestDataFrameAccess:
 
         mock_response = Mock(spec=Response)
         mock_response.text_elements = [
-            {'type': 'TextElement', 'content': 'First text'},
-            {'type': 'TextElement', 'content': 'Second text'}
+            {"type": "TextElement", "content": "First text"},
+            {"type": "TextElement", "content": "Second text"},
         ]
         cursor._history.append(mock_response)
 
-        assert cursor.text == 'First text'
+        assert cursor.text == "First text"
 
     def test_texts_returns_all_text_elements(self):
         """Test texts returns all text elements."""
@@ -109,28 +109,24 @@ class TestDataFrameAccess:
 
         mock_response = Mock(spec=Response)
         mock_response.text_elements = [
-            {'type': 'TextElement', 'content': 'First text'},
-            {'type': 'TextElement', 'content': 'Second text'}
+            {"type": "TextElement", "content": "First text"},
+            {"type": "TextElement", "content": "Second text"},
         ]
         cursor._history.append(mock_response)
 
         texts = cursor.texts
-        assert texts == ['First text', 'Second text']
+        assert texts == ["First text", "Second text"]
 
     def test_elements_returns_all_typed_elements(self):
         """Test elements returns all elements with type tags."""
         cursor = Cursor()
 
         # Create mixed response
-        df1 = pd.DataFrame({'a': [1, 2, 3]})
+        df1 = pd.DataFrame({"a": [1, 2, 3]})
 
         mock_response = Mock(spec=Response)
-        mock_response.text_elements = [
-            {'type': 'TextElement', 'content': 'Some text'}
-        ]
-        mock_response.dataframe_elements = [
-            {'type': 'DfElement', 'table': df1}
-        ]
+        mock_response.text_elements = [{"type": "TextElement", "content": "Some text"}]
+        mock_response.dataframe_elements = [{"type": "DfElement", "table": df1}]
         mock_response.graph_elements = []
         cursor._history.append(mock_response)
 
@@ -138,36 +134,36 @@ class TestDataFrameAccess:
         assert len(elements) == 2
 
         # Check text element
-        assert elements[0]['type'] == 'text'
-        assert elements[0]['value'] == 'Some text'
+        assert elements[0]["type"] == "text"
+        assert elements[0]["value"] == "Some text"
 
         # Check dataframe element
-        assert elements[1]['type'] == 'dataframe'
-        pd.testing.assert_frame_equal(elements[1]['value'], df1)
+        assert elements[1]["type"] == "dataframe"
+        pd.testing.assert_frame_equal(elements[1]["value"], df1)
 
     def test_history_access_with_getitem(self):
         """Test accessing history with lui[-1] syntax."""
         cursor = Cursor()
 
         # Add multiple responses
-        df1 = pd.DataFrame({'a': [1, 2, 3]})
-        df2 = pd.DataFrame({'b': [4, 5, 6]})
+        df1 = pd.DataFrame({"a": [1, 2, 3]})
+        df2 = pd.DataFrame({"b": [4, 5, 6]})
 
         response1 = Mock(spec=Response)
-        response1.dataframe_elements = [{'type': 'DfElement', 'table': df1}]
-        response1.text_elements = [{'type': 'TextElement', 'content': 'First'}]
+        response1.dataframe_elements = [{"type": "DfElement", "table": df1}]
+        response1.text_elements = [{"type": "TextElement", "content": "First"}]
         response1.graph_elements = []
 
         response2 = Mock(spec=Response)
-        response2.dataframe_elements = [{'type': 'DfElement', 'table': df2}]
-        response2.text_elements = [{'type': 'TextElement', 'content': 'Second'}]
+        response2.dataframe_elements = [{"type": "DfElement", "table": df2}]
+        response2.text_elements = [{"type": "TextElement", "content": "Second"}]
         response2.graph_elements = []
 
         cursor._history.extend([response1, response2])
 
         # Test negative indexing
-        assert cursor[-1].text == 'Second'
-        assert cursor[-2].text == 'First'
+        assert cursor[-1].text == "Second"
+        assert cursor[-2].text == "First"
 
         # Test dataframe access
         pd.testing.assert_frame_equal(cursor[-1].df, df2)
@@ -187,7 +183,7 @@ class TestDataFrameAccess:
 
         # Add one response
         response = Mock(spec=Response)
-        response.text_elements = [{'type': 'TextElement', 'content': 'Test'}]
+        response.text_elements = [{"type": "TextElement", "content": "Test"}]
         response.dataframe_elements = []
         response.graph_elements = []
         cursor._history.append(response)
@@ -214,8 +210,8 @@ class TestDataFrameAccess:
 
         mock_response = Mock(spec=Response)
         mock_response.dataframe_elements = [
-            {'type': 'DfElement'},  # Missing 'table' key
-            {'type': 'DfElement', 'table': 'not a dataframe'}  # Wrong type
+            {"type": "DfElement"},  # Missing 'table' key
+            {"type": "DfElement", "table": "not a dataframe"},  # Wrong type
         ]
         cursor._history.append(mock_response)
 
@@ -238,15 +234,15 @@ class TestResponseProxy:
 
     def test_proxy_delegates_to_response(self):
         """Test proxy correctly delegates to underlying response."""
-        df = pd.DataFrame({'x': [1, 2, 3]})
+        df = pd.DataFrame({"x": [1, 2, 3]})
 
         response = Mock(spec=Response)
-        response.text_elements = [{'type': 'TextElement', 'content': 'Hello'}]
-        response.dataframe_elements = [{'type': 'DfElement', 'table': df}]
+        response.text_elements = [{"type": "TextElement", "content": "Hello"}]
+        response.dataframe_elements = [{"type": "DfElement", "table": df}]
         response.graph_elements = []
 
         proxy = ResponseProxy(response)
 
-        assert proxy.text == 'Hello'
+        assert proxy.text == "Hello"
         pd.testing.assert_frame_equal(proxy.df, df)
         assert len(proxy.elements) == 2

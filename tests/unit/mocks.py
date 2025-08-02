@@ -123,12 +123,14 @@ class MockResponse:
         # Ensure text_elements is always populated for text responses
         if response_type == "text" and not self.text_elements:
             # Force add a text element
-            self.elements.append({
-                "type": "TextElement",
-                "id": self.id,
-                "content": self.text,
-                "language": "Markdown"
-            })
+            self.elements.append(
+                {
+                    "type": "TextElement",
+                    "id": self.id,
+                    "content": self.text,
+                    "language": "Markdown",
+                }
+            )
 
     def _setup_elements(self, response_type: str):
         """Set up elements list and convenience properties."""
@@ -142,7 +144,7 @@ class MockResponse:
             element.update(
                 {
                     "content": self.text,
-                    "language": getattr(self, "language", "Markdown")
+                    "language": getattr(self, "language", "Markdown"),
                 }
             )
         elif response_type == "dataframe":
@@ -268,9 +270,9 @@ def create_mock_client():
 
     # Make client callable (for v0.2.0+ interface)
     def client_call(prompt, *args, **kwargs):
-        thread_id = kwargs.get('thread_id', '')
-        agent = kwargs.get('agent', 'LouieAgent')
-        traces = kwargs.get('traces', False)
+        thread_id = kwargs.get("thread_id", "")
+        agent = kwargs.get("agent", "LouieAgent")
+        traces = kwargs.get("traces", False)
         return add_cell(thread_id, prompt, agent, traces)
 
     # Set the callable function

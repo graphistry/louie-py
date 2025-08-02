@@ -35,8 +35,8 @@ class TestHelpDiscovery:
 
         # Mock response
         mock_response = Mock(spec=Response)
-        mock_response.text_elements = [{'type': 'TextElement', 'content': 'Hello'}]
-        mock_response.dataframe_elements = [{'type': 'DfElement', 'table': Mock()}]
+        mock_response.text_elements = [{"type": "TextElement", "content": "Hello"}]
+        mock_response.dataframe_elements = [{"type": "DfElement", "table": Mock()}]
 
         cursor._history.append(mock_response)
         cursor._current_thread = "test-123"
@@ -66,7 +66,7 @@ class TestHelpDiscovery:
 
         # Mock response
         mock_response = Mock(spec=Response)
-        mock_response.text_elements = [{'type': 'TextElement', 'content': 'Hello'}]
+        mock_response.text_elements = [{"type": "TextElement", "content": "Hello"}]
         mock_response.dataframe_elements = []
 
         cursor._history.append(mock_response)
@@ -82,12 +82,13 @@ class TestHelpDiscovery:
 
     def test_lui_proxy_repr(self):
         """Test lui proxy delegates repr correctly."""
-        with patch('louieai.notebook.cursor.LouieClient') as mock_client_class:
+        with patch("louieai.notebook.cursor.LouieClient") as mock_client_class:
             mock_client = Mock()
             mock_client_class.return_value = mock_client
 
             # Reset singleton
             import louieai.notebook
+
             louieai.notebook._global_cursor = None
 
             from louieai.globals import lui
@@ -105,11 +106,11 @@ class TestHelpDiscovery:
         cursor = Cursor()
 
         # help() uses __doc__ attribute
-        assert hasattr(cursor, '__doc__')
+        assert hasattr(cursor, "__doc__")
         assert len(cursor.__doc__) > 100  # Should have substantial docs
 
         # Test main method has docs
-        assert hasattr(cursor.__call__, '__doc__')
+        assert hasattr(cursor.__call__, "__doc__")
         assert "Execute a query" in cursor.__call__.__doc__
 
     def test_quick_help_in_html(self):

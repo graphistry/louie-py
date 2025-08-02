@@ -10,10 +10,7 @@ from ._client import Response, Thread
 from .notebook import Cursor
 
 
-def louie(
-    graphistry_client: Any | None = None,
-    **kwargs: Any
-) -> Cursor:
+def louie(graphistry_client: Any | None = None, **kwargs: Any) -> Cursor:
     """Create a callable Louie interface.
 
     This factory function provides flexible ways to create a Louie client:

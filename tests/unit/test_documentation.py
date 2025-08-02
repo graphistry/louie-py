@@ -163,6 +163,7 @@ class TestDocumentation:
         # Mock lui as callable
         def mock_lui_call(*args, **kwargs):
             return Mock(text="Response", df=mock_lui.df)
+
         mock_lui.side_effect = mock_lui_call
 
         # Mock imports
@@ -277,14 +278,16 @@ def _create_comprehensive_mock_lui():
 
     # Basic attributes
     mock_lui.text = "Mocked text response"
-    mock_df = pd.DataFrame({
-        "region": ["North", "South", "East", "West", "North"],
-        "sales": [100, 200, 150, 300, 250],
-        "product": ["A", "B", "C", "D", "E"],
-        "country": ["USA", "Canada", "Mexico", "USA", "Canada"],
-        "failed_logins": [5, 3, 8, 2, 1],
-        "col1": [1, 2, 3, 4, 5]
-    })
+    mock_df = pd.DataFrame(
+        {
+            "region": ["North", "South", "East", "West", "North"],
+            "sales": [100, 200, 150, 300, 250],
+            "product": ["A", "B", "C", "D", "E"],
+            "country": ["USA", "Canada", "Mexico", "USA", "Canada"],
+            "failed_logins": [5, 3, 8, 2, 1],
+            "col1": [1, 2, 3, 4, 5],
+        }
+    )
     mock_lui.df = mock_df
     mock_lui.dfs = [mock_df]  # Make it a real list
     mock_lui.texts = ["Mocked text response"]
@@ -313,12 +316,14 @@ def _create_comprehensive_mock_lui():
     def mock_getitem(self, index):
         hist = Mock()
         hist.text = "Historical text"
-        hist.df = pd.DataFrame({
-            "region": ["North", "South"],
-            "sales": [100, 200],
-            "product": ["A", "B"],
-            "col1": [1, 2]
-        })
+        hist.df = pd.DataFrame(
+            {
+                "region": ["North", "South"],
+                "sales": [100, 200],
+                "product": ["A", "B"],
+                "col1": [1, 2],
+            }
+        )
         hist.dfs = [hist.df]
         hist.texts = ["Historical text"]
         return hist

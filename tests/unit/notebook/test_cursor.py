@@ -14,7 +14,7 @@ class TestCursor:
 
     def test_init_creates_client(self):
         """Test cursor initializes with default client."""
-        with patch('louieai.notebook.cursor.LouieClient') as mock_client:
+        with patch("louieai.notebook.cursor.LouieClient") as mock_client:
             cursor = Cursor()
             mock_client.assert_called_once()
             assert len(cursor._history) == 0
@@ -30,25 +30,25 @@ class TestCursor:
     def test_call_creates_thread_on_first_use(self):
         """Test thread creation on first query."""
         mock_client = Mock()
-        mock_response = Mock(spec=Response, thread_id='test-thread-123')
+        mock_response = Mock(spec=Response, thread_id="test-thread-123")
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
         cursor("Test query")
 
         # Should start with empty thread
-        assert cursor._current_thread == 'test-thread-123'
+        assert cursor._current_thread == "test-thread-123"
 
         # Should use empty thread_id on first call
         mock_client.add_cell.assert_called_once()
         call_args = mock_client.add_cell.call_args[1]
-        assert call_args['thread_id'] == ''
-        assert call_args['prompt'] == "Test query"
+        assert call_args["thread_id"] == ""
+        assert call_args["prompt"] == "Test query"
 
     def test_call_reuses_thread(self):
         """Test thread persistence across calls."""
         mock_client = Mock()
-        mock_response = Mock(spec=Response, thread_id='test-thread-123')
+        mock_response = Mock(spec=Response, thread_id="test-thread-123")
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
@@ -63,16 +63,16 @@ class TestCursor:
 
         # Check calls
         calls = mock_client.add_cell.call_args_list
-        assert calls[0][1]['thread_id'] == ''  # First call creates thread
-        assert calls[1][1]['thread_id'] == 'test-thread-123'  # Second reuses
+        assert calls[0][1]["thread_id"] == ""  # First call creates thread
+        assert calls[1][1]["thread_id"] == "test-thread-123"  # Second reuses
 
     def test_history_tracking(self):
         """Test response history is maintained."""
         mock_client = Mock()
 
         # Create distinct response objects
-        response1 = Mock(spec=Response, thread_id='test-thread', id='resp1')
-        response2 = Mock(spec=Response, thread_id='test-thread', id='resp2')
+        response1 = Mock(spec=Response, thread_id="test-thread", id="resp1")
+        response2 = Mock(spec=Response, thread_id="test-thread", id="resp2")
         mock_client.add_cell.side_effect = [response1, response2]
 
         cursor = Cursor(client=mock_client)
@@ -105,7 +105,7 @@ class TestCursor:
     def test_traces_default_off(self):
         """Test traces are off by default."""
         mock_client = Mock()
-        mock_response = Mock(spec=Response, thread_id='test-thread')
+        mock_response = Mock(spec=Response, thread_id="test-thread")
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
@@ -114,12 +114,12 @@ class TestCursor:
         # Check traces parameter passed to client
         assert cursor._traces is False
         call_kwargs = mock_client.add_cell.call_args[1]
-        assert call_kwargs['traces'] is False
+        assert call_kwargs["traces"] is False
 
     def test_traces_override(self):
         """Test per-query trace override."""
         mock_client = Mock()
-        mock_response = Mock(spec=Response, thread_id='test-thread')
+        mock_response = Mock(spec=Response, thread_id="test-thread")
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
@@ -127,24 +127,24 @@ class TestCursor:
         # Query with traces enabled
         cursor("Test query", traces=True)
         call_kwargs = mock_client.add_cell.call_args[1]
-        assert call_kwargs['traces'] is True
+        assert call_kwargs["traces"] is True
 
         # Query with traces disabled explicitly
         cursor("Test query 2", traces=False)
         call_kwargs = mock_client.add_cell.call_args[1]
-        assert call_kwargs['traces'] is False
+        assert call_kwargs["traces"] is False
 
     def test_agent_override(self):
         """Test agent can be overridden."""
         mock_client = Mock()
-        mock_response = Mock(spec=Response, thread_id='test-thread')
+        mock_response = Mock(spec=Response, thread_id="test-thread")
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
         cursor("Test query", agent="custom")
 
         call_args = mock_client.add_cell.call_args[1]
-        assert call_args['agent'] == 'custom'
+        assert call_args["agent"] == "custom"
 
     def test_error_handling(self):
         """Test errors are logged and re-raised."""
@@ -156,7 +156,7 @@ class TestCursor:
         with pytest.raises(ValueError, match="API Error"):
             cursor("Test query")
 
-    @patch('louieai.notebook.cursor.logger')
+    @patch("louieai.notebook.cursor.logger")
     def test_error_logging(self, mock_logger):
         """Test errors are logged."""
         mock_client = Mock()
@@ -178,42 +178,46 @@ class TestCursor:
         import sys
 
         # Test without IPython
-        if 'IPython' in sys.modules:
-            del sys.modules['IPython']
+        if "IPython" in sys.modules:
+            del sys.modules["IPython"]
         assert cursor._in_jupyter() is False
 
         # Test with IPython
-        sys.modules['IPython'] = Mock()
+        sys.modules["IPython"] = Mock()
         assert cursor._in_jupyter() is True
 
         # Clean up
-        if 'IPython' in sys.modules:
-            del sys.modules['IPython']
+        if "IPython" in sys.modules:
+            del sys.modules["IPython"]
 
     def test_no_display_outside_jupyter(self):
         """Test display is skipped outside Jupyter."""
         mock_client = Mock()
-        mock_response = Mock(spec=Response, thread_id='test-thread')
+        mock_response = Mock(spec=Response, thread_id="test-thread")
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
 
         # Mock not in Jupyter
-        with patch.object(cursor, '_in_jupyter', return_value=False), \
-             patch.object(cursor, '_display') as mock_display:
+        with (
+            patch.object(cursor, "_in_jupyter", return_value=False),
+            patch.object(cursor, "_display") as mock_display,
+        ):
             cursor("Test query")
             mock_display.assert_not_called()
 
     def test_display_disabled_by_kwarg(self):
         """Test display can be disabled via kwarg."""
         mock_client = Mock()
-        mock_response = Mock(spec=Response, thread_id='test-thread')
+        mock_response = Mock(spec=Response, thread_id="test-thread")
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
 
         # Mock in Jupyter
-        with patch.object(cursor, '_in_jupyter', return_value=True), \
-             patch.object(cursor, '_display') as mock_display:
+        with (
+            patch.object(cursor, "_in_jupyter", return_value=True),
+            patch.object(cursor, "_display") as mock_display,
+        ):
             cursor("Test query", display=False)
             mock_display.assert_not_called()

@@ -18,11 +18,16 @@ class MockResponse:
             {"type": "TextElement", "content": "Analysis complete. " * 100}
         ]
         self.dataframe_elements = [
-            {"type": "DfElement", "table": pd.DataFrame({
-                'col1': range(1000),
-                'col2': range(1000, 2000),
-                'col3': ['value'] * 1000
-            })}
+            {
+                "type": "DfElement",
+                "table": pd.DataFrame(
+                    {
+                        "col1": range(1000),
+                        "col2": range(1000, 2000),
+                        "col3": ["value"] * 1000,
+                    }
+                ),
+            }
         ]
         self.graph_elements = []
         self.elements = []
@@ -32,7 +37,7 @@ class MockResponse:
             self.trace_elements = [
                 {
                     "type": "TraceElement",
-                    "content": "Step " + str(i) + ": " + ("x" * 500)
+                    "content": "Step " + str(i) + ": " + ("x" * 500),
                 }
                 for i in range(50)  # 50 trace steps
             ]
@@ -44,9 +49,10 @@ class TestTraceOverhead:
     def setup_method(self):
         """Reset state before each test."""
         import louieai.notebook
+
         louieai.notebook._global_cursor = None
 
-    @patch('louieai.notebook.cursor.LouieClient')
+    @patch("louieai.notebook.cursor.LouieClient")
     def test_query_performance_without_traces(self, mock_client_class):
         """Benchmark query performance without traces."""
         mock_client = Mock()
@@ -81,7 +87,7 @@ class TestTraceOverhead:
         # Should be fast
         assert avg_time < 10  # Less than 10ms average
 
-    @patch('louieai.notebook.cursor.LouieClient')
+    @patch("louieai.notebook.cursor.LouieClient")
     def test_query_performance_with_traces(self, mock_client_class):
         """Benchmark query performance with traces."""
         mock_client = Mock()
@@ -114,7 +120,7 @@ class TestTraceOverhead:
         # Should still be reasonable
         assert avg_time < 20  # Less than 20ms average
 
-    @patch('louieai.notebook.cursor.LouieClient')
+    @patch("louieai.notebook.cursor.LouieClient")
     def test_history_performance(self, mock_client_class):
         """Benchmark history access performance."""
         mock_client = Mock()
@@ -147,7 +153,7 @@ class TestTraceOverhead:
         # History access should be very fast
         assert avg_time < 1  # Less than 1ms average
 
-    @patch('louieai.notebook.cursor.LouieClient')
+    @patch("louieai.notebook.cursor.LouieClient")
     def test_memory_usage_with_history(self, mock_client_class):
         """Test memory usage with full history."""
         import sys
@@ -157,13 +163,17 @@ class TestTraceOverhead:
 
         # Create large responses
         large_response = MockResponse(include_traces=True)
-        large_response.dataframe_elements.append({
-            "type": "DfElement",
-            "table": pd.DataFrame({
-                f'col{i}': range(10000)
-                for i in range(20)  # 20 columns, 10k rows
-            })
-        })
+        large_response.dataframe_elements.append(
+            {
+                "type": "DfElement",
+                "table": pd.DataFrame(
+                    {
+                        f"col{i}": range(10000)
+                        for i in range(20)  # 20 columns, 10k rows
+                    }
+                ),
+            }
+        )
 
         mock_client.add_cell.return_value = large_response
 
@@ -188,7 +198,7 @@ class TestTraceOverhead:
         # Memory should be reasonable (less than 10MB for history)
         assert final_size < 10 * 1024 * 1024
 
-    @patch('louieai.notebook.cursor.LouieClient')
+    @patch("louieai.notebook.cursor.LouieClient")
     def test_dataframe_access_performance(self, mock_client_class):
         """Benchmark DataFrame access patterns."""
         mock_client = Mock()
@@ -197,12 +207,9 @@ class TestTraceOverhead:
         # Create response with multiple dataframes
         response = MockResponse(include_traces=False)
         for _ in range(10):
-            response.dataframe_elements.append({
-                "type": "DfElement",
-                "table": pd.DataFrame({
-                    'data': range(1000)
-                })
-            })
+            response.dataframe_elements.append(
+                {"type": "DfElement", "table": pd.DataFrame({"data": range(1000)})}
+            )
 
         mock_client.add_cell.return_value = response
 
@@ -238,7 +245,7 @@ class TestTraceOverhead:
 class TestOverheadComparison:
     """Compare notebook API overhead vs direct client."""
 
-    @patch('louieai.notebook.cursor.LouieClient')
+    @patch("louieai.notebook.cursor.LouieClient")
     def test_notebook_vs_client_overhead(self, mock_client_class):
         """Compare notebook API overhead to direct client usage."""
         mock_client = Mock()
@@ -252,8 +259,8 @@ class TestOverheadComparison:
         for _ in range(100):
             start = time.perf_counter()
             resp = mock_client.add_cell("", "test query", traces=False)
-            _ = resp.dataframe_elements[0]['table']
-            _ = resp.text_elements[0]['content']
+            _ = resp.dataframe_elements[0]["table"]
+            _ = resp.text_elements[0]["content"]
             end = time.perf_counter()
             direct_times.append(end - start)
 
@@ -296,4 +303,3 @@ if __name__ == "__main__":
     comparison.test_notebook_vs_client_overhead()
 
     print("\nAll benchmarks completed!")
-

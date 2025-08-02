@@ -41,10 +41,12 @@ class ResponseProxy:
         """All text elements."""
         if not self._response:
             return []
-        if (not hasattr(self._response, 'text_elements') or
-                not self._response.text_elements):
+        if (
+            not hasattr(self._response, "text_elements")
+            or not self._response.text_elements
+        ):
             return []
-        return [elem.get('content', '') for elem in self._response.text_elements]
+        return [elem.get("content", "") for elem in self._response.text_elements]
 
     @property
     def elements(self) -> list[dict[str, Any]]:
@@ -55,42 +57,37 @@ class ResponseProxy:
         result = []
 
         # If response has raw elements list, check for ExceptionElements
-        if hasattr(self._response, 'elements') and self._response.elements:
+        if hasattr(self._response, "elements") and self._response.elements:
             for elem in self._response.elements:
-                if isinstance(elem, dict) and elem.get('type') == 'ExceptionElement':
-                    result.append({
-                        'type': 'error',
-                        'value': elem.get('message', 'Unknown error'),
-                        'error_type': elem.get('error_type'),
-                        'traceback': elem.get('traceback')
-                    })
+                if isinstance(elem, dict) and elem.get("type") == "ExceptionElement":
+                    result.append(
+                        {
+                            "type": "error",
+                            "value": elem.get("message", "Unknown error"),
+                            "error_type": elem.get("error_type"),
+                            "traceback": elem.get("traceback"),
+                        }
+                    )
 
         # Add text elements
-        if hasattr(self._response, 'text_elements') and self._response.text_elements:
+        if hasattr(self._response, "text_elements") and self._response.text_elements:
             for elem in self._response.text_elements:
                 if isinstance(elem, dict):
-                    result.append({
-                        'type': 'text',
-                        'value': elem.get('content', '')
-                    })
+                    result.append({"type": "text", "value": elem.get("content", "")})
 
         # Add dataframe elements
-        if (hasattr(self._response, 'dataframe_elements') and
-                self._response.dataframe_elements):
+        if (
+            hasattr(self._response, "dataframe_elements")
+            and self._response.dataframe_elements
+        ):
             for elem in self._response.dataframe_elements:
-                if isinstance(elem, dict) and 'table' in elem:
-                    result.append({
-                        'type': 'dataframe',
-                        'value': elem['table']
-                    })
+                if isinstance(elem, dict) and "table" in elem:
+                    result.append({"type": "dataframe", "value": elem["table"]})
 
         # Add graph elements
-        if hasattr(self._response, 'graph_elements') and self._response.graph_elements:
+        if hasattr(self._response, "graph_elements") and self._response.graph_elements:
             for elem in self._response.graph_elements:
-                result.append({
-                    'type': 'graph',
-                    'value': elem
-                })
+                result.append({"type": "graph", "value": elem})
 
         return result
 
@@ -99,11 +96,12 @@ class ResponseProxy:
         """All error elements."""
         if not self._response:
             return []
-        if not hasattr(self._response, 'elements'):
+        if not hasattr(self._response, "elements"):
             return []
         return [
-            elem for elem in self._response.elements
-            if isinstance(elem, dict) and elem.get('type') == 'ExceptionElement'
+            elem
+            for elem in self._response.elements
+            if isinstance(elem, dict) and elem.get("type") == "ExceptionElement"
         ]
 
     @property
@@ -113,14 +111,19 @@ class ResponseProxy:
 
     def _extract_dataframes(self, response: Response) -> list[pd.DataFrame]:
         """Extract pandas DataFrames from response."""
-        if (not hasattr(response, 'dataframe_elements') or
-                not response.dataframe_elements):
+        if (
+            not hasattr(response, "dataframe_elements")
+            or not response.dataframe_elements
+        ):
             return []
         dfs = []
         for elem in response.dataframe_elements:
-            if (isinstance(elem, dict) and 'table' in elem and
-                    isinstance(elem['table'], pd.DataFrame)):
-                dfs.append(elem['table'])
+            if (
+                isinstance(elem, dict)
+                and "table" in elem
+                and isinstance(elem["table"], pd.DataFrame)
+            ):
+                dfs.append(elem["table"])
         return dfs
 
 
@@ -164,45 +167,45 @@ class Cursor:
             import os
 
             # Check for Louie-specific URL
-            server_url = os.environ.get('LOUIE_URL', 'https://louie-dev.grph.xyz')
+            server_url = os.environ.get("LOUIE_URL", "https://louie-dev.grph.xyz")
 
             # Check for credentials - support multiple auth methods
             # 1. Personal key authentication (PyGraphistry service accounts)
-            personal_key_id = os.environ.get('GRAPHISTRY_PERSONAL_KEY_ID')
-            personal_key_secret = os.environ.get('GRAPHISTRY_PERSONAL_KEY_SECRET')
+            personal_key_id = os.environ.get("GRAPHISTRY_PERSONAL_KEY_ID")
+            personal_key_secret = os.environ.get("GRAPHISTRY_PERSONAL_KEY_SECRET")
 
             # 2. API key authentication (legacy)
-            api_key = os.environ.get('GRAPHISTRY_API_KEY')
+            api_key = os.environ.get("GRAPHISTRY_API_KEY")
 
             # 3. Username/password authentication
-            username = os.environ.get('GRAPHISTRY_USERNAME')
-            password = os.environ.get('GRAPHISTRY_PASSWORD')
+            username = os.environ.get("GRAPHISTRY_USERNAME")
+            password = os.environ.get("GRAPHISTRY_PASSWORD")
 
             # 4. Organization name (optional for all auth methods)
-            org_name = os.environ.get('GRAPHISTRY_ORG_NAME')
+            org_name = os.environ.get("GRAPHISTRY_ORG_NAME")
 
             # 5. Server configuration
-            server = os.environ.get('GRAPHISTRY_SERVER')
+            server = os.environ.get("GRAPHISTRY_SERVER")
 
             # Build client kwargs
-            client_kwargs: dict[str, Any] = {'server_url': server_url}
+            client_kwargs: dict[str, Any] = {"server_url": server_url}
 
             # Add all available authentication parameters
             # The LouieClient will handle priority internally
             if personal_key_id:
-                client_kwargs['personal_key_id'] = personal_key_id
+                client_kwargs["personal_key_id"] = personal_key_id
             if personal_key_secret:
-                client_kwargs['personal_key_secret'] = personal_key_secret
+                client_kwargs["personal_key_secret"] = personal_key_secret
             if api_key:
-                client_kwargs['api_key'] = api_key
+                client_kwargs["api_key"] = api_key
             if username:
-                client_kwargs['username'] = username
+                client_kwargs["username"] = username
             if password:
-                client_kwargs['password'] = password
+                client_kwargs["password"] = password
             if org_name:
-                client_kwargs['org_name'] = org_name
+                client_kwargs["org_name"] = org_name
             if server:
-                client_kwargs['server'] = server
+                client_kwargs["server"] = server
 
             client = LouieClient(**client_kwargs)
         self._client = client
@@ -211,11 +214,7 @@ class Cursor:
         self._traces: bool = False
 
     def __call__(
-        self,
-        prompt: str,
-        *,
-        traces: bool | None = None,
-        **kwargs: Any
+        self, prompt: str, *, traces: bool | None = None, **kwargs: Any
     ) -> Response:
         """Execute a query with implicit thread management.
 
@@ -235,23 +234,16 @@ class Cursor:
         use_traces = traces if traces is not None else self._traces
 
         # Build parameters
-        params = {
-            'prompt': prompt,
-            'thread_id': self._current_thread,
-            **kwargs
-        }
+        params = {"prompt": prompt, "thread_id": self._current_thread, **kwargs}
 
         # Extract add_cell specific params
-        thread_id = params.pop('thread_id')
-        agent = params.pop('agent', 'LouieAgent')
+        thread_id = params.pop("thread_id")
+        agent = params.pop("agent", "LouieAgent")
 
         # Execute query
         try:
             response = self._client.add_cell(
-                thread_id=thread_id,
-                prompt=prompt,
-                agent=agent,
-                traces=use_traces
+                thread_id=thread_id, prompt=prompt, agent=agent, traces=use_traces
             )
 
             # Update thread ID in case it was created
@@ -262,7 +254,7 @@ class Cursor:
             self._history.append(response)
 
             # Auto-display in Jupyter if available
-            if self._in_jupyter() and kwargs.get('display', True):
+            if self._in_jupyter() and kwargs.get("display", True):
                 self._display(response)
 
             return response
@@ -281,7 +273,8 @@ class Cursor:
         try:
             # Check for IPython without importing it
             import sys
-            return 'IPython' in sys.modules
+
+            return "IPython" in sys.modules
         except Exception:
             return False
 
@@ -326,9 +319,9 @@ class Cursor:
         if not self._history:
             return []
         latest = self._history[-1]
-        if not hasattr(latest, 'text_elements') or not latest.text_elements:
+        if not hasattr(latest, "text_elements") or not latest.text_elements:
             return []
-        return [elem.get('content', '') for elem in latest.text_elements]
+        return [elem.get("content", "") for elem in latest.text_elements]
 
     @property
     def charts(self) -> list[dict[str, Any]]:
@@ -391,10 +384,14 @@ class Cursor:
             data_info = []
 
             # Count elements
-            text_count = (len(latest.text_elements)
-                         if hasattr(latest, 'text_elements') else 0)
-            df_count = (len(latest.dataframe_elements)
-                       if hasattr(latest, 'dataframe_elements') else 0)
+            text_count = (
+                len(latest.text_elements) if hasattr(latest, "text_elements") else 0
+            )
+            df_count = (
+                len(latest.dataframe_elements)
+                if hasattr(latest, "dataframe_elements")
+                else 0
+            )
 
             if text_count:
                 data_info.append(f"{text_count} text")
@@ -411,7 +408,7 @@ class Cursor:
         """HTML representation for Jupyter notebooks."""
         html_parts = [
             "<div style='border: 1px solid #ddd; padding: 10px; border-radius: 5px;'>",
-            "<h4 style='margin-top: 0;'>🤖 LouieAI Notebook Interface</h4>"
+            "<h4 style='margin-top: 0;'>🤖 LouieAI Notebook Interface</h4>",
         ]
 
         # Session status
@@ -428,8 +425,7 @@ class Cursor:
         html_parts.append(f"<p>📚 <b>History:</b> {history_count} responses")
         if history_count > 0:
             html_parts.append(
-                " (access with <code>lui[-1]</code>, "
-                "<code>lui[-2]</code>, etc.)</p>"
+                " (access with <code>lui[-1]</code>, <code>lui[-2]</code>, etc.)</p>"
             )
         else:
             html_parts.append("</p>")
@@ -453,7 +449,7 @@ class Cursor:
                 html_parts.append("<p>⚠️ <b>Latest Response Contains Errors:</b></p>")
                 html_parts.append("<ul style='margin: 5px 0; color: #d73a49;'>")
                 for error in proxy.errors[:3]:  # Show first 3 errors
-                    msg = error.get('message', 'Unknown error')
+                    msg = error.get("message", "Unknown error")
                     html_parts.append(f"<li>{msg}</li>")
                 if len(proxy.errors) > 3:
                     html_parts.append(
@@ -466,8 +462,9 @@ class Cursor:
                 html_parts.append("<ul style='margin: 5px 0;'>")
 
                 # Text elements
-                text_count = (len(latest.text_elements)
-                             if hasattr(latest, 'text_elements') else 0)
+                text_count = (
+                    len(latest.text_elements) if hasattr(latest, "text_elements") else 0
+                )
                 if text_count:
                     html_parts.append(
                         f"<li>{text_count} text element(s) - access with "
@@ -475,8 +472,11 @@ class Cursor:
                     )
 
                 # DataFrames
-                df_count = (len(latest.dataframe_elements)
-                           if hasattr(latest, 'dataframe_elements') else 0)
+                df_count = (
+                    len(latest.dataframe_elements)
+                    if hasattr(latest, "dataframe_elements")
+                    else 0
+                )
                 if df_count:
                     html_parts.append(
                         f"<li>{df_count} dataframe(s) - access with "
@@ -487,12 +487,10 @@ class Cursor:
 
         # Quick help
         html_parts.append(
-            "<details><summary><b>Quick Help</b> "
-            "(click to expand)</summary>"
+            "<details><summary><b>Quick Help</b> (click to expand)</summary>"
         )
         html_parts.append(
-            "<pre style='margin: 10px 0; padding: 10px; "
-            "background: #f5f5f5;'>"
+            "<pre style='margin: 10px 0; padding: 10px; background: #f5f5f5;'>"
         )
         html_parts.append("# Make a query\n")
         html_parts.append("lui('Show me sales data from last week')\n\n")
@@ -523,13 +521,17 @@ class Cursor:
 
     def _extract_dataframes(self, response: Response) -> list[pd.DataFrame]:
         """Extract pandas DataFrames from response."""
-        if (not hasattr(response, 'dataframe_elements') or
-                not response.dataframe_elements):
+        if (
+            not hasattr(response, "dataframe_elements")
+            or not response.dataframe_elements
+        ):
             return []
         dfs = []
         for elem in response.dataframe_elements:
-            if (isinstance(elem, dict) and 'table' in elem and
-                    isinstance(elem['table'], pd.DataFrame)):
-                dfs.append(elem['table'])
+            if (
+                isinstance(elem, dict)
+                and "table" in elem
+                and isinstance(elem["table"], pd.DataFrame)
+            ):
+                dfs.append(elem["table"])
         return dfs
-

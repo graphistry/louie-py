@@ -23,8 +23,8 @@ if CURRENT_PYTHON_VERSION < MIN_PYTHON_VERSION:
     else:
         recommended_cmd = "python3.10 -m pytest"
 
-    current_version = '.'.join(map(str, CURRENT_PYTHON_VERSION))
-    min_version = '.'.join(map(str, MIN_PYTHON_VERSION))
+    current_version = ".".join(map(str, CURRENT_PYTHON_VERSION))
+    min_version = ".".join(map(str, MIN_PYTHON_VERSION))
     warning_msg = (
         f"\n⚠️  WARNING: You are using Python {current_version}, "
         f"but this project requires Python {min_version} or higher.\n"

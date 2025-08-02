@@ -19,7 +19,7 @@ class TestLouieFactory:
         result2 = louie()
         assert result is not result2
 
-    @patch('louieai._client.LouieClient')
+    @patch("louieai._client.LouieClient")
     def test_louie_with_graphistry_client(self, mock_client_class):
         """Test louie() with PyGraphistry client."""
         # Mock graphistry client
@@ -37,7 +37,7 @@ class TestLouieFactory:
         assert isinstance(result, Cursor)
         mock_client_class.assert_called_once_with(graphistry_client=mock_graphistry)
 
-    @patch('louieai._client.LouieClient')
+    @patch("louieai._client.LouieClient")
     def test_louie_with_username_password(self, mock_client_class):
         """Test louie() with username/password."""
         # Mock LouieClient
@@ -50,11 +50,10 @@ class TestLouieFactory:
         # Verify
         assert isinstance(result, Cursor)
         mock_client_class.assert_called_once_with(
-            username="testuser",
-            password="testpass"
+            username="testuser", password="testpass"
         )
 
-    @patch('louieai._client.LouieClient')
+    @patch("louieai._client.LouieClient")
     def test_louie_with_personal_keys(self, mock_client_class):
         """Test louie() with personal key authentication."""
         # Mock LouieClient
@@ -63,20 +62,16 @@ class TestLouieFactory:
 
         # Create cursor with personal keys
         result = louie(
-            personal_key_id="pk_123",
-            personal_key_secret="sk_456",
-            org_name="test-org"
+            personal_key_id="pk_123", personal_key_secret="sk_456", org_name="test-org"
         )
 
         # Verify
         assert isinstance(result, Cursor)
         mock_client_class.assert_called_once_with(
-            personal_key_id="pk_123",
-            personal_key_secret="sk_456",
-            org_name="test-org"
+            personal_key_id="pk_123", personal_key_secret="sk_456", org_name="test-org"
         )
 
-    @patch('louieai._client.LouieClient')
+    @patch("louieai._client.LouieClient")
     def test_louie_with_api_key(self, mock_client_class):
         """Test louie() with API key."""
         # Mock LouieClient
@@ -90,7 +85,7 @@ class TestLouieFactory:
         assert isinstance(result, Cursor)
         mock_client_class.assert_called_once_with(api_key="test_api_key_123")
 
-    @patch('louieai._client.LouieClient')
+    @patch("louieai._client.LouieClient")
     def test_louie_with_custom_server(self, mock_client_class):
         """Test louie() with custom server URL."""
         # Mock LouieClient
@@ -99,18 +94,16 @@ class TestLouieFactory:
 
         # Create cursor with custom server
         result = louie(
-            server_url="https://custom.louie.ai",
-            server="custom.graphistry.com"
+            server_url="https://custom.louie.ai", server="custom.graphistry.com"
         )
 
         # Verify
         assert isinstance(result, Cursor)
         mock_client_class.assert_called_once_with(
-            server_url="https://custom.louie.ai",
-            server="custom.graphistry.com"
+            server_url="https://custom.louie.ai", server="custom.graphistry.com"
         )
 
-    @patch('louieai._client.LouieClient')
+    @patch("louieai._client.LouieClient")
     def test_louie_cursor_is_callable(self, mock_client_class):
         """Test that returned cursor is callable."""
         # Mock LouieClient
@@ -136,12 +129,12 @@ class TestLouieFactory:
         assert isinstance(cursor2, Cursor)
 
         # Example 3: With credentials
-        with patch('louieai._client.LouieClient'):
+        with patch("louieai._client.LouieClient"):
             cursor3 = louie(username="user", password="pass")
             assert isinstance(cursor3, Cursor)
 
     def test_louie_available_at_package_level(self):
         """Test that louie is exported at package level."""
-        assert hasattr(louieai, 'louie')
+        assert hasattr(louieai, "louie")
         assert louieai.louie is louie
-        assert 'louie' in louieai.__all__
+        assert "louie" in louieai.__all__

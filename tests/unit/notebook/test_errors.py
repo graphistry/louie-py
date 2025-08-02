@@ -87,7 +87,7 @@ class TestErrorHandlingIntegration:
         assert cursor[-1].df is None
         assert cursor[99].text is None
 
-    @patch('louieai.notebook.cursor.logger')
+    @patch("louieai.notebook.cursor.logger")
     def test_errors_are_logged(self, mock_logger):
         """Test errors are logged with context."""
         mock_client = Mock()
@@ -112,8 +112,8 @@ class TestErrorHandlingIntegration:
         mock_response = Mock(spec=Response)
         mock_response.dataframe_elements = [
             {},  # Missing 'table' key
-            {'table': 'not a dataframe'},  # Wrong type
-            {'type': 'DfElement'},  # Missing 'table'
+            {"table": "not a dataframe"},  # Wrong type
+            {"type": "DfElement"},  # Missing 'table'
         ]
 
         cursor._history.append(mock_response)
@@ -127,7 +127,7 @@ class TestErrorHandlingIntegration:
         cursor = Cursor()
 
         # Create a mock response that truly doesn't have the attributes
-        mock_response = Mock(spec=['thread_id'])  # Only has thread_id
+        mock_response = Mock(spec=["thread_id"])  # Only has thread_id
 
         cursor._history.append(mock_response)
 

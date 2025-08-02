@@ -265,7 +265,7 @@ class LouieClient:
         prompt: str,
         agent: str = "LouieAgent",
         *,
-        traces: bool = False
+        traces: bool = False,
     ) -> Response:
         """Add a cell (query) to a thread and get response.
 
@@ -315,7 +315,7 @@ class LouieClient:
         thread_id: str | None = None,
         traces: bool = False,
         agent: str = "LouieAgent",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Response:
         """Make the client callable for ergonomic usage.
 
@@ -339,7 +339,7 @@ class LouieClient:
         tid = thread_id if thread_id is not None else ""
 
         # Store the thread_id for subsequent calls if not provided
-        if not hasattr(self, '_current_thread_id'):
+        if not hasattr(self, "_current_thread_id"):
             self._current_thread_id = None
 
         # Use stored thread_id if none provided
@@ -348,10 +348,7 @@ class LouieClient:
 
         # Make the call
         response = self.add_cell(
-            thread_id=tid,
-            prompt=prompt,
-            agent=agent,
-            traces=traces
+            thread_id=tid, prompt=prompt, agent=agent, traces=traces
         )
 
         # Store thread_id for next call

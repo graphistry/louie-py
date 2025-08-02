@@ -28,7 +28,7 @@ class NoDataFrameError(NotebookError):
     def __init__(self):
         super().__init__(
             "No dataframe in the latest response.",
-            "lui('show the data as a table') or lui('convert to dataframe')"
+            "lui('show the data as a table') or lui('convert to dataframe')",
         )
 
 
@@ -37,8 +37,7 @@ class NoResponseError(NotebookError):
 
     def __init__(self):
         super().__init__(
-            "No responses yet. Make a query first.",
-            "lui('your question here')"
+            "No responses yet. Make a query first.", "lui('your question here')"
         )
 
 
@@ -48,7 +47,7 @@ class SessionExpiredError(NotebookError):
     def __init__(self):
         super().__init__(
             "Session expired. Starting a new conversation.",
-            "Continue with your query - a new session will be created automatically."
+            "Continue with your query - a new session will be created automatically.",
         )
 
 
@@ -59,7 +58,7 @@ class AuthenticationError(NotebookError):
         super().__init__(
             "Authentication failed. Check your credentials.",
             "Set GRAPHISTRY_USERNAME and GRAPHISTRY_PASSWORD environment variables, "
-            "or pass credentials to LouieClient."
+            "or pass credentials to LouieClient.",
         )
 
 
@@ -70,5 +69,5 @@ class ConnectionError(NotebookError):
         super().__init__(
             f"Could not connect to server: {server}",
             "Check your internet connection and server URL. "
-            "Default server is 'louie.ai'."
+            "Default server is 'louie.ai'.",
         )
