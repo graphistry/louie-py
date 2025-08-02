@@ -20,20 +20,19 @@ nav:
     - Agent Guides:
       - Overview: guides/agents/index.md
       - Database Agents:
-        - Databricks: guides/agents/databricks.md
-        - PostgreSQL: guides/agents/postgresql.md
-        - MySQL: guides/agents/mysql.md
-        - Snowflake: guides/agents/snowflake.md
-        - BigQuery: guides/agents/bigquery.md
-        - MSSQL: guides/agents/mssql.md
-        - CockroachDB: guides/agents/cockroachdb.md
-        - Spanner: guides/agents/spanner.md
         - Athena: guides/agents/athena.md
-        - Neptune: guides/agents/neptune.md
-      - Search & Analytics:
-        - OpenSearch: guides/agents/opensearch.md
-        - Splunk: guides/agents/splunk.md
+        - BigQuery: guides/agents/bigquery.md
+        - CockroachDB: guides/agents/cockroachdb.md
+        - Databricks: guides/agents/databricks.md
         - Kusto: guides/agents/kusto.md
+        - MSSQL: guides/agents/mssql.md
+        - MySQL: guides/agents/mysql.md
+        - Neptune: guides/agents/neptune.md
+        - OpenSearch: guides/agents/opensearch.md
+        - PostgreSQL: guides/agents/postgresql.md
+        - Snowflake: guides/agents/snowflake.md
+        - Spanner: guides/agents/spanner.md
+        - Splunk: guides/agents/splunk.md
       - Visualization:
         - Graph Networks: guides/agents/graph.md
         - Interactive Tables: guides/agents/perspective.md
