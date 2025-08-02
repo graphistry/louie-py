@@ -172,7 +172,7 @@ class TestDocumentation:
         # Create mock louie function that returns mock_lui
         def mock_louie_factory(*args, **kwargs):
             return mock_lui
-        
+
         # Mock imports
         with patch.dict(
             "sys.modules",
@@ -181,7 +181,7 @@ class TestDocumentation:
                 "louieai": Mock(
                     LouieClient=Mock(return_value=client),
                     louie=mock_louie_factory,
-                    Cursor=Mock
+                    Cursor=Mock,
                 ),
                 "louieai.notebook": Mock(lui=mock_lui),
                 "louieai.globals": Mock(lui=mock_lui),
@@ -264,9 +264,9 @@ def test_documentation_file(doc_file):
         namespace["lui"] = mock_lui
 
         # Create mock louie factory that returns mock_lui
-        def mock_louie_factory(*args, **kwargs):
+        def mock_louie_factory(*args, mock_lui=mock_lui, **kwargs):
             return mock_lui
-            
+
         with patch.dict(
             "sys.modules",
             {
@@ -274,7 +274,7 @@ def test_documentation_file(doc_file):
                 "louieai": Mock(
                     LouieClient=Mock(return_value=client),
                     louie=mock_louie_factory,
-                    Cursor=Mock
+                    Cursor=Mock,
                 ),
                 "louieai.notebook": Mock(lui=mock_lui),
                 "louieai.globals": Mock(lui=mock_lui),
@@ -296,7 +296,7 @@ def test_documentation_file(doc_file):
 def _create_comprehensive_mock_lui(client=None):
     """Create a comprehensive mock lui object that works like the real one."""
     mock_lui = Mock()
-    
+
     # Create client if not provided
     if client is None:
         client = create_mock_client()
