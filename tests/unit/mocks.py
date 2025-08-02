@@ -320,7 +320,7 @@ def determine_response_type(prompt: str) -> str:
     prompt_lower = prompt.lower()
 
     if any(
-        word in prompt_lower for word in ["dataframe", "query", "data", "table", "sql"]
+        word in prompt_lower for word in ["dataframe", "query", "data", "table", "sql", "ip addresses", "find", "suspicious"]
     ):
         return "dataframe"
     elif any(

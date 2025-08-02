@@ -151,9 +151,10 @@ class TestStreamingIntegration:
 
     def test_non_jupyter_falls_back_to_regular(self, mock_graphistry):
         """Test that non-Jupyter environments use regular add_cell."""
-        # Mock to simulate non-Jupyter
-        with patch("sys.modules", {}):  # No IPython
-            lui = louie(graphistry_client=mock_graphistry)
+        # Mock to simulate non-Jupyter by patching _in_jupyter directly
+        lui = louie(graphistry_client=mock_graphistry)
+        
+        with patch.object(lui, "_in_jupyter", return_value=False):
 
             # Mock regular add_cell
             mock_response = Response(

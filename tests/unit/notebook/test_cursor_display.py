@@ -163,6 +163,8 @@ class TestCursorDisplay:
             mock_client.add_cell.return_value = mock_response
 
             cursor = Cursor(client=mock_client)
+            # Set _last_display_id to simulate update scenario (not streaming)
+            cursor._last_display_id = "existing_display"
             cursor("test query")
 
             # Display should have been called
