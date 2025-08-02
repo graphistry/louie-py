@@ -287,6 +287,24 @@ class ResponseProxy:
         ]
 
     @property
+    def g(self) -> dict[str, Any] | None:
+        """Latest graph element or None."""
+        gs = self.gs
+        return gs[0] if gs else None
+
+    @property
+    def gs(self) -> list[dict[str, Any]]:
+        """All graph elements from this response."""
+        if not self._response:
+            return []
+
+        # Use the graph_elements property which already filters elements
+        if hasattr(self._response, "graph_elements"):
+            return self._response.graph_elements
+        
+        return []
+
+    @property
     def elements(self) -> list[dict[str, Any]]:
         """All elements with type tags."""
         if not self._response:
@@ -433,6 +451,8 @@ class Cursor:
     Data Access:
         - lui.df: Latest dataframe (or None)
         - lui.dfs: All dataframes from latest response
+        - lui.g: Latest graph element (or None)
+        - lui.gs: All graph elements from latest response
         - lui.text: Primary text response
         - lui.texts: All text elements
         - lui.elements: All elements with type tags
@@ -696,6 +716,20 @@ class Cursor:
         return [
             elem.get("content") or elem.get("text", "") for elem in latest.text_elements
         ]
+
+    @property
+    def g(self) -> dict[str, Any] | None:
+        """Latest graph element or None."""
+        gs = self.gs
+        return gs[0] if gs else None
+
+    @property
+    def gs(self) -> list[dict[str, Any]]:
+        """All graph elements from latest response."""
+        if not self._history:
+            return []
+        proxy = ResponseProxy(self._history[-1])
+        return proxy.gs
 
     @property
     def charts(self) -> list[dict[str, Any]]:
