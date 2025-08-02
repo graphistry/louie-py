@@ -350,6 +350,17 @@ def _create_comprehensive_mock_lui(client=None):
     mock_lui.errors = []
     mock_lui.has_errors = False
     mock_lui.traces = False
+    
+    # Add history attribute for accessing previous results
+    mock_history = []
+    for i in range(5):  # Create some mock history
+        hist_item = Mock()
+        hist_item.text = f"Historical text {i}"
+        hist_item.df = mock_df
+        hist_item.dfs = [mock_df]
+        hist_item.texts = [f"Historical text {i}"]
+        mock_history.append(hist_item)
+    mock_lui.history = mock_history
 
     # Make lui callable
     def mock_lui_call(*args, **kwargs):
@@ -369,22 +380,22 @@ def _create_comprehensive_mock_lui(client=None):
     mock_lui.__call__ = mock_lui_call
 
     # Make lui subscriptable for history
-    def mock_getitem(self, index):
-        hist = Mock()
-        hist.text = "Historical text"
-        hist.df = pd.DataFrame(
-            {
-                "region": ["North", "South"],
-                "sales": [100, 200],
-                "product": ["A", "B"],
-                "col1": [1, 2],
-            }
-        )
-        hist.dfs = [hist.df]
-        hist.texts = ["Historical text"]
-        return hist
-
-    mock_lui.__getitem__ = mock_getitem
+    # Create a mock history response that will be returned for any index
+    hist_response = Mock()
+    hist_response.text = "Historical text"
+    hist_response.df = pd.DataFrame(
+        {
+            "region": ["North", "South"],
+            "sales": [100, 200],
+            "product": ["A", "B"],
+            "col1": [1, 2],
+        }
+    )
+    hist_response.dfs = [hist_response.df]
+    hist_response.texts = ["Historical text"]
+    
+    # Configure the mock to support indexing
+    mock_lui.__getitem__ = Mock(return_value=hist_response)
 
     return mock_lui
 
