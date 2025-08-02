@@ -238,7 +238,7 @@ def create_mock_client():
         "personal_key_secret": "test_personal_key_secret",
         "org_name": "test_org",
         "api": 3,
-        "server": "test.graphistry.com"
+        "server": "test.graphistry.com",
     }
     auth_manager.get_token.return_value = "fake-token-123"
     client._auth_manager = auth_manager
@@ -247,8 +247,9 @@ def create_mock_client():
     def mock_get_headers():
         return {
             "Authorization": "Bearer fake-token-123",
-            "X-Graphistry-Org": "test-org"
+            "X-Graphistry-Org": "test-org",
         }
+
     client._get_headers = Mock(return_value=mock_get_headers())
 
     # Thread management
@@ -320,7 +321,17 @@ def determine_response_type(prompt: str) -> str:
     prompt_lower = prompt.lower()
 
     if any(
-        word in prompt_lower for word in ["dataframe", "query", "data", "table", "sql", "ip addresses", "find", "suspicious"]
+        word in prompt_lower
+        for word in [
+            "dataframe",
+            "query",
+            "data",
+            "table",
+            "sql",
+            "ip addresses",
+            "find",
+            "suspicious",
+        ]
     ):
         return "dataframe"
     elif any(

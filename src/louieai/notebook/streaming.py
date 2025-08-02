@@ -41,32 +41,53 @@ class StreamingDisplay:
         elif elem_type == "DfElement":
             df_id = elem.get("df_id") or elem.get("block_id")
             shape = elem.get("metadata", {}).get("shape", ["?", "?"])
-            return f"<div style='background: #f0f0f0; padding: 5px; margin: 5px 0;'>📊 DataFrame: {df_id} (shape: {shape[0]} × {shape[1]})</div>"
+            return (
+                f"<div style='background: #f0f0f0; padding: 5px; margin: 5px 0;'>"
+                f"📊 DataFrame: {df_id} (shape: {shape[0]} x {shape[1]})</div>"
+            )
 
         elif elem_type == "ExceptionElement":
             msg = elem.get("message", "Unknown error")
-            return f"<div style='color: red; background: #ffe0e0; padding: 10px; margin: 5px 0;'>⚠️ Error: {msg}</div>"
+            return (
+                f"<div style='color: red; background: #ffe0e0; padding: 10px; "
+                f"margin: 5px 0;'>⚠️ Error: {msg}</div>"
+            )
 
         elif elem_type == "DebugLine":
             text = elem.get("text", "")
-            return f"<div style='color: #666; font-family: monospace; font-size: 0.9em;'>🐛 {text}</div>"
+            return (
+                f"<div style='color: #666; font-family: monospace; "
+                f"font-size: 0.9em;'>🐛 {text}</div>"
+            )
 
         elif elem_type == "InfoLine":
             text = elem.get("text", "")
-            return f"<div style='color: #0066cc; font-family: monospace; font-size: 0.9em;'>ℹ️ {text}</div>"
+            return (
+                f"<div style='color: #0066cc; font-family: monospace; "
+                f"font-size: 0.9em;'>i {text}</div>"
+            )
 
         elif elem_type == "WarningLine":
             text = elem.get("text", "")
-            return f"<div style='color: #ff8800; font-family: monospace; font-size: 0.9em;'>⚠️ {text}</div>"
+            return (
+                f"<div style='color: #ff8800; font-family: monospace; "
+                f"font-size: 0.9em;'>⚠️ {text}</div>"
+            )
 
         elif elem_type == "ErrorLine":
             text = elem.get("text", "")
-            return f"<div style='color: #cc0000; font-family: monospace; font-size: 0.9em;'>❌ {text}</div>"
+            return (
+                f"<div style='color: #cc0000; font-family: monospace; "
+                f"font-size: 0.9em;'>❌ {text}</div>"
+            )
 
         elif elem_type == "CodeElement":
             code = elem.get("code", "") or elem.get("text", "")
             elem.get("language", "")
-            return f"<pre style='background: #f5f5f5; padding: 10px; border-radius: 5px;'><code>{code}</code></pre>"
+            return (
+                f"<pre style='background: #f5f5f5; padding: 10px; "
+                f"border-radius: 5px;'><code>{code}</code></pre>"
+            )
 
         else:
             # For unknown types, try to extract text or show raw content

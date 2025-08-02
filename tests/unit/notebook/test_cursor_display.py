@@ -140,18 +140,21 @@ class TestCursorDisplay:
         mock_display = MagicMock()
         mock_markdown = MagicMock()
 
-        with patch.dict(
-            sys.modules,
-            {
-                "IPython.display": MagicMock(
-                    display=mock_display, Markdown=mock_markdown
-                )
-            },
-        ), patch("louieai.notebook.streaming.stream_response") as mock_stream:
+        with (
+            patch.dict(
+                sys.modules,
+                {
+                    "IPython.display": MagicMock(
+                        display=mock_display, Markdown=mock_markdown
+                    )
+                },
+            ),
+            patch("louieai.notebook.streaming.stream_response") as mock_stream,
+        ):
             # Mock streaming response
             mock_stream.return_value = {
                 "dthread_id": "test-thread",
-                "elements": [{"type": "TextElement", "content": "Response text"}]
+                "elements": [{"type": "TextElement", "content": "Response text"}],
             }
 
             # Create cursor and make query

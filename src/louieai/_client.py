@@ -237,7 +237,7 @@ class LouieClient:
             warnings.warn(
                 f"Failed to fetch dataframe {block_id}: {e}",
                 RuntimeWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             return None
 

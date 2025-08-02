@@ -1,6 +1,5 @@
 """Test rendering of various element types."""
 
-
 from louieai._client import Response
 from louieai.notebook.cursor import _render_response_html
 from louieai.notebook.streaming import StreamingDisplay

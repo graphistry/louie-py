@@ -134,9 +134,7 @@ class TestStreamingIntegration:
 
             with patch("louieai.notebook.streaming.HAS_IPYTHON", True):
                 with patch("louieai.notebook.streaming.HTML") as mock_html:
-                    with patch(
-                        "louieai.notebook.streaming.update_display"
-                    ):
+                    with patch("louieai.notebook.streaming.update_display"):
                         lui = louie(graphistry_client=mock_graphistry)
 
                         # Should raise but also display error
@@ -153,9 +151,8 @@ class TestStreamingIntegration:
         """Test that non-Jupyter environments use regular add_cell."""
         # Mock to simulate non-Jupyter by patching _in_jupyter directly
         lui = louie(graphistry_client=mock_graphistry)
-        
-        with patch.object(lui, "_in_jupyter", return_value=False):
 
+        with patch.object(lui, "_in_jupyter", return_value=False):
             # Mock regular add_cell
             mock_response = Response(
                 thread_id="D_test123",

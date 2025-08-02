@@ -237,14 +237,17 @@ class TestCursor:
         # Mock streaming response to prevent HTTP calls
         mock_stream_result = {
             "dthread_id": "test-thread",
-            "elements": [{"type": "TextElement", "id": "test", "text": "test"}]
+            "elements": [{"type": "TextElement", "id": "test", "text": "test"}],
         }
 
         # Mock in Jupyter
         with (
             patch.object(cursor, "_in_jupyter", return_value=True),
             patch.object(cursor, "_display") as mock_display,
-            patch("louieai.notebook.streaming.stream_response", return_value=mock_stream_result),
+            patch(
+                "louieai.notebook.streaming.stream_response",
+                return_value=mock_stream_result,
+            ),
         ):
             cursor("Test query", display=False)
             mock_display.assert_not_called()

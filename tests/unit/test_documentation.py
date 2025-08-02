@@ -94,7 +94,7 @@ def create_test_namespace(client):
     """Create namespace with all necessary mocks for code execution."""
     # Mock modules
     mock_graphistry = Mock()
-    
+
     # Create a properly mocked graphistry client with auth manager
     mock_registered_client = Mock()
     mock_registered_client._auth_manager = Mock()
@@ -106,10 +106,10 @@ def create_test_namespace(client):
         "personal_key_secret": "test_personal_key_secret",
         "org_name": "test_org",
         "api": 3,
-        "server": "test.graphistry.com"
+        "server": "test.graphistry.com",
     }
     mock_registered_client._auth_manager.get_token.return_value = "fake-token-123"
-    
+
     mock_graphistry.register = Mock(return_value=mock_registered_client)
     mock_graphistry.api_token = Mock(return_value="fake-token")
     mock_graphistry.nodes = Mock(return_value=mock_graphistry)
@@ -124,9 +124,9 @@ def create_test_namespace(client):
     response = client.add_cell(thread.id, "test query")
     response1 = client.add_cell(thread.id, "query data")  # Will be dataframe type
     response2 = client.add_cell(thread.id, "analyze results")
-    
+
     # Ensure response1 has a working to_dataframe method for chaining examples
-    if not hasattr(response1, 'to_dataframe') or response1.to_dataframe() is None:
+    if not hasattr(response1, "to_dataframe") or response1.to_dataframe() is None:
         response1.to_dataframe = Mock(return_value=MockDataFrame())
 
     # File operations mock
@@ -200,19 +200,22 @@ class TestDocumentation:
         namespace["louieai"] = mock_louie_factory
 
         # Mock environment variables and graphistry module
-        with patch.dict(
-            "os.environ",
-            {
-                "GRAPHISTRY_USERNAME": "test_user",
-                "GRAPHISTRY_PASSWORD": "test_password",
-                "GRAPHISTRY_SERVER": "test.graphistry.com",
-            },
-        ), patch.dict(
-            "sys.modules",
-            {
-                "graphistry": namespace["graphistry"],
-                "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
-            },
+        with (
+            patch.dict(
+                "os.environ",
+                {
+                    "GRAPHISTRY_USERNAME": "test_user",
+                    "GRAPHISTRY_PASSWORD": "test_password",
+                    "GRAPHISTRY_SERVER": "test.graphistry.com",
+                },
+            ),
+            patch.dict(
+                "sys.modules",
+                {
+                    "graphistry": namespace["graphistry"],
+                    "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
+                },
+            ),
         ):
             try:
                 exec(code, namespace)

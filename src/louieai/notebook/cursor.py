@@ -89,7 +89,7 @@ def _render_response_html(response) -> str:
                     if text:
                         html_parts.append(
                             f"<div style='color: #0066cc; font-family: monospace; "
-                            f"font-size: 0.9em;'>ℹ️ {text}</div>"
+                            f"font-size: 0.9em;'>i {text}</div>"
                         )
 
                 # WarningLine
@@ -123,7 +123,8 @@ def _render_response_html(response) -> str:
                     code = elem.get("code", "") or elem.get("text", "")
                     if code:
                         html_parts.append(
-                            f"<pre style='background: #f5f5f5; padding: 10px; border-radius: 5px;'><code>{code}</code></pre>"
+                            f"<pre style='background: #f5f5f5; padding: 10px; "
+                            f"border-radius: 5px;'><code>{code}</code></pre>"
                         )
 
                 # Unknown types - try to extract text
@@ -493,7 +494,11 @@ class Cursor:
 
             # Auto-display in Jupyter if available (only if not streaming)
             # Streaming handles its own display
-            if not (self._in_jupyter() and self._last_display_id is None) and self._in_jupyter() and kwargs.get("display", True):
+            if (
+                not (self._in_jupyter() and self._last_display_id is None)
+                and self._in_jupyter()
+                and kwargs.get("display", True)
+            ):
                 self._display(response)
 
             # Return self for chaining and property access

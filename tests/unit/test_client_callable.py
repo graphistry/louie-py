@@ -41,7 +41,7 @@ class TestClientCallable:
         mock_auth_manager._credentials = {
             "org_name": "test_org",
             "username": "test_user",
-            "api": 3
+            "api": 3,
         }
 
         # Mock streaming response
@@ -83,7 +83,7 @@ class TestClientCallable:
         mock_auth_manager._credentials = {
             "org_name": "test_org",
             "username": "test_user",
-            "api": 3
+            "api": 3,
         }
 
         # Mock first response (creates thread)
@@ -139,7 +139,7 @@ class TestClientCallable:
         mock_auth_manager._credentials = {
             "org_name": "test_org",
             "username": "test_user",
-            "api": 3
+            "api": 3,
         }
 
         # Mock response
@@ -180,7 +180,7 @@ class TestClientCallable:
         mock_auth_manager._credentials = {
             "org_name": "test_org",
             "username": "test_user",
-            "api": 3
+            "api": 3,
         }
 
         # Mock response
@@ -220,7 +220,7 @@ class TestClientCallable:
         mock_auth_manager._credentials = {
             "org_name": "test_org",
             "username": "test_user",
-            "api": 3
+            "api": 3,
         }
 
         # Mock response

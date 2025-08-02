@@ -29,36 +29,40 @@ def _extract_org_name_from_graphistry(graphistry_client) -> str | None:
         return None
 
     # Method 1: Check if client has _credentials dict with org_name (most common)
-    if (hasattr(graphistry_client, '_credentials') and
-        graphistry_client._credentials and
-        isinstance(graphistry_client._credentials, dict)):
-        org_name = graphistry_client._credentials.get('org_name')
-        if org_name and not str(org_name).startswith('<MagicMock'):
+    if (
+        hasattr(graphistry_client, "_credentials")
+        and graphistry_client._credentials
+        and isinstance(graphistry_client._credentials, dict)
+    ):
+        org_name = graphistry_client._credentials.get("org_name")
+        if org_name and not str(org_name).startswith("<MagicMock"):
             return str(org_name)
 
     # Method 2: Check if client has auth_manager with credentials
-    if hasattr(graphistry_client, '_auth_manager') and graphistry_client._auth_manager:
+    if hasattr(graphistry_client, "_auth_manager") and graphistry_client._auth_manager:
         auth_mgr = graphistry_client._auth_manager
-        if (hasattr(auth_mgr, '_credentials') and
-            auth_mgr._credentials and
-            isinstance(auth_mgr._credentials, dict)):
-            org_name = auth_mgr._credentials.get('org_name')
-            if org_name and not str(org_name).startswith('<MagicMock'):
+        if (
+            hasattr(auth_mgr, "_credentials")
+            and auth_mgr._credentials
+            and isinstance(auth_mgr._credentials, dict)
+        ):
+            org_name = auth_mgr._credentials.get("org_name")
+            if org_name and not str(org_name).startswith("<MagicMock"):
                 return str(org_name)
 
     # Method 3: Check if client has _org_name attribute (fallback)
-    if hasattr(graphistry_client, '_org_name') and graphistry_client._org_name:
+    if hasattr(graphistry_client, "_org_name") and graphistry_client._org_name:
         org_name = graphistry_client._org_name
-        if org_name and not str(org_name).startswith('<MagicMock'):
+        if org_name and not str(org_name).startswith("<MagicMock"):
             return str(org_name)
 
     # Method 4: Check if client has get_auth_info() method (newer versions)
-    if hasattr(graphistry_client, 'get_auth_info'):
+    if hasattr(graphistry_client, "get_auth_info"):
         try:
             auth_info = graphistry_client.get_auth_info()
-            if isinstance(auth_info, dict) and 'org_name' in auth_info:
-                org_name = auth_info['org_name']
-                if org_name and not str(org_name).startswith('<MagicMock'):
+            if isinstance(auth_info, dict) and "org_name" in auth_info:
+                org_name = auth_info["org_name"]
+                if org_name and not str(org_name).startswith("<MagicMock"):
                     return str(org_name)
         except Exception:
             pass  # Ignore errors from get_auth_info
@@ -150,17 +154,18 @@ def louie(
     # If graphistry_client provided, create LouieClient with it
     if graphistry_client is not None:
         # Implement org_name cascade: explicit > env > extracted > None
-        if 'org_name' not in kwargs:
+        if "org_name" not in kwargs:
             # Check environment variable first
             import os
-            env_org = os.environ.get('GRAPHISTRY_ORG_NAME')
+
+            env_org = os.environ.get("GRAPHISTRY_ORG_NAME")
             if env_org:
-                kwargs['org_name'] = env_org
+                kwargs["org_name"] = env_org
             else:
                 # Extract from graphistry client as fallback
                 extracted_org = _extract_org_name_from_graphistry(graphistry_client)
                 if extracted_org:
-                    kwargs['org_name'] = extracted_org
+                    kwargs["org_name"] = extracted_org
         client = LouieClient(graphistry_client=graphistry_client, **kwargs)
         return Cursor(client=client, share_mode=share_mode)
 
