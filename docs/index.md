@@ -11,103 +11,57 @@ pip install louieai
 ```
 
 ```python
-# First, set up authentication with PyGraphistry
 import graphistry
+import louieai
 
-# Option 1: Environment variables (recommended for notebooks)
-# In your terminal or notebook:
-# export GRAPHISTRY_USERNAME="your_username"
+# Authenticate with Graphistry Hub (free account at hub.graphistry.com)
+graphistry.register(api=3, username="alice@example.com", password="secure123!")
+
+# Create Louie interface and start analyzing
+lui = louieai()
+lui("Show me patterns in customer behavior")
+print(lui.text)  # Natural language insights
+df = lui.df      # Data as pandas DataFrame
+```
+
+## Powerful Options
+
+```python
+# Choose your authentication method
+import louieai
+
+# Option 1: Environment variables (great for notebooks)
+# export GRAPHISTRY_USERNAME="your_username" 
 # export GRAPHISTRY_PASSWORD="your_password"
+lui = louieai()  # Auto-detects credentials
 
-# Then in Python:
-import louieai
-lui = louieai()  # Automatically uses the environment variables
-
-# Option 2: Direct authentication
-g = graphistry.register(
-    api=3, 
-    server="hub.graphistry.com",  # Graphistry Hub (free tier)
-    username="your_username", 
-    password="your_password"
-)
-
-# Now import and use LouieAI with the authenticated client
-import louieai
-lui = louieai(g, server_url="https://den.louie.ai")  # Specify Louie server
-
-# Option 3: With organization and workspace settings
-# For personal organization (most common):
+# Option 2: Specific servers and organizations
 g = graphistry.register(
     api=3,
-    server="hub.graphistry.com",
-    username="john_doe",
-    password="your_password",
-    org_name="john_doe"  # Personal orgs use your username
-)
-lui = louieai(g, server_url="https://den.louie.ai")
-
-# For team organization:
-g = graphistry.register(
-    api=3,
-    server="hub.graphistry.com",
+    server="hub.graphistry.com",  # or "your-company.graphistry.com"
     username="your_username",
     password="your_password",
-    org_name="databricks-PAT-botsv3"  # Team organization name
+    org_name="your-org"  # Optional: specify organization
 )
-lui = louieai(g, server_url="https://den.louie.ai")
+lui = louieai(g, server_url="https://den.louie.ai")  # or your enterprise URL
 
-# Control visibility of your threads
-# Option A: Set default for the session
-lui_private = louieai(g, server_url="https://den.louie.ai", share_mode="Private")
-lui_org = louieai(g, server_url="https://den.louie.ai", share_mode="Organization")
+# Control data visibility
+lui = louieai(share_mode="Organization")  # Share within your org
+lui("Analyze sales trends", share_mode="Private")  # Override per query
 
-# Option B: Override per query
-lui("analyze my data")  # Uses session default
-lui("analyze my data", share_mode="Organization")  # Override for this query
-lui("analyze my data", share_mode="Public")  # Override for this query
-
-# Note: Organization names are converted to slugs (lowercase, special chars become hyphens)
-# Examples: "John Doe" → "john-doe", "My_Team!" → "my-team"
-
-# For enterprise users:
-# g = graphistry.register(api=3, server="your-company.graphistry.com", 
-#                        org_name="your-org", ...)
-# lui = louieai(g, server_url="https://louie.your-company.com")
-
-## Example 1: Minimal Usage
-# Just ask questions and get answers
-lui("What are the key patterns in this data?")
-print(lui.text)  # "I found 3 key patterns: ..."
-
-## Example 2: Full Features
-# Configure session defaults
-lui = louieai(g, server_url="https://den.louie.ai", share_mode="Organization")
-lui.traces = True  # Show AI reasoning steps
-
-# Ask complex questions
-lui("Show me users with unusual ordering patterns or velocity")
-
-# Access multiple result types
-print(lui.text)     # Text explanation
-fraud_df = lui.df   # Generated dataframe
-all_dfs = lui.dfs   # All dataframes in response
-
-# Continue the conversation (maintains context)
-lui("Now show me geographic anomalies")
-geo_df = lui.df
-
-# Override settings per query
-lui("Create a private analysis", share_mode="Private", traces=False)
+# Enable AI reasoning traces
+lui.traces = True
+lui("Complex analysis requiring step-by-step reasoning")
 
 # Access conversation history
-previous = lui[-1]  # Previous response
-print(previous.text)
-older_df = lui[-2].df  # Dataframe from 2 queries ago
-
-# Thread management
-print(lui.thread_id)  # Current thread ID
-print(lui.url)        # URL to view thread
+previous_result = lui[-1]  # Last response
+older_df = lui[-2].df      # DataFrame from 2 queries ago
 ```
+
+**Need more options?** See our guides:
+- [Authentication Guide](guides/authentication.md) - All authentication methods including API keys, multi-tenant usage
+- [Getting Started](getting-started/quick-start.md) - Complete walkthrough with examples
+- [Agent Selection](guides/agent-selection.md) - Use specialized agents for databases and visualizations
 
 ## Key Features
 
