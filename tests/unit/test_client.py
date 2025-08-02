@@ -272,14 +272,18 @@ class TestLouieClient:
             response = client.add_cell("D_001", "Query data and analyze")
 
         assert response.thread_id == "D_001"
-        # The streaming stops after finding the first TextElement for efficiency
-        # So we only get the first element in this test
-        assert len(response.elements) == 1
+        # The streaming now continues to read all elements
+        assert len(response.elements) == 2
 
-        # Check text element (first one found)
+        # Check text element (should have the latest update)
         text_elem = response.elements[0]
         assert text_elem["type"] == "TextElement"
-        assert text_elem["text"] == "Processing..."
+        assert text_elem["text"] == "Processing...\nAnalyzing..."
+        
+        # Check dataframe element
+        df_elem = response.elements[1]
+        assert df_elem["type"] == "DfElement"
+        assert df_elem["df_id"] == "df_123"
 
     def test_error_handling(self, client):
         """Test error handling for API failures."""
