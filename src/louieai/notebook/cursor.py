@@ -417,7 +417,7 @@ class Cursor:
                 # Generate a unique display ID for this response
                 display_id = f"louie_response_{response.thread_id}_{id(response)}"
                 display(HTML(html_content), display_id=display_id)
-                
+
                 # Store display ID for potential updates
                 self._last_display_id = display_id
 
