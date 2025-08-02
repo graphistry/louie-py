@@ -202,7 +202,11 @@ class CallableModule(types.ModuleType):
     """A module that can be called like a function."""
 
     def __init__(self, module):
-        if module is not None and hasattr(module, "__dict__") and module.__dict__ is not None:
+        if (
+            module is not None
+            and hasattr(module, "__dict__")
+            and module.__dict__ is not None
+        ):
             self.__dict__.update(module.__dict__)
             super().__init__(module.__name__)
         else:
