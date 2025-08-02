@@ -62,6 +62,23 @@ Flexible factory function for creating callable Louie interfaces with various au
 
 The traditional client class for interacting with Louie.ai. Provides full control over threads, authentication, and responses. Now also callable!
 
+### [Available Agents](../reference/agents.md)
+
+LouieAI provides 40+ specialized agents for different tasks:
+- **General AI**: LouieAgent (default), TextAgent, CodeAgent
+- **Databases**: PostgresAgent, MySQLAgent, DatabricksAgent, SnowflakeAgent, and more
+- **Visualizations**: GraphAgent, KeplerAgent, PerspectiveAgent, MermaidAgent
+- **Direct Execution**: PassthroughAgent variants for each database
+
+```python
+# Default agent
+lui("Analyze my data")
+
+# Specify a specialized agent
+lui("Show user activity", agent="PostgresAgent")
+lui("Create network graph", agent="GraphAgent")
+```
+
 ## Installation
 
 Using uv (recommended):

@@ -2,12 +2,7 @@
 
 LouieAI supports different agents for specialized tasks. By default, queries use the `LouieAgent`, but you can specify other agents when needed.
 
-## Available Agents
-
-- **LouieAgent** (default) - General-purpose AI agent for most queries
-- **DatabricksAgent** - Specialized for Databricks SQL queries and data analysis
-- **PassthroughAgent** - Direct SQL execution without AI interpretation
-- Other custom agents as configured in your Louie instance
+For a complete list of all available agents, see the [Agents Reference](../reference/agents.md).
 
 ## How to Specify an Agent
 
@@ -153,6 +148,19 @@ print(lui.text)
 lui("Create a query to visualize incident trends by category", 
     agent="DatabricksAgent")
 ```
+
+## Common Agents Quick Reference
+
+The most commonly used agents:
+
+- **LouieAgent** (default) - General conversational AI agent
+- **DatabricksAgent** - Databricks SQL with schema awareness
+- **SplunkAgent** - Splunk query generation and analysis
+- **GraphAgent** - Network visualization with AI assistance
+- **CodeAgent** - Python code generation
+- **PostgresAgent** - PostgreSQL queries
+
+See the [Agents Reference](../reference/agents.md) for the complete list of 40+ available agents.
 
 ## Checking Available Agents
 

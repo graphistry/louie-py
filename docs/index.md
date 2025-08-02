@@ -114,10 +114,34 @@ print(lui.url)        # URL to view thread
 - **Notebook-friendly API**: Streamlined `lui()` interface for Jupyter notebooks
 - **Thread-based conversations**: Maintain context across multiple queries
 - **Multiple response types**: Handle text, DataFrames, visualizations, and more
+- **40+ Specialized Agents**: Choose from database-specific, visualization, and analysis agents
 - **Streaming support**: Responses stream in real-time via JSONL
 - **Natural language interface**: Access all Louie capabilities through simple prompts
 - **Auto-refresh authentication**: Automatically handles JWT token expiration
 - **Multiple auth methods**: Works with existing Graphistry sessions or direct credentials
+
+### 🤖 Available Agents
+
+LouieAI provides specialized agents for different tasks:
+
+- **General Purpose**: LouieAgent (default), TextAgent, CodeAgent
+- **Databases**: DatabricksAgent, PostgresAgent, MySQLAgent, SnowflakeAgent, BigQueryAgent, and more
+- **Search & Analytics**: SplunkAgent, OpenSearchAgent, KustoAgent
+- **Visualizations**: GraphAgent, PerspectiveAgent, KeplerAgent, MermaidAgent
+- **Direct Execution**: PassthroughAgent variants for each database (no AI interpretation)
+
+```python
+# Use the default conversational agent
+lui("Analyze security incidents from last week")
+
+# Use a specialized database agent
+lui("Show failed logins by country", agent="PostgresAgent")
+
+# Direct SQL execution without AI
+lui("SELECT * FROM auth_logs WHERE status='failed'", agent="PostgresPassthroughAgent")
+```
+
+See the complete [Agents Reference](reference/agents.md) for all available agents and usage examples.
 
 ## Getting Started
 
@@ -134,6 +158,7 @@ Ready to dive deeper? These guides cover common use cases and advanced features:
 - **[Examples](guides/examples.md)** - Practical examples for both notebook and client APIs
 - **[Query Patterns](guides/query-patterns.md)** - Advanced query techniques and best practices
 - **[Authentication Guide](guides/authentication.md)** - Multi-tenant usage, API keys, and troubleshooting
+- **[Agent Selection](guides/agent-selection.md)** - How to choose and use different agents
 - **[Interactive Notebooks](getting-started/notebooks/)** - Hands-on Jupyter notebook examples
 
 ## API Reference
@@ -143,6 +168,7 @@ Complete technical documentation:
 - **[API Overview](api/index.md)** - Overview of the LouieAI API
 - **[LouieClient Reference](api/client.md)** - Complete LouieClient documentation
 - **[Response Types](api/response-types.md)** - Understanding LouieAI response formats
+- **[Available Agents](reference/agents.md)** - Complete list of 40+ specialized agents
 
 ## Developer Resources
 
