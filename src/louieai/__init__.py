@@ -202,7 +202,7 @@ class CallableModule(types.ModuleType):
     """A module that can be called like a function."""
 
     def __init__(self, module):
-        if module is not None:
+        if module is not None and hasattr(module, '__dict__'):
             self.__dict__.update(module.__dict__)
             super().__init__(module.__name__)
         else:
@@ -212,9 +212,6 @@ class CallableModule(types.ModuleType):
         return louie(*args, **kwargs)
 
 
-# Replace the module with a callable version only if it exists
-if sys.modules.get(__name__) is not None:
-    sys.modules[__name__] = CallableModule(sys.modules[__name__])
-else:
-    # If module doesn't exist yet, create a new CallableModule
-    sys.modules[__name__] = CallableModule(None)
+# Replace the module with a callable version
+current_module = sys.modules.get(__name__)
+sys.modules[__name__] = CallableModule(current_module)
