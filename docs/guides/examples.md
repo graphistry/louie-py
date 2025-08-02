@@ -7,13 +7,22 @@ This page demonstrates common usage patterns for both the notebook-friendly API 
 ### Notebook API (Recommended for Jupyter)
 
 ```python
+# Option 1: Traditional import
 from louieai.notebook import lui
 
-# Make a query - authentication uses environment variables
-lui("What are the top security threats in my data?")
+# Option 2: New callable module (cleaner!)
+import louieai
+lui = louieai()  # Uses environment variables or existing PyGraphistry auth
 
-# Print the response
+# Make a query - returns cursor for chaining
+result = lui("What are the top security threats in my data?")
+
+# In Jupyter, the response is displayed automatically
+# You can also access it programmatically:
 print(lui.text)
+
+# Or chain operations:
+summary = lui("Summarize the threats").text
 ```
 
 ### Traditional Client API
@@ -39,7 +48,7 @@ for text in response.text_elements:
 ### Notebook API
 
 ```python
-# Query that returns data
+# Query that returns data - response displays automatically in Jupyter
 lui("Show me a summary of failed login attempts by country")
 
 # Access DataFrame directly
@@ -50,6 +59,11 @@ if lui.df is not None:
 # Access all dataframes from the response
 for i, df in enumerate(lui.dfs):
     print(f"DataFrame {i}: {df.shape}")
+
+# Chain operations on the returned cursor
+top_countries = lui("Show top 5 countries by failed logins").df
+if top_countries is not None:
+    top_countries.plot(kind='bar')
 ```
 
 ### Traditional Client API
@@ -225,6 +239,53 @@ for query in queries:
         'has_data': lui.df is not None,
         'summary': lui.text[:100] if lui.text else None
     })
+```
+
+## Notebook-Specific Features
+
+### Auto-Display in Jupyter
+
+```python
+import louieai
+lui = louieai()
+
+# In Jupyter, responses display automatically with formatting
+lui("Explain the key findings")
+# ✨ Response appears below the cell with markdown rendering
+
+# Disable auto-display for a specific query
+lui("Generate large report", display=False)
+```
+
+### Method Chaining
+
+```python
+# Chain operations on the cursor
+analysis = lui("Analyze user behavior patterns") \
+    .df \
+    .groupby('user_type') \
+    .agg({'activity_count': 'sum'})
+
+# Multiple queries in sequence
+lui("Load user data") \
+   ("Filter for active users") \
+   ("Show summary statistics")
+```
+
+### Clean Import Patterns
+
+```python
+# Method 1: Direct module call (NEW!)
+import louieai
+lui = louieai(username="user", password="pass")
+
+# Method 2: Traditional notebook import
+from louieai.notebook import lui
+
+# Method 3: With PyGraphistry client
+import graphistry
+g = graphistry.register(api=3, server="hub.graphistry.com", username="user", password="pass")
+lui = louieai(g, server_url="https://den.louie.ai")
 ```
 
 ## Interactive Notebooks

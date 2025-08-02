@@ -7,16 +7,38 @@ The notebook API provides a streamlined interface optimized for Jupyter notebook
 ```python
 from louieai.notebook import lui
 
-# Make queries
-lui("Analyze the sales data from last quarter")
+# Make queries - returns the cursor for chaining
+response = lui("Analyze the sales data from last quarter")
 
-# Access results
+# The response is displayed automatically in Jupyter notebooks
+# You can also access results directly:
 print(lui.text)      # Text response
 df = lui.df          # Latest dataframe
 all_dfs = lui.dfs    # All dataframes
+
+# Or chain operations:
+lui("Show me the data").df.head()
 ```
 
 ## Alternative Import Methods
+
+### Direct Module Import (New!)
+
+The cleanest import method - make the module itself callable:
+
+```python
+import louieai
+
+# Create authenticated instance
+lui = louieai(username="user", password="pass")
+# Or with existing PyGraphistry client
+lui = louieai(g)
+
+# Use it
+lui("Your query here")
+```
+
+### Global Singleton Import
 
 You can also import the global `lui` singleton from the globals module:
 
@@ -34,8 +56,9 @@ The `lui` object is a singleton that manages your LouieAI session with implicit 
 ### Making Queries
 
 ```python
-# Basic query
-lui("What are the key metrics in this dataset?")
+# Basic query - returns the cursor itself for chaining
+result = lui("What are the key metrics in this dataset?")
+# result is lui, so you can chain: lui("query").df
 
 # Query with traces enabled for this call only
 lui("Complex analysis task", traces=True)
@@ -43,6 +66,11 @@ lui("Complex analysis task", traces=True)
 # Query without auto-display in Jupyter
 lui("Generate report", display=False)
 ```
+
+**Important**: `lui()` returns itself (the cursor), not the Response object. This enables:
+- Chaining operations: `lui("query").df.describe()`
+- Immediate property access: `text = lui("query").text`
+- Auto-display in Jupyter notebooks
 
 ### Accessing Responses
 
