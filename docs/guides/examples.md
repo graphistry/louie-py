@@ -43,6 +43,43 @@ for text in response.text_elements:
     print(text['content'])
 ```
 
+## Advanced API Patterns
+
+### Thread Creation with Initial Query
+
+```python
+# Traditional client: Create thread with initial prompt
+thread = client.create_thread(
+    name="Security Analysis", 
+    initial_prompt="Query logs for failed login attempts in last 24 hours"
+)
+response = thread  # Initial response is returned when thread is created
+```
+
+### Handling Different Response Types
+
+```python
+# Traditional client: Check response type for images
+response = client.add_cell(thread.id, "Create a trend visualization")
+
+if response.type == "Base64ImageElement":
+    save_base64_image(response.src, "trends.png")
+    
+if response.dataset_id:
+    print(f"View graph: https://hub.graphistry.com/graph/graph.html?dataset={response.dataset_id}")
+```
+
+### Chaining Responses with Data
+
+```python
+# Traditional client: Extract data from one response to use in next query
+response1 = client.add_cell(thread.id, "Find suspicious IP addresses")
+suspicious_ips = response1.to_dataframe()['source_ip'].unique()
+
+response2 = client.add_cell(thread.id, 
+    f"Analyze these IPs for threats: {suspicious_ips.tolist()}")
+```
+
 ## Working with DataFrames
 
 ### Notebook API

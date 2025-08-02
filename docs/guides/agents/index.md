@@ -1,45 +1,71 @@
-# Agent Guides
+# Agent Overview
 
-Detailed guides for using LouieAI's specialized agents. Each agent type has two variants:
+LouieAI provides 20+ specialized agents for different data sources and tasks. Most agents have two variants:
 
-- **AI-Assisted** - Natural language interface with semantic understanding
-- **Passthrough** - Direct execution without AI interpretation
+- **AI-Assisted** (e.g., `PostgresAgent`) - Natural language to query language with semantic understanding
+- **Passthrough** (e.g., `PostgresPassthroughAgent`) - Direct query execution without AI interpretation
 
-## Database Agents
+## How to Use Agents
 
-### [Databricks Agent](databricks.md)
-Powerful integration with Databricks SQL Analytics, Unity Catalog, and Delta Lake.
-- AI understands your schemas and business metrics
-- Natural language to optimized SQL
-- Direct SQL execution option
+### Notebook API
+```python
+from louieai.notebook import lui
 
-### [PostgreSQL Agent](postgresql.md)
-Comprehensive PostgreSQL support with semantic layer.
-- Complex business logic understanding
-- Query optimization suggestions
-- Full SQL control when needed
+# Default general-purpose agent
+lui("Analyze customer behavior patterns")
 
-### [Splunk Agent](splunk.md)
-Advanced log analysis and security monitoring.
-- Natural language to SPL queries
-- Pattern recognition and anomaly detection
-- Direct SPL execution
+# Specify database agent
+lui("Show failed login attempts from last hour", agent="SplunkAgent")
 
-## Analytics & Visualization
+# Use passthrough for exact SQL
+lui("SELECT * FROM logs LIMIT 10", agent="PostgresPassthroughAgent")
+```
 
-### [Graph Agent](graph.md)
-Network visualization using Graphistry.
-- AI-powered graph generation from descriptions
-- Automatic layout and styling
-- Direct graph specification with JSON
+### Traditional Client API
+```python
+from louieai import LouieClient
+client = LouieClient()
 
-### [Python Code Agent](code.md)
-Generate and execute Python code for data processing.
-- Complete data science workflows
-- Best practices and error handling
-- Direct code execution
+# With agent parameter
+response = client.add_cell("", "Analyze patterns", agent="LouieAgent")
+response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroughAgent")
+```
 
-## Quick Comparison
+## Quick Reference Table
+
+| **Data Source** | **Agent** | **Use Cases** | **Query Language** |
+|---|---|---|---|
+| **Cloud Data Warehouses** |
+| BigQuery | `BigQueryAgent` | Petabyte analytics, ML, geospatial | SQL |
+| Snowflake | `SnowflakeAgent` | Enterprise analytics, time travel | SQL |
+| Databricks | `DatabricksAgent` | Unity Catalog, Delta Lake | SQL |
+| Athena | `AthenaAgent` | Serverless S3 queries | SQL |
+| **Traditional Databases** |
+| PostgreSQL | `PostgresAgent` | OLTP/Analytics, JSON, advanced features | SQL |
+| MySQL | `MySQLAgent` | Web applications, performance optimization | SQL |
+| SQL Server | `MSSQLAgent` | Enterprise Windows environments | T-SQL |
+| **Distributed Systems** |
+| CockroachDB | `CockroachDBAgent` | Global consistency, multi-region | SQL |
+| Spanner | `SpannerAgent` | Global scale, strong consistency | SQL |
+| **Search & Logs** |
+| OpenSearch | `OpenSearchAgent` | Log analytics, security monitoring | Query DSL |
+| Splunk | `SplunkAgent` | Security operations, correlations | SPL |
+| Kusto | `KustoAgent` | Azure telemetry, time series | KQL |
+| **Graph Databases** |
+| Neptune | `NeptuneAgent` | Relationship analysis | Cypher |
+| **Visualization** |
+| Graph | `GraphAgent` | Network analysis with Graphistry | JSON |
+| Kepler | `KeplerAgent` | Geospatial mapping | Config |
+| Perspective | `PerspectiveAgent` | Interactive data tables | Config |
+| Mermaid | `MermaidAgent` | Diagrams and flowcharts | Mermaid |
+| **Development** |
+| Code | `CodeAgent` | Python data processing | Python |
+| Notebook | `NotebookAgent` | Jupyter automation | Python |
+| TableAI | `TableAIAgent` | Intelligent data insights | Natural Language |
+| **Data Collection** |
+| Firecrawl | `FirecrawlAgent` | Web scraping | Natural Language |
+
+## AI vs Passthrough Comparison
 
 | Use Case | AI-Assisted Agent | Passthrough Agent |
 |----------|------------------|-------------------|
@@ -49,7 +75,17 @@ Generate and execute Python code for data processing.
 | **Learning curve** | ✅ Natural language | ❌ Need to know query language |
 | **Performance** | ✅ Often optimizes queries | ✅ Full control over execution |
 
-## Common Patterns
+## Agent Selection Guidelines
+
+### When to Use AI-Assisted Agents
+- **Exploring new data sources** - "Show me customer behavior patterns"
+- **Complex business questions** - "Find high-risk transactions across regions"
+- **Learning query patterns** - See how the AI structures queries for your use case
+
+### When to Use Passthrough Agents  
+- **Exact control needed** - Specific SQL optimizations or edge cases
+- **Known query patterns** - You already know the exact query to run
+- **Performance critical** - Direct execution without AI processing overhead
 
 ### Multi-Agent Workflows
 
@@ -57,7 +93,7 @@ Generate and execute Python code for data processing.
 # 1. Explore with database agent
 lui("Show me customer behavior patterns", agent="PostgresAgent")
 
-# 2. Visualize findings
+# 2. Visualize findings  
 lui("Create a network of customer interactions", agent="GraphAgent")
 
 # 3. Generate analysis code
@@ -67,35 +103,26 @@ lui("Write code to predict customer churn", agent="CodeAgent")
 lui("Create Splunk queries to track model performance", agent="SplunkAgent")
 ```
 
-### Choosing Between AI and Passthrough
+## Individual Agent Guides
 
-```python
-# Use AI when exploring
-lui("Find security anomalies in the logs", agent="SplunkAgent")
+**Database Agents:**
+- [Databricks](databricks.md) - Unity Catalog, Delta Lake analytics
+- [PostgreSQL](postgresql.md) - Advanced SQL features, JSON support
+- [Splunk](splunk.md) - Security operations, log analysis
+- [BigQuery](bigquery.md) - Petabyte analytics, ML integration
+- [Snowflake](snowflake.md) - Enterprise data warehouse
+- [MySQL](mysql.md) - Web application databases
+- [OpenSearch](opensearch.md) - Search and log analytics
+- [Athena](athena.md), [CockroachDB](cockroachdb.md), [Kusto](kusto.md), [MSSQL](mssql.md), [Neptune](neptune.md), [Spanner](spanner.md)
 
-# Use passthrough when you know exactly what you want
-lui('index=security event_type="failed_login" | stats count by src_ip', 
-    agent="SplunkPassthroughAgent")
-```
+**Visualization Agents:**
+- [Graph](graph.md) - Network visualization with Graphistry
+- [Kepler](kepler.md) - Geospatial mapping
+- [Perspective](perspective.md) - Interactive data tables
+- [Mermaid](mermaid.md) - Diagrams and flowcharts
 
-## More Agents
-
-See the [complete agents reference](../../reference/agents.md) for all 40+ available agents including:
-
-- **SQL Databases**: MySQL, MSSQL, Snowflake, BigQuery
-- **NoSQL**: OpenSearch, Neptune (Graph DB)
-- **Visualization**: Kepler (Maps), Perspective (Tables), Mermaid (Diagrams)
-- **Specialized**: Firecrawl (Web scraping), Recipe/Example management
-
-## Getting Started
-
-1. Start with the AI-assisted version to explore your data
-2. Review the generated queries to understand patterns
-3. Switch to passthrough agents when you need exact control
-4. Combine multiple agents for complex workflows
-
-Each guide includes:
-- ✅ Real-world examples
-- ✅ Best practices
-- ✅ Performance tips
-- ✅ Integration patterns
+**Development Agents:**
+- [Code](code.md) - Python code generation
+- [Notebook](notebook.md) - Jupyter automation
+- [TableAI](tableai.md) - Intelligent data insights
+- [Firecrawl](firecrawl.md) - Web scraping
