@@ -212,4 +212,9 @@ class CallableModule(types.ModuleType):
         return louie(*args, **kwargs)
 
 
-sys.modules[__name__] = CallableModule(sys.modules[__name__])
+# Replace the module with a callable version only if it exists
+if sys.modules.get(__name__) is not None:
+    sys.modules[__name__] = CallableModule(sys.modules[__name__])
+else:
+    # If module doesn't exist yet, create a new CallableModule
+    sys.modules[__name__] = CallableModule(None)
