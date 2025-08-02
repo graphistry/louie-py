@@ -12,7 +12,7 @@ from ._client import Response, Thread
 from .notebook import Cursor
 
 
-def louie(graphistry_client: Any | None = None, **kwargs: Any) -> Cursor:
+def louie(graphistry_client: Any | None = None, share_mode: str = "Private", **kwargs: Any) -> Cursor:
     """Create a callable Louie interface.
 
     This factory function provides flexible ways to create a Louie client:
@@ -41,6 +41,7 @@ def louie(graphistry_client: Any | None = None, **kwargs: Any) -> Cursor:
 
     Args:
         graphistry_client: Optional PyGraphistry client or None for global
+        share_mode: Default visibility mode - "Private", "Organization", or "Public" (default: "Private")
         **kwargs: Authentication parameters passed to LouieClient
             - username: PyGraphistry username
             - password: PyGraphistry password
@@ -69,13 +70,15 @@ def louie(graphistry_client: Any | None = None, **kwargs: Any) -> Cursor:
         >>> lui = louie(g)
         >>> lui("Show me the patterns")
 
-        >>> # Direct authentication
+        >>> # Direct authentication with default visibility
         >>> lui = louie(
         ...     personal_key_id="pk_123",
         ...     personal_key_secret="sk_456",
-        ...     org_name="my-org"
+        ...     org_name="my-org",
+        ...     share_mode="Organization"  # All queries default to org visibility
         ... )
-        >>> lui("Analyze fraud patterns")
+        >>> lui("Analyze fraud patterns")  # Shared within organization
+        >>> lui("Private analysis", share_mode="Private")  # Override for this query
 
         >>> # Custom timeouts for long-running agentic flows
         >>> lui = louie(
@@ -91,15 +94,15 @@ def louie(graphistry_client: Any | None = None, **kwargs: Any) -> Cursor:
     # If graphistry_client provided, create LouieClient with it
     if graphistry_client is not None:
         client = LouieClient(graphistry_client=graphistry_client, **kwargs)
-        return Cursor(client=client)
+        return Cursor(client=client, share_mode=share_mode)
 
     # If kwargs provided, create LouieClient with them
     if kwargs:
         client = LouieClient(**kwargs)
-        return Cursor(client=client)
+        return Cursor(client=client, share_mode=share_mode)
 
     # Otherwise, create a new cursor with environment variables
-    return Cursor()
+    return Cursor(share_mode=share_mode)
 
 
 __all__ = [

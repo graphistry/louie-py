@@ -255,6 +255,11 @@ class Cursor:
         - History tracked (last 100 responses)
         - Access previous: lui[-1], lui[-2], etc.
 
+    Visibility Control:
+        >>> lui = louieai(share_mode="Organization")  # Set default for session
+        >>> lui("Query")  # Uses Organization visibility
+        >>> lui("Query", share_mode="Private")  # Override for this query
+
     Trace Control:
         >>> lui.traces = True  # Enable reasoning traces
         >>> lui("Complex query", traces=False)  # Override per query
@@ -267,11 +272,12 @@ class Cursor:
         - lui.elements: All elements with type tags
     """
 
-    def __init__(self, client: LouieClient | None = None):
+    def __init__(self, client: LouieClient | None = None, share_mode: str = "Private"):
         """Initialize global cursor.
 
         Args:
             client: LouieAI client instance. If None, creates default client.
+            share_mode: Default visibility mode for queries - "Private", "Organization", or "Public"
         """
         if client is None:
             # Create client with env credentials if available
@@ -339,16 +345,17 @@ class Cursor:
         self._history: deque[Response] = deque(maxlen=100)
         self._current_thread: str | None = None
         self._traces: bool = False
+        self._share_mode: str = share_mode
 
     def __call__(
-        self, prompt: str, *, traces: bool | None = None, share_mode: str = "Private", **kwargs: Any
+        self, prompt: str, *, traces: bool | None = None, share_mode: str | None = None, **kwargs: Any
     ) -> "Cursor":
         """Execute a query with implicit thread management.
 
         Args:
             prompt: Natural language query
             traces: Override session trace setting for this query
-            share_mode: Visibility mode - "Private", "Organization", or "Public" (default: "Private")
+            share_mode: Override default visibility mode for this query (optional)
             **kwargs: Additional arguments passed to client.query()
 
         Returns:
@@ -360,6 +367,9 @@ class Cursor:
 
         # Determine trace setting
         use_traces = traces if traces is not None else self._traces
+        
+        # Determine share_mode setting
+        use_share_mode = share_mode if share_mode is not None else self._share_mode
 
         # Build parameters
         params = {"prompt": prompt, "thread_id": self._current_thread, **kwargs}
@@ -371,7 +381,7 @@ class Cursor:
         # Execute query
         try:
             response = self._client.add_cell(
-                thread_id=thread_id, prompt=prompt, agent=agent, traces=use_traces, share_mode=share_mode
+                thread_id=thread_id, prompt=prompt, agent=agent, traces=use_traces, share_mode=use_share_mode
             )
 
             # Update thread ID in case it was created

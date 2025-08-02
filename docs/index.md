@@ -57,9 +57,14 @@ g = graphistry.register(
 lui = louieai(g, server_url="https://den.louie.ai")
 
 # Control visibility of your threads
-lui("analyze my data")  # Default: Private workspace (only you can see)
-lui("analyze my data", share_mode="Organization")  # Share within your org
-lui("analyze my data", share_mode="Public")  # Share publicly
+# Option A: Set default for the session
+lui_private = louieai(g, server_url="https://den.louie.ai", share_mode="Private")
+lui_org = louieai(g, server_url="https://den.louie.ai", share_mode="Organization")
+
+# Option B: Override per query
+lui("analyze my data")  # Uses session default
+lui("analyze my data", share_mode="Organization")  # Override for this query
+lui("analyze my data", share_mode="Public")  # Override for this query
 
 # Note: Organization names are converted to slugs (lowercase, special chars become hyphens)
 # Examples: "John Doe" → "john-doe", "My_Team!" → "my-team"
