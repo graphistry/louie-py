@@ -202,15 +202,19 @@ class CallableModule(types.ModuleType):
     """A module that can be called like a function."""
 
     def __init__(self, module):
+        # Initialize the parent class first
+        if module is not None and hasattr(module, "__name__"):
+            super().__init__(module.__name__)
+        else:
+            super().__init__(__name__)
+
+        # Then update the dictionary if possible
         if (
             module is not None
             and hasattr(module, "__dict__")
             and module.__dict__ is not None
         ):
             self.__dict__.update(module.__dict__)
-            super().__init__(module.__name__)
-        else:
-            super().__init__(__name__)
 
     def __call__(self, *args, **kwargs):
         return louie(*args, **kwargs)
