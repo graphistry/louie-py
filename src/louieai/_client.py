@@ -205,34 +205,37 @@ class LouieClient:
         """Get authorization headers using auth manager."""
         token = self._auth_manager.get_token()
         headers = {"Authorization": f"Bearer {token}"}
-        
+
         # Add organization header if available
-        if (hasattr(self._auth_manager, "_credentials") and 
-            self._auth_manager._credentials.get("org_name")):
+        if hasattr(
+            self._auth_manager, "_credentials"
+        ) and self._auth_manager._credentials.get("org_name"):
             org_name = self._auth_manager._credentials["org_name"]
             # Convert to slug format (lowercase, replace special chars with hyphens)
-            org_slug = self._to_slug(org_name)
-            headers["X-Graphistry-Org"] = org_slug
-        
+            if org_name:  # Ensure org_name is not None
+                org_slug = self._to_slug(str(org_name))
+                headers["X-Graphistry-Org"] = org_slug
+
         return headers
-    
+
     def _to_slug(self, text: str) -> str:
         """Convert text to slug format.
-        
+
         - Lowercase
         - Replace spaces and special chars with hyphens
         - Remove consecutive hyphens
         - Strip leading/trailing hyphens
         """
         import re
+
         # Convert to lowercase
         slug = text.lower()
         # Replace any non-alphanumeric character with hyphen
-        slug = re.sub(r'[^a-z0-9]+', '-', slug)
+        slug = re.sub(r"[^a-z0-9]+", "-", slug)
         # Remove consecutive hyphens
-        slug = re.sub(r'-+', '-', slug)
+        slug = re.sub(r"-+", "-", slug)
         # Strip leading/trailing hyphens
-        slug = slug.strip('-')
+        slug = slug.strip("-")
         return slug
 
     def _parse_jsonl_response(self, response_text: str) -> dict[str, Any]:
@@ -311,7 +314,7 @@ class LouieClient:
             prompt: Natural language query
             agent: Agent to use (default: LouieAgent)
             traces: Whether to include reasoning traces in response (default: False)
-            share_mode: Visibility mode - "Private", "Organization", or "Public" (default: "Private")
+            share_mode: Visibility mode - "Private", "Organization", or "Public"
 
         Returns:
             Response object containing thread_id and all elements
@@ -424,7 +427,7 @@ class LouieClient:
             thread_id: Thread ID to use (None creates new thread)
             traces: Whether to include reasoning traces
             agent: Agent to use (default: LouieAgent)
-            share_mode: Visibility mode - "Private", "Organization", or "Public" (default: "Private")
+            share_mode: Visibility mode - "Private", "Organization", or "Public"
             **kwargs: Additional arguments (reserved for future use)
 
         Returns:
@@ -443,7 +446,11 @@ class LouieClient:
 
         # Make the call
         response = self.add_cell(
-            thread_id=tid, prompt=prompt, agent=agent, traces=traces, share_mode=share_mode
+            thread_id=tid,
+            prompt=prompt,
+            agent=agent,
+            traces=traces,
+            share_mode=share_mode,
         )
 
         # Store thread_id for next call

@@ -12,7 +12,9 @@ from ._client import Response, Thread
 from .notebook import Cursor
 
 
-def louie(graphistry_client: Any | None = None, share_mode: str = "Private", **kwargs: Any) -> Cursor:
+def louie(
+    graphistry_client: Any | None = None, share_mode: str = "Private", **kwargs: Any
+) -> Cursor:
     """Create a callable Louie interface.
 
     This factory function provides flexible ways to create a Louie client:
@@ -41,7 +43,7 @@ def louie(graphistry_client: Any | None = None, share_mode: str = "Private", **k
 
     Args:
         graphistry_client: Optional PyGraphistry client or None for global
-        share_mode: Default visibility mode - "Private", "Organization", or "Public" (default: "Private")
+        share_mode: Default visibility mode - "Private", "Organization", or "Public"
         **kwargs: Authentication parameters passed to LouieClient
             - username: PyGraphistry username
             - password: PyGraphistry password

@@ -277,7 +277,7 @@ class Cursor:
 
         Args:
             client: LouieAI client instance. If None, creates default client.
-            share_mode: Default visibility mode for queries - "Private", "Organization", or "Public"
+            share_mode: Default visibility mode - "Private", "Organization", or "Public"
         """
         if client is None:
             # Create client with env credentials if available
@@ -348,7 +348,12 @@ class Cursor:
         self._share_mode: str = share_mode
 
     def __call__(
-        self, prompt: str, *, traces: bool | None = None, share_mode: str | None = None, **kwargs: Any
+        self,
+        prompt: str,
+        *,
+        traces: bool | None = None,
+        share_mode: str | None = None,
+        **kwargs: Any,
     ) -> "Cursor":
         """Execute a query with implicit thread management.
 
@@ -367,7 +372,7 @@ class Cursor:
 
         # Determine trace setting
         use_traces = traces if traces is not None else self._traces
-        
+
         # Determine share_mode setting
         use_share_mode = share_mode if share_mode is not None else self._share_mode
 
@@ -381,7 +386,11 @@ class Cursor:
         # Execute query
         try:
             response = self._client.add_cell(
-                thread_id=thread_id, prompt=prompt, agent=agent, traces=use_traces, share_mode=use_share_mode
+                thread_id=thread_id,
+                prompt=prompt,
+                agent=agent,
+                traces=use_traces,
+                share_mode=use_share_mode,
             )
 
             # Update thread ID in case it was created
@@ -618,17 +627,18 @@ class Cursor:
         if self._current_thread:
             session_info = [
                 "<p style='margin: 5px 0; font-size: 0.9em;'>",
-                f"✅ <b>Session:</b> Active | ",
+                "✅ <b>Session:</b> Active | ",
                 f"<b>Thread ID:</b> <code>{self._current_thread}</code> | ",
-                f"<a href='{self.url}' target='_blank'>View Thread ↗</a>"
+                f"<a href='{self.url}' target='_blank'>View Thread ↗</a>",
             ]
-            
+
             # Add organization info if available
-            if (hasattr(self._client._auth_manager, "_credentials") and 
-                self._client._auth_manager._credentials.get("org_name")):
+            if hasattr(
+                self._client._auth_manager, "_credentials"
+            ) and self._client._auth_manager._credentials.get("org_name"):
                 org_name = self._client._auth_manager._credentials["org_name"]
                 session_info.append(f" | <b>Org:</b> {org_name}")
-            
+
             session_info.append("</p>")
             html_parts.append("".join(session_info))
         else:
@@ -720,9 +730,15 @@ class Cursor:
         html_parts.append("# Make a query\n")
         html_parts.append("lui('Show me sales data from last week')\n\n")
         html_parts.append("# Control visibility\n")
-        html_parts.append("lui('query', share_mode='Private')       # Default: only you\n")
-        html_parts.append("lui('query', share_mode='Organization')  # Share within org\n")
-        html_parts.append("lui('query', share_mode='Public')        # Share publicly\n\n")
+        html_parts.append(
+            "lui('query', share_mode='Private')       # Default: only you\n"
+        )
+        html_parts.append(
+            "lui('query', share_mode='Organization')  # Share within org\n"
+        )
+        html_parts.append(
+            "lui('query', share_mode='Public')        # Share publicly\n\n"
+        )
         html_parts.append("# Access results\n")
         html_parts.append("df = lui.df          # Latest dataframe\n")
         html_parts.append("text = lui.text      # Latest text response\n")
