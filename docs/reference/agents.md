@@ -35,8 +35,31 @@ This page lists all available agent types in LouieAI. Each agent is specialized 
 
 ## Database Query Agents
 
+### Semantic Layer & Schema Learning
+
+Database agents in LouieAI do more than simple query generation - they build a **semantic understanding** of your data:
+
+1. **Schema Discovery**: Agents automatically learn your database schema, table relationships, and data types
+2. **Semantic Modeling**: They understand business context, common patterns, and domain-specific terminology
+3. **Intelligent Query Generation**: Queries are generated based on semantic understanding, not just keyword matching
+4. **Cross-Table Reasoning**: Agents can infer joins and relationships even when not explicitly stated
+
+Example of semantic understanding:
+```python
+# Instead of needing to specify tables and joins:
+lui("Show me customer churn last quarter", agent="DatabricksAgent")
+
+# The agent understands:
+# - "customer churn" maps to specific tables/columns
+# - "last quarter" needs date range calculation
+# - Required joins between customer, subscription, and date tables
+# - Appropriate aggregations and filters
+```
+
+### Agent Variants
+
 Each database type has two variants:
-- **[Database]Agent** - AI-assisted query generation and natural language interface
+- **[Database]Agent** - AI-powered with semantic understanding and natural language interface
 - **[Database]PassthroughAgent** - Direct query execution without AI interpretation
 
 ### Analytics Databases
@@ -93,14 +116,30 @@ lui("SELECT * FROM events WHERE severity='HIGH'", agent="SplunkPassthroughAgent"
 ```
 
 ### AI-Assisted vs Passthrough
-```python
-# AI-assisted query generation
-lui("Show me all failed login attempts today", agent="PostgresAgent")
-# AI generates: SELECT * FROM auth_logs WHERE status='failed' AND date=CURRENT_DATE
 
-# Direct query execution
+**AI-Assisted Agents** leverage semantic understanding:
+```python
+# Natural language with business context
+lui("Show me suspicious user behavior patterns", agent="PostgresAgent")
+# Agent understands:
+# - What constitutes "suspicious" in your data model
+# - Which tables contain user behavior data
+# - Appropriate time windows and thresholds
+# - Complex joins and aggregations needed
+
+# Another example with learned semantics
+lui("Compare this month's revenue to last month by product category", agent="DatabricksAgent")
+# Agent knows:
+# - Revenue calculation from your specific schema
+# - Product hierarchy and categorization
+# - Proper date handling for your fiscal calendar
+```
+
+**Passthrough Agents** for direct control:
+```python
+# When you know exactly what you want
 lui("SELECT * FROM auth_logs WHERE status='failed'", agent="PostgresPassthroughAgent")
-# Executes exactly as written
+# Executes exactly as written - no interpretation
 ```
 
 ### Visualization Agents
@@ -120,10 +159,17 @@ lui(json.dumps(graph_json), agent="GraphPassthroughAgent")
    - Mixed queries requiring multiple steps
    - When you're unsure which agent to use
 
-2. **Use specialized agents** when:
+2. **Use specialized database agents** when:
    - Working with specific data sources (e.g., DatabricksAgent for Databricks)
-   - You need direct control (passthrough agents)
-   - Creating specific visualizations (GraphAgent, KeplerAgent)
+   - You want the agent to leverage learned semantic understanding of your schema
+   - You prefer natural language over writing SQL
+   - You need complex queries involving multiple tables and business logic
+
+3. **Benefits of semantic layer**:
+   - **Faster query development**: Describe what you want, not how to get it
+   - **Consistent business logic**: Agents learn and apply your organization's definitions
+   - **Reduced errors**: Semantic understanding prevents common SQL mistakes
+   - **Knowledge sharing**: New users can query without knowing the schema
 
 3. **Use passthrough agents** when:
    - You have exact queries/specifications

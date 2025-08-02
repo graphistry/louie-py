@@ -69,15 +69,21 @@ df = lui.df
 
 ### DatabricksAgent
 
-Optimized for Databricks environments with schema awareness:
+Optimized for Databricks with semantic layer capabilities:
 
 ```python
-# Natural language to SQL
-lui("Show me all tables in the security database", agent="DatabricksAgent")
+# Leverages learned schema and relationships
+lui("Show me customer lifetime value trends", agent="DatabricksAgent")
+# Agent understands your specific CLV calculation and data model
 
-# Complex analytical queries
-lui("Calculate the average response time by incident type for last month", 
+# Complex business logic queries
+lui("Find products with declining market share in key segments", 
     agent="DatabricksAgent")
+# Agent knows your product hierarchy, market segments, and KPIs
+
+# Cross-database analytics
+lui("Compare operational metrics across regions", agent="DatabricksAgent") 
+# Understands your multi-database architecture and metric definitions
 ```
 
 ### LouieAgent (Default)
@@ -154,11 +160,31 @@ lui("Create a query to visualize incident trends by category",
 The most commonly used agents:
 
 - **LouieAgent** (default) - General conversational AI agent
-- **DatabricksAgent** - Databricks SQL with schema awareness
-- **SplunkAgent** - Splunk query generation and analysis
+- **DatabricksAgent** - Databricks SQL with semantic layer and schema learning
+- **SplunkAgent** - Splunk query generation with log pattern understanding 
 - **GraphAgent** - Network visualization with AI assistance
 - **CodeAgent** - Python code generation
-- **PostgresAgent** - PostgreSQL queries
+- **PostgresAgent** - PostgreSQL queries with semantic understanding
+
+### The Power of Semantic Understanding
+
+Database agents don't just translate natural language to SQL - they:
+1. **Learn your schema** - Understand table relationships and data types
+2. **Build semantic models** - Map business concepts to data structures
+3. **Apply domain knowledge** - Understand your specific business terminology
+4. **Generate intelligent queries** - Create optimized queries based on data patterns
+
+Example:
+```python
+# The agent understands your business context
+lui("Show me high-value customers at risk", agent="PostgresAgent")
+
+# It knows:
+# - What defines "high-value" in your business
+# - Risk indicators from your data model  
+# - Which tables to join and how
+# - Appropriate time windows and thresholds
+```
 
 See the [Agents Reference](../reference/agents.md) for the complete list of 40+ available agents.
 

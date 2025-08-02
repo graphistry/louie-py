@@ -120,12 +120,15 @@ print(lui.url)        # URL to view thread
 - **Auto-refresh authentication**: Automatically handles JWT token expiration
 - **Multiple auth methods**: Works with existing Graphistry sessions or direct credentials
 
-### 🤖 Available Agents
+### 🤖 Available Agents with Semantic Understanding
 
-LouieAI provides specialized agents for different tasks:
+LouieAI provides specialized agents that learn and understand your data:
 
 - **General Purpose**: LouieAgent (default), TextAgent, CodeAgent
-- **Databases**: DatabricksAgent, PostgresAgent, MySQLAgent, SnowflakeAgent, BigQueryAgent, and more
+- **Databases with Semantic Layer**: 
+  - DatabricksAgent, PostgresAgent, MySQLAgent, SnowflakeAgent, BigQueryAgent
+  - Agents learn your schema, relationships, and business context
+  - Generate complex queries from natural language using semantic understanding
 - **Search & Analytics**: SplunkAgent, OpenSearchAgent, KustoAgent
 - **Visualizations**: GraphAgent, PerspectiveAgent, KeplerAgent, MermaidAgent
 - **Direct Execution**: PassthroughAgent variants for each database (no AI interpretation)
@@ -134,10 +137,15 @@ LouieAI provides specialized agents for different tasks:
 # Use the default conversational agent
 lui("Analyze security incidents from last week")
 
-# Use a specialized database agent
-lui("Show failed logins by country", agent="PostgresAgent")
+# Database agent with semantic understanding
+lui("Show me customer churn trends", agent="DatabricksAgent")
+# The agent understands your schema and business definitions of "churn"
 
-# Direct SQL execution without AI
+# Natural language leveraging learned semantics
+lui("Which products have anomalous return rates?", agent="PostgresAgent") 
+# Agent knows your product hierarchy, return policies, and what's "anomalous"
+
+# Direct SQL when you need exact control
 lui("SELECT * FROM auth_logs WHERE status='failed'", agent="PostgresPassthroughAgent")
 ```
 

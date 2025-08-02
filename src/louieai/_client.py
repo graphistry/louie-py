@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
+import pandas as pd
 
 from .auth import AuthManager, auto_retry_auth
 
@@ -272,7 +273,22 @@ class LouieClient:
                 continue
 
         # Convert to list, preserving order
-        result["elements"] = list(elements_by_id.values())
+        elements = list(elements_by_id.values())
+        
+        # Convert table dicts to DataFrames for DfElements
+        for elem in elements:
+            if elem.get("type") == "DfElement" and "table" in elem:
+                table = elem["table"]
+                if isinstance(table, dict) and "columns" in table and "data" in table:
+                    # Convert dict representation to pandas DataFrame
+                    df = pd.DataFrame(
+                        data=table["data"],
+                        columns=table["columns"],
+                        index=table.get("index")
+                    )
+                    elem["table"] = df
+        
+        result["elements"] = elements
         return result
 
     def create_thread(
