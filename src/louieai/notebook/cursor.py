@@ -11,6 +11,67 @@ from louieai._client import LouieClient, Response
 logger = logging.getLogger(__name__)
 
 
+def _render_response_html(response) -> str:
+    """Render response to HTML - shared by both auto-display and ResponseProxy.
+    
+    This is the single source of truth for response rendering.
+    """
+    if not response:
+        return ""
+        
+    html_parts = []
+    
+    try:
+        # Display text elements
+        if hasattr(response, 'text_elements') and response.text_elements:
+            for elem in response.text_elements:
+                if isinstance(elem, dict):
+                    content = (elem.get("content") or elem.get("text", "")).strip()
+                    if content:
+                        # Use IPython's Markdown renderer for consistency
+                        try:
+                            from IPython.display import Markdown
+                            md = Markdown(content)
+                            # Get the actual markdown-rendered HTML
+                            from IPython.core.formatters import HTMLFormatter
+                            formatter = HTMLFormatter()
+                            html_content = formatter(md)
+                            if html_content:
+                                html_parts.append(html_content)
+                            else:
+                                # Fallback: basic markdown-like conversion
+                                import html
+                                escaped = html.escape(content)
+                                # Basic markdown-like formatting
+                                escaped = escaped.replace('\n\n', '</p><p>').replace('\n', '<br>')
+                                if escaped.startswith('## '):
+                                    escaped = f"<h2>{escaped[3:]}</h2>"
+                                elif escaped.startswith('# '):
+                                    escaped = f"<h1>{escaped[2:]}</h1>"
+                                html_parts.append(f"<div>{escaped}</div>")
+                        except ImportError:
+                            # No IPython, use basic HTML
+                            import html
+                            escaped = html.escape(content).replace('\n', '<br>')
+                            html_parts.append(f"<div>{escaped}</div>")
+        
+        # Display dataframes
+        if hasattr(response, 'dataframe_elements') and response.dataframe_elements:
+            for elem in response.dataframe_elements:
+                if isinstance(elem, dict) and "table" in elem:
+                    df = elem["table"]
+                    if hasattr(df, '_repr_html_'):
+                        df_html = df._repr_html_()
+                        if df_html:
+                            html_parts.append(df_html)
+                            
+    except Exception:
+        # Fallback on any error
+        html_parts.append("<div style='color: #888;'><em>Response content unavailable</em></div>")
+        
+    return '\n'.join(html_parts)
+
+
 class ResponseProxy:
     """Proxy for historical responses with same property access."""
 
@@ -46,7 +107,8 @@ class ResponseProxy:
             or not self._response.text_elements
         ):
             return []
-        return [elem.get("content", "") for elem in self._response.text_elements]
+        # Handle both 'content' and 'text' keys for backward compatibility
+        return [elem.get("content") or elem.get("text", "") for elem in self._response.text_elements]
 
     @property
     def elements(self) -> list[dict[str, Any]]:
@@ -125,6 +187,40 @@ class ResponseProxy:
             ):
                 dfs.append(elem["table"])
         return dfs
+    
+    def __repr__(self) -> str:
+        """String representation for REPL/notebook display."""
+        if not self._response:
+            return "<ResponseProxy: No response>"
+        
+        # Count content
+        text_count = len(self.texts)
+        df_count = len(self.dfs)
+        error_count = len(self.errors)
+        
+        parts = []
+        if error_count:
+            parts.append(f"{error_count} errors")
+        if text_count:
+            parts.append(f"{text_count} text")
+        if df_count:
+            parts.append(f"{df_count} dataframe")
+            
+        if parts:
+            content = ", ".join(parts)
+            return f"<ResponseProxy: {content}>"
+        else:
+            return "<ResponseProxy: Empty response>"
+    
+    def _repr_html_(self) -> str:
+        """HTML representation for Jupyter notebooks - identical to auto-display."""
+        if not self._response:
+            return "<div style='color: #888;'><em>No response data</em></div>"
+        
+        # Use the shared renderer to ensure lui('query') and lui[-1] show identical content
+        html_content = _render_response_html(self._response)
+        
+        return html_content if html_content else "<div style='color: #888;'><em>Empty response</em></div>"
 
 
 class Cursor:
@@ -296,21 +392,14 @@ class Cursor:
             return False
 
     def _display(self, response: Response) -> None:
-        """Display response in Jupyter."""
+        """Display response in Jupyter using the same renderer as ResponseProxy."""
         try:
-            from IPython.display import display, Markdown, HTML
+            from IPython.display import display, HTML
             
-            # Display text elements
-            if hasattr(response, 'text_elements') and response.text_elements:
-                for elem in response.text_elements:
-                    if isinstance(elem, dict) and (content := elem.get("content", "").strip()):
-                        display(Markdown(content))
-            
-            # Display dataframes
-            if hasattr(response, 'dataframe_elements') and response.dataframe_elements:
-                for elem in response.dataframe_elements:
-                    if isinstance(elem, dict) and "table" in elem:
-                        display(elem["table"])
+            # Use the shared rendering function
+            html_content = _render_response_html(response)
+            if html_content:
+                display(HTML(html_content))
                     
         except ImportError:
             # IPython not available, skip display
@@ -356,7 +445,8 @@ class Cursor:
         latest = self._history[-1]
         if not hasattr(latest, "text_elements") or not latest.text_elements:
             return []
-        return [elem.get("content", "") for elem in latest.text_elements]
+        # Handle both 'content' and 'text' keys for backward compatibility
+        return [elem.get("content") or elem.get("text", "") for elem in latest.text_elements]
 
     @property
     def charts(self) -> list[dict[str, Any]]:
@@ -453,7 +543,8 @@ class Cursor:
             # Display text elements
             if hasattr(latest, "text_elements") and latest.text_elements:
                 for elem in latest.text_elements:
-                    if content := elem.get("content", "").strip():
+                    content = (elem.get("content") or elem.get("text", "")).strip()
+                    if content:
                         # Escape HTML but preserve newlines
                         import html
                         escaped_content = html.escape(content).replace('\n', '<br>')
