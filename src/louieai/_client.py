@@ -202,36 +202,39 @@ class LouieClient:
         """
         self._auth_manager._graphistry_client.register(**kwargs)
         return self
-    
+
     @auto_retry_auth
-    def _fetch_dataframe_arrow(self, thread_id: str, block_id: str) -> pd.DataFrame | None:
+    def _fetch_dataframe_arrow(
+        self, thread_id: str, block_id: str
+    ) -> pd.DataFrame | None:
         """Fetch a dataframe using Arrow format.
-        
+
         Args:
             thread_id: The thread ID
             block_id: The block ID for the dataframe
-            
+
         Returns:
             DataFrame or None if fetch fails
         """
         try:
             headers = self._get_headers()
             url = f"{self.server_url}/api/dthread/{thread_id}/df/block/{block_id}/arrow"
-            
+
             response = self._client.get(url, headers=headers)
             response.raise_for_status()
-            
+
             # Parse Arrow format
             reader = pa.ipc.open_stream(response.content)
             table = reader.read_all()
-            
+
             # Convert to pandas
             df = table.to_pandas()
             return df
-            
+
         except Exception as e:
             import warnings
-            warnings.warn(f"Failed to fetch dataframe {block_id}: {e}", RuntimeWarning)
+
+            warnings.warn(f"Failed to fetch dataframe {block_id}: {e}", RuntimeWarning, stacklevel=2)
             return None
 
     def _get_headers(self) -> dict[str, str]:
@@ -435,7 +438,7 @@ class LouieClient:
 
         # Get the thread ID
         actual_thread_id = result["dthread_id"]
-        
+
         # Fetch dataframes for any DfElements
         for elem in result["elements"]:
             if elem.get("type") == "DfElement":

@@ -27,9 +27,9 @@ def _render_response_html(response) -> str:
             for elem in response.elements:
                 if not isinstance(elem, dict):
                     continue
-                    
+
                 elem_type = elem.get("type", "")
-                
+
                 # TextElement
                 if elem_type == "TextElement":
                     content = (elem.get("content") or elem.get("text", "")).strip()
@@ -65,7 +65,7 @@ def _render_response_html(response) -> str:
 
                             escaped = html.escape(content).replace("\n", "<br>")
                             html_parts.append(f"<div>{escaped}</div>")
-                
+
                 # DfElement
                 elif elem_type == "DfElement" and "table" in elem:
                     df = elem["table"]
@@ -73,47 +73,65 @@ def _render_response_html(response) -> str:
                         df_html = df._repr_html_()
                         if df_html:
                             html_parts.append(df_html)
-                
+
                 # DebugLine
                 elif elem_type == "DebugLine":
                     text = elem.get("text", "")
                     if text:
-                        html_parts.append(f"<div style='color: #666; font-family: monospace; font-size: 0.9em;'>🐛 {text}</div>")
-                
-                # InfoLine  
+                        html_parts.append(
+                            f"<div style='color: #666; font-family: monospace; font-size: 0.9em;'>🐛 {text}</div>"
+                        )
+
+                # InfoLine
                 elif elem_type == "InfoLine":
                     text = elem.get("text", "")
                     if text:
-                        html_parts.append(f"<div style='color: #0066cc; font-family: monospace; font-size: 0.9em;'>ℹ️ {text}</div>")
-                
+                        html_parts.append(
+                            f"<div style='color: #0066cc; font-family: monospace; font-size: 0.9em;'>ℹ️ {text}</div>"
+                        )
+
                 # WarningLine
                 elif elem_type == "WarningLine":
                     text = elem.get("text", "")
                     if text:
-                        html_parts.append(f"<div style='color: #ff8800; font-family: monospace; font-size: 0.9em;'>⚠️ {text}</div>")
-                
+                        html_parts.append(
+                            f"<div style='color: #ff8800; font-family: monospace; font-size: 0.9em;'>⚠️ {text}</div>"
+                        )
+
                 # ErrorLine
                 elif elem_type == "ErrorLine":
                     text = elem.get("text", "")
                     if text:
-                        html_parts.append(f"<div style='color: #cc0000; font-family: monospace; font-size: 0.9em;'>❌ {text}</div>")
-                
+                        html_parts.append(
+                            f"<div style='color: #cc0000; font-family: monospace; font-size: 0.9em;'>❌ {text}</div>"
+                        )
+
                 # ExceptionElement
                 elif elem_type == "ExceptionElement":
                     msg = elem.get("message", "Unknown error")
-                    html_parts.append(f"<div style='color: red; background: #ffe0e0; padding: 10px; margin: 5px 0;'>⚠️ Error: {msg}</div>")
-                
+                    html_parts.append(
+                        f"<div style='color: red; background: #ffe0e0; padding: 10px; margin: 5px 0;'>⚠️ Error: {msg}</div>"
+                    )
+
                 # CodeElement
                 elif elem_type == "CodeElement":
                     code = elem.get("code", "") or elem.get("text", "")
                     if code:
-                        html_parts.append(f"<pre style='background: #f5f5f5; padding: 10px; border-radius: 5px;'><code>{code}</code></pre>")
-                
+                        html_parts.append(
+                            f"<pre style='background: #f5f5f5; padding: 10px; border-radius: 5px;'><code>{code}</code></pre>"
+                        )
+
                 # Unknown types - try to extract text
                 else:
-                    text = elem.get("text", "") or elem.get("content", "") or str(elem.get("value", ""))
+                    text = (
+                        elem.get("text", "")
+                        or elem.get("content", "")
+                        or str(elem.get("value", ""))
+                    )
                     if text:
-                        html_parts.append(f"<div style='color: gray;'>[{elem_type}] {text}</div>")
+                        html_parts.append(
+                            f"<div style='color: gray;'>[{elem_type}] {text}</div>"
+                        )
 
     except Exception:
         # Fallback on any error
@@ -435,7 +453,7 @@ class Cursor:
             if self._in_jupyter() and self._last_display_id is None:
                 # Use streaming display for better UX
                 from .streaming import stream_response
-                
+
                 result = stream_response(
                     self._client,
                     thread_id=thread_id,
@@ -444,12 +462,12 @@ class Cursor:
                     traces=use_traces,
                     share_mode=use_share_mode,
                 )
-                
+
                 # Create Response object from streaming result
                 from .._client import Response
+
                 response = Response(
-                    thread_id=result["dthread_id"],
-                    elements=result["elements"]
+                    thread_id=result["dthread_id"], elements=result["elements"]
                 )
             else:
                 # Non-Jupyter or updating existing display
