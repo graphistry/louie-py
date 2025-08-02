@@ -1,10 +1,11 @@
+import sys
+from typing import Any
+
 try:
     from ._version import __version__
 except ImportError:
     # Fallback for development installs without setuptools_scm
     __version__ = "0.0.0+unknown"
-
-from typing import Any
 
 from ._client import Response, Thread
 from .notebook import Cursor
@@ -117,7 +118,5 @@ class CallableModule:
     def __call__(self, *args, **kwargs):
         return louie(*args, **kwargs)
 
-
-import sys
 
 sys.modules[__name__] = CallableModule(sys.modules[__name__])
