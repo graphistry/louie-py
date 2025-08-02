@@ -37,11 +37,11 @@ class TestThreadProperties:
         # Production server
         ("https://den.louie.ai", "abc123", "https://den.louie.ai/threads/abc123"),
         ("https://den.louie.ai/", "abc123", "https://den.louie.ai/threads/abc123"),
-        
+
         # Dev server
         ("https://louie-dev.grph.xyz", "xyz789", "https://louie-dev.grph.xyz/threads/xyz789"),
         ("https://louie-dev.grph.xyz/", "xyz789", "https://louie-dev.grph.xyz/threads/xyz789"),
-        
+
         # Custom/enterprise servers
         ("https://custom.example.com", "test1", "https://custom.example.com/threads/test1"),
         ("https://louie.internal.corp", "corp123", "https://louie.internal.corp/threads/corp123"),
@@ -50,17 +50,17 @@ class TestThreadProperties:
         """Test URL generation for different server configurations."""
         mock_client = MagicMock()
         mock_client.server_url = server_url
-        
+
         cursor = Cursor(client=mock_client)
         cursor._current_thread = thread_id
-        
+
         assert cursor.url == expected_url
 
     def test_url_none_without_thread(self):
         """Test url returns None when no thread exists."""
         mock_client = MagicMock()
         mock_client.server_url = "https://den.louie.ai"
-        
+
         cursor = Cursor(client=mock_client)
         assert cursor.thread_id is None
         assert cursor.url is None
@@ -69,7 +69,7 @@ class TestThreadProperties:
         """Test thread_id persists across multiple queries."""
         mock_client = MagicMock()
         mock_client.server_url = "https://den.louie.ai"
-        
+
         # First response sets thread
         response1 = Response(
             thread_id="thread-123",
@@ -80,17 +80,18 @@ class TestThreadProperties:
             thread_id="thread-123",
             elements=[{"type": "TextElement", "content": "Second"}]
         )
-        
+
         mock_client.add_cell.side_effect = [response1, response2]
-        
+
         cursor = Cursor(client=mock_client)
-        
+
         # First query
         cursor("first query")
         assert cursor.thread_id == "thread-123"
         assert cursor.url == "https://den.louie.ai/threads/thread-123"
-        
+
         # Second query
         cursor("second query")
         assert cursor.thread_id == "thread-123"
         assert cursor.url == "https://den.louie.ai/threads/thread-123"  # Same URL
+

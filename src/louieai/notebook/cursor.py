@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def _render_response_html(response) -> str:
     """Render response to HTML - shared by both auto-display and ResponseProxy.
-    
+
     This is the single source of truth for response rendering.
     """
     if not response:
@@ -601,7 +601,8 @@ class Cursor:
             )
         else:
             html_parts.append(
-                "<p style='margin: 5px 0; font-size: 0.9em;'>⚪ <b>Session:</b> Not started "
+                "<p style='margin: 5px 0; font-size: 0.9em;'>"
+                "⚪ <b>Session:</b> Not started "
                 "(use <code>lui('your query')</code>)</p>"
             )
 
@@ -620,10 +621,14 @@ class Cursor:
 
         # Traces
         if self._traces:
-            html_parts.append("<p style='margin: 5px 0; font-size: 0.9em;'>🔍 <b>Traces:</b> Enabled (showing AI reasoning)</p>")
+            html_parts.append(
+                "<p style='margin: 5px 0; font-size: 0.9em;'>"
+                "🔍 <b>Traces:</b> Enabled (showing AI reasoning)</p>"
+            )
         else:
             html_parts.append(
-                "<p style='margin: 5px 0; font-size: 0.9em;'>🔍 <b>Traces:</b> Disabled "
+                "<p style='margin: 5px 0; font-size: 0.9em;'>"
+                "🔍 <b>Traces:</b> Disabled "
                 "(use <code>lui.traces = True</code> to enable)</p>"
             )
 
