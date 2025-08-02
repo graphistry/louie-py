@@ -110,6 +110,27 @@ class StreamingDisplay:
                 f"border-radius: 5px;'><code>{code}</code></pre>"
             )
 
+        elif elem_type in ["GraphElement", "graph"]:
+            # Extract graph ID or dataset
+            graph_id = elem.get("id") or elem.get("dataset") or elem.get("graph_id")
+            
+            # Get Graphistry server URL (could be from elem metadata or client config)
+            server_url = elem.get("server_url", "https://hub.graphistry.com")
+            
+            if graph_id:
+                # Create iframe for Graphistry visualization
+                iframe_url = f"{server_url}/graph/graph.html?dataset={graph_id}"
+                return (
+                    f'<div style="margin: 10px 0;">'
+                    f'<iframe src="{iframe_url}" '
+                    f'width="100%" height="600" '
+                    f'style="border: 1px solid #ddd; border-radius: 5px;">'
+                    f'</iframe>'
+                    f'</div>'
+                )
+            else:
+                return f"<div style='color: gray;'>[{elem_type}] No graph ID available</div>"
+
         else:
             # For unknown types, try to extract text or show raw content
             text = (

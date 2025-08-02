@@ -1,4 +1,4 @@
-"""Test inline dataframe display in HTML output."""
+"""Test inline dataframe and graph display in HTML output."""
 
 import pandas as pd
 
@@ -78,3 +78,42 @@ def test_render_mixed_content():
     assert "30" in html
     assert "40" in html
     assert "Total rows: 2" in html
+
+
+def test_render_graph_element_with_id():
+    """Test that GraphElement renders as iframe."""
+    response = Response(
+        thread_id="test",
+        elements=[
+            {"type": "GraphElement", "id": "abc123"},
+            {"type": "graph", "dataset": "xyz456", "server_url": "https://custom.graphistry.com"},
+        ],
+    )
+    
+    html = _render_response_html(response)
+    
+    # Check for iframes
+    assert '<iframe' in html
+    assert 'dataset=abc123' in html
+    assert 'dataset=xyz456' in html
+    assert 'https://hub.graphistry.com/graph/graph.html?dataset=abc123' in html
+    assert 'https://custom.graphistry.com/graph/graph.html?dataset=xyz456' in html
+    assert 'width="100%"' in html
+    assert 'height="600"' in html
+
+
+def test_render_graph_element_without_id():
+    """Test that GraphElement without ID shows placeholder."""
+    response = Response(
+        thread_id="test",
+        elements=[
+            {"type": "GraphElement"},  # No ID
+        ],
+    )
+    
+    html = _render_response_html(response)
+    
+    # Should not have iframe
+    assert '<iframe' not in html
+    # Should have placeholder message
+    assert "No graph ID available" in html

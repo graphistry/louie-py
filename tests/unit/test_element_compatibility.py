@@ -76,6 +76,9 @@ class TestElementTypeCompatibility:
 
         assert len(response.graph_elements) == 2
         assert response.has_graphs is True
+        # Verify elements are preserved
+        assert response.graph_elements[0]["id"] == "g1"
+        assert response.graph_elements[1]["id"] == "g2"
 
     def test_error_element_formats(self):
         """Test various error element formats."""
