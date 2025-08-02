@@ -232,12 +232,12 @@ class LouieClient:
             # Parse Arrow format
             # Try file format first (most common), then stream format
             try:
-                reader = pa.ipc.open_file(response.content)
-                table = reader.read_all()
+                file_reader = pa.ipc.open_file(response.content)
+                table = file_reader.read_all()
             except Exception:
                 # Fallback to stream format
-                reader = pa.ipc.open_stream(response.content)
-                table = reader.read_all()
+                stream_reader = pa.ipc.open_stream(response.content)
+                table = stream_reader.read_all()
 
             # Convert to pandas
             df = table.to_pandas()
