@@ -11,6 +11,23 @@ pip install louieai
 ```
 
 ```python
+# First, set up authentication with PyGraphistry
+import os
+import graphistry
+
+# Option 1: Environment variables (recommended)
+# export GRAPHISTRY_USERNAME="your_username"
+# export GRAPHISTRY_PASSWORD="your_password"
+
+# Option 2: Direct authentication
+graphistry.register(
+    api=3, 
+    server="hub.graphistry.com",  # or your server
+    username="your_username", 
+    password="your_password"
+)
+
+# Now import and use LouieAI
 from louieai.notebook import lui
 
 # Ask questions in natural language
