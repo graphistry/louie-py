@@ -341,13 +341,14 @@ class Cursor:
         self._traces: bool = False
 
     def __call__(
-        self, prompt: str, *, traces: bool | None = None, **kwargs: Any
+        self, prompt: str, *, traces: bool | None = None, share_mode: str = "Private", **kwargs: Any
     ) -> "Cursor":
         """Execute a query with implicit thread management.
 
         Args:
             prompt: Natural language query
             traces: Override session trace setting for this query
+            share_mode: Visibility mode - "Private", "Organization", or "Public" (default: "Private")
             **kwargs: Additional arguments passed to client.query()
 
         Returns:
@@ -370,7 +371,7 @@ class Cursor:
         # Execute query
         try:
             response = self._client.add_cell(
-                thread_id=thread_id, prompt=prompt, agent=agent, traces=use_traces
+                thread_id=thread_id, prompt=prompt, agent=agent, traces=use_traces, share_mode=share_mode
             )
 
             # Update thread ID in case it was created
@@ -603,14 +604,23 @@ class Cursor:
         # Session info footer
         html_parts.append("<hr style='margin: 10px 0;'>")
 
-        # Session status
+        # Session status with organization info
         if self._current_thread:
-            html_parts.append(
-                "<p style='margin: 5px 0; font-size: 0.9em;'>"
-                f"✅ <b>Session:</b> Active | "
-                f"<b>Thread ID:</b> <code>{self._current_thread}</code> | "
-                f"<a href='{self.url}' target='_blank'>View Thread ↗</a></p>"
-            )
+            session_info = [
+                "<p style='margin: 5px 0; font-size: 0.9em;'>",
+                f"✅ <b>Session:</b> Active | ",
+                f"<b>Thread ID:</b> <code>{self._current_thread}</code> | ",
+                f"<a href='{self.url}' target='_blank'>View Thread ↗</a>"
+            ]
+            
+            # Add organization info if available
+            if (hasattr(self._client._auth_manager, "_credentials") and 
+                self._client._auth_manager._credentials.get("org_name")):
+                org_name = self._client._auth_manager._credentials["org_name"]
+                session_info.append(f" | <b>Org:</b> {org_name}")
+            
+            session_info.append("</p>")
+            html_parts.append("".join(session_info))
         else:
             html_parts.append(
                 "<p style='margin: 5px 0; font-size: 0.9em;'>"
@@ -699,6 +709,10 @@ class Cursor:
         )
         html_parts.append("# Make a query\n")
         html_parts.append("lui('Show me sales data from last week')\n\n")
+        html_parts.append("# Control visibility\n")
+        html_parts.append("lui('query', share_mode='Private')       # Default: only you\n")
+        html_parts.append("lui('query', share_mode='Organization')  # Share within org\n")
+        html_parts.append("lui('query', share_mode='Public')        # Share publicly\n\n")
         html_parts.append("# Access results\n")
         html_parts.append("df = lui.df          # Latest dataframe\n")
         html_parts.append("text = lui.text      # Latest text response\n")

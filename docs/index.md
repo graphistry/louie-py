@@ -35,8 +35,38 @@ g = graphistry.register(
 import louieai
 lui = louieai(g, server_url="https://den.louie.ai")  # Specify Louie server
 
+# Option 3: With organization and workspace settings
+# For personal organization (most common):
+g = graphistry.register(
+    api=3,
+    server="hub.graphistry.com",
+    username="john_doe",
+    password="your_password",
+    org_name="john_doe"  # Personal orgs use your username
+)
+lui = louieai(g, server_url="https://den.louie.ai")
+
+# For team organization:
+g = graphistry.register(
+    api=3,
+    server="hub.graphistry.com",
+    username="your_username",
+    password="your_password",
+    org_name="databricks-PAT-botsv3"  # Team organization name
+)
+lui = louieai(g, server_url="https://den.louie.ai")
+
+# Control visibility of your threads
+lui("analyze my data")  # Default: Private workspace (only you can see)
+lui("analyze my data", share_mode="Organization")  # Share within your org
+lui("analyze my data", share_mode="Public")  # Share publicly
+
+# Note: Organization names are converted to slugs (lowercase, special chars become hyphens)
+# Examples: "John Doe" → "john-doe", "My_Team!" → "my-team"
+
 # For enterprise users:
-# g = graphistry.register(api=3, server="your-company.graphistry.com", ...)
+# g = graphistry.register(api=3, server="your-company.graphistry.com", 
+#                        org_name="your-org", ...)
 # lui = louieai(g, server_url="https://louie.your-company.com")
 
 # Ask questions in natural language

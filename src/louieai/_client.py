@@ -99,7 +99,7 @@ class LouieClient:
             api_key: API key for direct authentication (legacy)
             personal_key_id: Personal key ID for service account authentication
             personal_key_secret: Personal key secret for service account authentication
-            org_name: Organization name (optional for all auth methods)
+            org_name: Organization name - use username for personal orgs (optional)
             api: API version (default: 3)
             server: Graphistry server URL for direct authentication
             timeout: Overall timeout in seconds for requests (default: 300s/5min)
@@ -204,7 +204,36 @@ class LouieClient:
     def _get_headers(self) -> dict[str, str]:
         """Get authorization headers using auth manager."""
         token = self._auth_manager.get_token()
-        return {"Authorization": f"Bearer {token}"}
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # Add organization header if available
+        if (hasattr(self._auth_manager, "_credentials") and 
+            self._auth_manager._credentials.get("org_name")):
+            org_name = self._auth_manager._credentials["org_name"]
+            # Convert to slug format (lowercase, replace special chars with hyphens)
+            org_slug = self._to_slug(org_name)
+            headers["X-Graphistry-Org"] = org_slug
+        
+        return headers
+    
+    def _to_slug(self, text: str) -> str:
+        """Convert text to slug format.
+        
+        - Lowercase
+        - Replace spaces and special chars with hyphens
+        - Remove consecutive hyphens
+        - Strip leading/trailing hyphens
+        """
+        import re
+        # Convert to lowercase
+        slug = text.lower()
+        # Replace any non-alphanumeric character with hyphen
+        slug = re.sub(r'[^a-z0-9]+', '-', slug)
+        # Remove consecutive hyphens
+        slug = re.sub(r'-+', '-', slug)
+        # Strip leading/trailing hyphens
+        slug = slug.strip('-')
+        return slug
 
     def _parse_jsonl_response(self, response_text: str) -> dict[str, Any]:
         """Parse JSONL response into structured data.
@@ -273,6 +302,7 @@ class LouieClient:
         agent: str = "LouieAgent",
         *,
         traces: bool = False,
+        share_mode: str = "Private",
     ) -> Response:
         """Add a cell (query) to a thread and get response.
 
@@ -281,6 +311,7 @@ class LouieClient:
             prompt: Natural language query
             agent: Agent to use (default: LouieAgent)
             traces: Whether to include reasoning traces in response (default: False)
+            share_mode: Visibility mode - "Private", "Organization", or "Public" (default: "Private")
 
         Returns:
             Response object containing thread_id and all elements
@@ -293,7 +324,7 @@ class LouieClient:
             "agent": agent,
             # Convert bool to string for HTTP params
             "ignore_traces": str(not traces).lower(),
-            "share_mode": "Private",
+            "share_mode": share_mode,
         }
 
         # Add thread ID if continuing existing thread
@@ -306,48 +337,46 @@ class LouieClient:
         start_time = time.time()
 
         # Use configured timeouts
-        with (
-            httpx.Client(
-                timeout=httpx.Timeout(
-                    self._timeout,  # Overall timeout
-                    read=self._streaming_timeout,  # Per-chunk timeout
-                )
-            ) as stream_client,
-            stream_client.stream(
+        with httpx.Client(
+            timeout=httpx.Timeout(
+                self._timeout,  # Overall timeout
+                read=self._streaming_timeout,  # Per-chunk timeout
+            )
+        ) as stream_client:
+            with stream_client.stream(
                 "POST", f"{self.server_url}/api/chat/", headers=headers, params=params
-            ) as response,
-        ):
-            response.raise_for_status()
+            ) as response:
+                response.raise_for_status()
 
-            # Collect streaming lines
-            try:
-                for line in response.iter_lines():
-                    if line:
-                        response_text += line + "\n"
-                        lines_received += 1
+                # Collect streaming lines
+                try:
+                    for line in response.iter_lines():
+                        if line:
+                            response_text += line + "\n"
+                            lines_received += 1
 
-                        # Keep reading all elements until stream ends
-                        # Don't break early just because we got a text element
+                            # Keep reading all elements until stream ends
+                            # Don't break early just because we got a text element
 
-                    # Safety timeout - use configured timeout
-                    if time.time() - start_time > self._timeout:
-                        break
+                        # Safety timeout - use configured timeout
+                        if time.time() - start_time > self._timeout:
+                            break
 
-            except httpx.ReadTimeout as e:
-                elapsed = time.time() - start_time
-                # This is expected - the server keeps the connection open
-                # If we have at least 2 lines, that's a valid response
-                if lines_received >= 2:
-                    pass
-                else:
-                    raise RuntimeError(
-                        f"Louie API timeout after {elapsed:.1f}s waiting for "
-                        f"response. Only received {lines_received} lines. "
-                        f"Agentic flows can take time - consider increasing "
-                        f"timeout (current: {self._streaming_timeout}s per chunk, "
-                        f"{self._timeout}s total). "
-                        f"Set timeout parameter when creating LouieClient."
-                    ) from e
+                except httpx.ReadTimeout as e:
+                    elapsed = time.time() - start_time
+                    # This is expected - the server keeps the connection open
+                    # If we have at least 2 lines, that's a valid response
+                    if lines_received >= 2:
+                        pass
+                    else:
+                        raise RuntimeError(
+                            f"Louie API timeout after {elapsed:.1f}s waiting for "
+                            f"response. Only received {lines_received} lines. "
+                            f"Agentic flows can take time - consider increasing "
+                            f"timeout (current: {self._streaming_timeout}s per chunk, "
+                            f"{self._timeout}s total). "
+                            f"Set timeout parameter when creating LouieClient."
+                        ) from e
 
         # Log if request took a long time
         total_time = time.time() - start_time
@@ -379,6 +408,7 @@ class LouieClient:
         thread_id: str | None = None,
         traces: bool = False,
         agent: str = "LouieAgent",
+        share_mode: str = "Private",
         **kwargs: Any,
     ) -> Response:
         """Make the client callable for ergonomic usage.
@@ -394,6 +424,7 @@ class LouieClient:
             thread_id: Thread ID to use (None creates new thread)
             traces: Whether to include reasoning traces
             agent: Agent to use (default: LouieAgent)
+            share_mode: Visibility mode - "Private", "Organization", or "Public" (default: "Private")
             **kwargs: Additional arguments (reserved for future use)
 
         Returns:
@@ -412,7 +443,7 @@ class LouieClient:
 
         # Make the call
         response = self.add_cell(
-            thread_id=tid, prompt=prompt, agent=agent, traces=traces
+            thread_id=tid, prompt=prompt, agent=agent, traces=traces, share_mode=share_mode
         )
 
         # Store thread_id for next call
