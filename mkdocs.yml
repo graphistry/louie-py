@@ -17,6 +17,13 @@ nav:
     - Query Patterns: guides/query-patterns.md
     - Authentication Guide: guides/authentication.md
     - Agent Selection: guides/agent-selection.md
+    - Agent Guides:
+      - Overview: guides/agents/index.md
+      - Databricks: guides/agents/databricks.md
+      - Splunk: guides/agents/splunk.md
+      - PostgreSQL: guides/agents/postgresql.md
+      - Python Code: guides/agents/code.md
+      - Graph Visualization: guides/agents/graph.md
   - API Reference:
     - Overview: api/index.md
     - Notebook API: api/notebook.md
