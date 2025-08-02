@@ -74,10 +74,15 @@ lui("analyze my data", share_mode="Public")  # Override for this query
 #                        org_name="your-org", ...)
 # lui = louieai(g, server_url="https://louie.your-company.com")
 
-# Ask questions in natural language
-lui("Show me users with unusual ordering patterns or velocity")
+# Minimal example - just ask a question
+lui("What are the key patterns in this data?")
+print(lui.text)  # "I found 3 key patterns: ..."
 
-# Get behavioral fraud analysis instantly
+# Advanced example with traces and organization sharing
+lui.traces = True  # Show AI reasoning steps
+lui("Show me users with unusual ordering patterns or velocity", share_mode="Organization")
+
+# The response now includes reasoning traces
 print(lui.text)
 # Output: "Identified 34 accounts with suspicious ordering behavior:
 # 
@@ -91,15 +96,18 @@ print(lui.text)
 # 
 # **Pattern Analysis**: 73% likely reseller activity, 18% promotional abuse"
 
-# Access transaction patterns
-patterns_df = lui.df
-if patterns_df is not None:
-    print("\nSuspicious ordering patterns:")
-    print(patterns_df.head())
-    #     user_id  orders_24h  avg_basket  billing_state shipping_state  pattern_type
-    # 0  user_78234          47       $67         NY             TX      high_velocity
-    # 1  user_45891          23      $134         CA             CA      payment_cycling  
-    # 2  user_23456          18       $89         FL             WA      geo_inconsistent
+# Access results implicitly
+lui("Create a summary dataframe")
+summary_df = lui.df  # Access the dataframe that was just created
+analysis = lui.text  # Access the text explanation
+
+# Continue the conversation (maintains context)
+lui("Now filter for high-risk users")
+high_risk_df = lui.df  # The new filtered dataframe
+
+# Access history
+lui[-1].df  # Previous response's dataframe
+lui[-2].text  # Text from two queries ago
 ```
 
 ## Key Features
