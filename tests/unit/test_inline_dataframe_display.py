@@ -118,5 +118,7 @@ def test_render_graph_element_without_id():
     
     # Should not have iframe
     assert '<iframe' not in html
-    # Should have placeholder message
-    assert "No dataset_id found in value" in html
+    # Should have debug details
+    assert "No dataset_id found" in html
+    assert "<details" in html
+    assert "click to see element data" in html

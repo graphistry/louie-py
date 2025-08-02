@@ -113,9 +113,21 @@ class StreamingDisplay:
             )
 
         elif elem_type in ["GraphElement", "graph"]:
-            # Extract dataset_id from the value dict
+            # Extract dataset_id - try multiple possible locations
+            dataset_id = None
+            
+            # First try: element['value']['dataset_id']
             value = elem.get("value", {})
-            dataset_id = value.get("dataset_id") if isinstance(value, dict) else None
+            if isinstance(value, dict):
+                dataset_id = value.get("dataset_id")
+            
+            # Second try: element['dataset_id'] directly
+            if not dataset_id:
+                dataset_id = elem.get("dataset_id")
+            
+            # Third try: element['id'] as fallback
+            if not dataset_id:
+                dataset_id = elem.get("id")
             
             # Get Graphistry server URL from client if available
             server_url = "https://hub.graphistry.com"  # default
@@ -149,7 +161,17 @@ class StreamingDisplay:
                     f'</div>'
                 )
             else:
-                return f"<div style='color: gray;'>[{elem_type}] No dataset_id found in value</div>"
+                # Show debug info about what was in the element
+                import json
+                elem_json = json.dumps(elem, indent=2, default=str)
+                return (
+                    "<details style='margin: 10px 0;'>"
+                    f"<summary style='color: gray; cursor: pointer;'>"
+                    f"[{elem_type}] No dataset_id found - click to see element data</summary>"
+                    f"<pre style='background: #f5f5f5; padding: 10px; margin-top: 5px; "
+                    f"font-size: 0.8em; overflow-x: auto;'>{elem_json}</pre>"
+                    "</details>"
+                )
 
         else:
             # For unknown types, try to extract text or show raw content
