@@ -346,6 +346,7 @@ class Cursor:
         self._current_thread: str | None = None
         self._traces: bool = False
         self._share_mode: str = share_mode
+        self._last_display_id: str | None = None
 
     def __call__(
         self,
@@ -385,13 +386,35 @@ class Cursor:
 
         # Execute query
         try:
-            response = self._client.add_cell(
-                thread_id=thread_id,
-                prompt=prompt,
-                agent=agent,
-                traces=use_traces,
-                share_mode=use_share_mode,
-            )
+            # Check if we're in Jupyter and should stream
+            if self._in_jupyter() and self._last_display_id is None:
+                # Use streaming display for better UX
+                from .streaming import stream_response
+                
+                result = stream_response(
+                    self._client,
+                    thread_id=thread_id,
+                    prompt=prompt,
+                    agent=agent,
+                    traces=use_traces,
+                    share_mode=use_share_mode,
+                )
+                
+                # Create Response object from streaming result
+                from .._client import Response
+                response = Response(
+                    thread_id=result["dthread_id"],
+                    elements=result["elements"]
+                )
+            else:
+                # Non-Jupyter or updating existing display
+                response = self._client.add_cell(
+                    thread_id=thread_id,
+                    prompt=prompt,
+                    agent=agent,
+                    traces=use_traces,
+                    share_mode=use_share_mode,
+                )
 
             # Update thread ID in case it was created
             if not self._current_thread:
@@ -400,9 +423,11 @@ class Cursor:
             # Store in history
             self._history.append(response)
 
-            # Auto-display in Jupyter if available
-            if self._in_jupyter() and kwargs.get("display", True):
-                self._display(response)
+            # Auto-display in Jupyter if available (only if not streaming)
+            # Streaming handles its own display
+            if not (self._in_jupyter() and self._last_display_id is None):
+                if self._in_jupyter() and kwargs.get("display", True):
+                    self._display(response)
 
             # Return self for chaining and property access
             return self
