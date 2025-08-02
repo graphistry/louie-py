@@ -14,11 +14,18 @@ pip install louieai
 import graphistry
 import louieai
 
-# Authenticate with Graphistry Hub (free account at hub.graphistry.com)
-graphistry.register(api=3, username="alice@example.com", password="secure123!")
+# Configure servers and authenticate
+graphistry.register(
+    api=3, 
+    server="hub.graphistry.com",  # Your Graphistry server
+    username="alice@example.com", 
+    password="secure123!"
+)
 
-# Create Louie interface and start analyzing
-lui = louieai()
+# Create Louie interface with server configuration
+lui = louieai(server_url="https://den.louie.ai")  # Your Louie server
+
+# Start analyzing
 lui("Show me patterns in customer behavior")
 print(lui.text)  # Natural language insights
 df = lui.df      # Data as pandas DataFrame
