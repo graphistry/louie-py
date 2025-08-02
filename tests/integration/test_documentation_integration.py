@@ -22,7 +22,7 @@ from unit.test_documentation import extract_python_blocks
 class TestDocumentationIntegration:
     """Test documentation examples against real Louie API."""
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture
     def real_client(self, test_credentials):
         """Create real LouieClient with test credentials."""
         # Register with Graphistry

@@ -6,11 +6,48 @@
 
 AI-powered investigation platform for natural language data analysis.
 
-## Install & Go
+## Install & Authenticate
 
 ```bash
 pip install louieai
 ```
+
+### Authentication
+
+LouieAI uses PyGraphistry for authentication. You'll need a free account:
+
+1. **Get PyGraphistry credentials** at [hub.graphistry.com](https://hub.graphistry.com) (free signup)
+2. **Set environment variables** or authenticate in code:
+
+```bash
+# Option 1: Environment variables (recommended)
+export GRAPHISTRY_USERNAME="your_username"
+export GRAPHISTRY_PASSWORD="your_password"
+
+# Optional: Specify servers (defaults shown)
+export GRAPHISTRY_SERVER="hub.graphistry.com"  # PyGraphistry server
+export LOUIE_URL="https://louie.ai"           # Louie service endpoint
+```
+
+```python
+# Option 2: Authenticate in code
+import graphistry
+graphistry.register(
+    api=3, 
+    server="hub.graphistry.com",  # PyGraphistry server
+    username="your_username", 
+    password="your_password"
+)
+
+# Optional: Use custom Louie server
+from louieai import LouieClient
+client = LouieClient(
+    server_url="https://louie.ai",  # Louie service endpoint (default)
+    server="hub.graphistry.com"      # PyGraphistry server (default)
+)
+```
+
+### Quick Start
 
 ```python
 from louieai.notebook import lui

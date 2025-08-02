@@ -326,6 +326,37 @@ print(lui.text)
   - `server`: PyGraphistry server URL
   - `server_url`: Custom Louie server URL
 
+## Configuration
+
+### Timeout Settings
+
+Long-running agentic workflows may require increased timeouts. You can configure these via environment variables:
+
+```bash
+# Overall request timeout (default: 300 seconds / 5 minutes)
+export LOUIE_TIMEOUT=600
+
+# Per-chunk streaming timeout (default: 120 seconds / 2 minutes)
+export LOUIE_STREAMING_TIMEOUT=180
+```
+
+Or configure them when creating a client:
+
+```python
+from louieai import LouieClient
+from louieai.notebook import Cursor
+
+# Create client with custom timeouts
+client = LouieClient(
+    timeout=600.0,  # 10 minutes overall
+    streaming_timeout=180.0  # 3 minutes per chunk
+)
+
+# Use with cursor
+cursor = Cursor(client=client)
+cursor("Long-running analysis task")
+```
+
 ## See Also
 
 - [Getting Started Notebook](../getting-started/notebooks/01-getting-started.ipynb)

@@ -169,6 +169,30 @@ lui("Complex analysis query")
 lui("Another query", traces=True)
 ```
 
+### Timeout Configuration
+
+Agentic flows can take significant time to complete. The client provides configurable timeouts:
+
+```python
+from louieai import louie
+
+# Default timeouts (5 minutes total, 2 minutes per streaming chunk)
+lui = louie()
+
+# Custom timeouts for long-running analysis
+lui = louie(
+    timeout=600,  # 10 minutes total
+    streaming_timeout=180  # 3 minutes per chunk
+)
+
+# Using environment variables
+# export LOUIE_TIMEOUT=600
+# export LOUIE_STREAMING_TIMEOUT=180
+lui = louie()  # Will use env var settings
+```
+
+If you see timeout errors, the client will provide helpful guidance about increasing timeouts.
+
 ## Migration from Direct LouieClient
 
 If you have code using the old `LouieClient` directly:

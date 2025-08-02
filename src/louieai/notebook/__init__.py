@@ -52,6 +52,11 @@ class _LuiProxy:
     def _repr_html_(self):
         return _get_cursor()._repr_html_()
 
+    @property
+    def _cursor(self):
+        """Access the underlying cursor for testing."""
+        return _get_cursor()
+
 
 # Export the cursor as 'lui' for the recommended usage pattern
 lui = _LuiProxy()

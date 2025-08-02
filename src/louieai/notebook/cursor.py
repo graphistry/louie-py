@@ -187,8 +187,24 @@ class Cursor:
             # 5. Server configuration
             server = os.environ.get("GRAPHISTRY_SERVER")
 
+            # 6. Timeout configuration
+            timeout_str = os.environ.get("LOUIE_TIMEOUT", "300")
+            streaming_timeout_str = os.environ.get("LOUIE_STREAMING_TIMEOUT", "120")
+            try:
+                timeout = float(timeout_str)
+            except ValueError:
+                timeout = 300.0
+            try:
+                streaming_timeout = float(streaming_timeout_str)
+            except ValueError:
+                streaming_timeout = 120.0
+
             # Build client kwargs
-            client_kwargs: dict[str, Any] = {"server_url": server_url}
+            client_kwargs: dict[str, Any] = {
+                "server_url": server_url,
+                "timeout": timeout,
+                "streaming_timeout": streaming_timeout,
+            }
 
             # Add all available authentication parameters
             # The LouieClient will handle priority internally

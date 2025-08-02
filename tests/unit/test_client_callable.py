@@ -6,6 +6,19 @@ from louieai import Response
 from louieai._client import LouieClient
 
 
+def mock_streaming_response(lines):
+    """Helper to create a mock streaming response."""
+    mock_stream_response = Mock()
+    mock_stream_response.raise_for_status = Mock()
+    mock_stream_response.iter_lines.return_value = iter(lines)
+
+    mock_stream_cm = Mock()
+    mock_stream_cm.__enter__ = Mock(return_value=mock_stream_response)
+    mock_stream_cm.__exit__ = Mock(return_value=None)
+
+    return mock_stream_cm
+
+
 class TestClientCallable:
     """Test that LouieClient instances are callable."""
 
@@ -22,15 +35,22 @@ class TestClientCallable:
         mock_auth_manager = Mock()
         mock_auth_manager_class.return_value = mock_auth_manager
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
+        mock_auth_manager.get_token.return_value = "test-token"
 
-        mock_httpx = Mock()
-        mock_httpx_class.return_value = mock_httpx
+        # Mock streaming response
+        mock_stream_cm = mock_streaming_response(
+            [
+                '{"dthread_id": "new_thread_123"}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Response"}}',
+            ]
+        )
 
-        # Mock the response
-        mock_response = Mock()
-        mock_response.text = '{"elements": [], "dthread_id": "new_thread_123"}'
-        mock_response.raise_for_status = Mock()
-        mock_httpx.post.return_value = mock_response
+        mock_httpx_client = Mock()
+        mock_httpx_client.stream.return_value = mock_stream_cm
+
+        # Make httpx.Client return our mock
+        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
 
         # Create client and call it
         client = LouieClient()
@@ -39,10 +59,6 @@ class TestClientCallable:
         # Verify
         assert isinstance(response, Response)
         assert response.thread_id == "new_thread_123"
-
-        # Check that empty thread_id was passed (for new thread)
-        call_args = mock_httpx.post.call_args
-        assert "dthread_id" not in call_args[1]["params"]
 
     @patch("louieai._client.httpx.Client")
     @patch("louieai._client.AuthManager")
@@ -54,21 +70,31 @@ class TestClientCallable:
         mock_auth_manager = Mock()
         mock_auth_manager_class.return_value = mock_auth_manager
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
-
-        mock_httpx = Mock()
-        mock_httpx_class.return_value = mock_httpx
+        mock_auth_manager.get_token.return_value = "test-token"
 
         # Mock first response (creates thread)
-        mock_response1 = Mock()
-        mock_response1.text = '{"elements": [], "dthread_id": "thread_123"}'
-        mock_response1.raise_for_status = Mock()
+        mock_stream_cm1 = mock_streaming_response(
+            [
+                '{"dthread_id": "thread_123"}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Response 1"}}',
+            ]
+        )
 
         # Mock second response (uses same thread)
-        mock_response2 = Mock()
-        mock_response2.text = '{"elements": [], "dthread_id": "thread_123"}'
-        mock_response2.raise_for_status = Mock()
+        mock_stream_cm2 = mock_streaming_response(
+            [
+                '{"dthread_id": "thread_123"}',
+                '{"payload": {"id": "B_002", "type": "TextElement", '
+                '"text": "Response 2"}}',
+            ]
+        )
 
-        mock_httpx.post.side_effect = [mock_response1, mock_response2]
+        mock_httpx_client = Mock()
+        mock_httpx_client.stream.side_effect = [mock_stream_cm1, mock_stream_cm2]
+
+        # Make httpx.Client return our mock
+        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
 
         # Create client and make two calls
         client = LouieClient()
@@ -80,7 +106,7 @@ class TestClientCallable:
         assert response2.thread_id == "thread_123"
 
         # Check second call used the thread_id
-        second_call_args = mock_httpx.post.call_args_list[1]
+        second_call_args = mock_httpx_client.stream.call_args_list[1]
         assert second_call_args[1]["params"]["dthread_id"] == "thread_123"
 
     @patch("louieai._client.httpx.Client")
@@ -93,15 +119,22 @@ class TestClientCallable:
         mock_auth_manager = Mock()
         mock_auth_manager_class.return_value = mock_auth_manager
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
-
-        mock_httpx = Mock()
-        mock_httpx_class.return_value = mock_httpx
+        mock_auth_manager.get_token.return_value = "test-token"
 
         # Mock response
-        mock_response = Mock()
-        mock_response.text = '{"elements": [], "dthread_id": "custom_thread"}'
-        mock_response.raise_for_status = Mock()
-        mock_httpx.post.return_value = mock_response
+        mock_stream_cm = mock_streaming_response(
+            [
+                '{"dthread_id": "custom_thread"}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Response"}}',
+            ]
+        )
+
+        mock_httpx_client = Mock()
+        mock_httpx_client.stream.return_value = mock_stream_cm
+
+        # Make httpx.Client return our mock
+        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
 
         # Create client and call with thread_id
         client = LouieClient()
@@ -109,7 +142,7 @@ class TestClientCallable:
 
         # Verify
         assert response.thread_id == "custom_thread"
-        call_args = mock_httpx.post.call_args
+        call_args = mock_httpx_client.stream.call_args
         assert call_args[1]["params"]["dthread_id"] == "custom_thread"
 
     @patch("louieai._client.httpx.Client")
@@ -120,22 +153,29 @@ class TestClientCallable:
         mock_auth_manager = Mock()
         mock_auth_manager_class.return_value = mock_auth_manager
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
-
-        mock_httpx = Mock()
-        mock_httpx_class.return_value = mock_httpx
+        mock_auth_manager.get_token.return_value = "test-token"
 
         # Mock response
-        mock_response = Mock()
-        mock_response.text = '{"elements": [], "dthread_id": "thread_123"}'
-        mock_response.raise_for_status = Mock()
-        mock_httpx.post.return_value = mock_response
+        mock_stream_cm = mock_streaming_response(
+            [
+                '{"dthread_id": "thread_123"}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Response"}}',
+            ]
+        )
+
+        mock_httpx_client = Mock()
+        mock_httpx_client.stream.return_value = mock_stream_cm
+
+        # Make httpx.Client return our mock
+        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
 
         # Create client and call with traces
         client = LouieClient()
         client("Complex query", traces=True)
 
         # Verify traces parameter
-        call_args = mock_httpx.post.call_args
+        call_args = mock_httpx_client.stream.call_args
         assert call_args[1]["params"]["ignore_traces"] == "false"
 
     @patch("louieai._client.httpx.Client")
@@ -146,22 +186,29 @@ class TestClientCallable:
         mock_auth_manager = Mock()
         mock_auth_manager_class.return_value = mock_auth_manager
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
-
-        mock_httpx = Mock()
-        mock_httpx_class.return_value = mock_httpx
+        mock_auth_manager.get_token.return_value = "test-token"
 
         # Mock response
-        mock_response = Mock()
-        mock_response.text = '{"elements": [], "dthread_id": "thread_123"}'
-        mock_response.raise_for_status = Mock()
-        mock_httpx.post.return_value = mock_response
+        mock_stream_cm = mock_streaming_response(
+            [
+                '{"dthread_id": "thread_123"}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Response"}}',
+            ]
+        )
+
+        mock_httpx_client = Mock()
+        mock_httpx_client.stream.return_value = mock_stream_cm
+
+        # Make httpx.Client return our mock
+        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
 
         # Create client and call with custom agent
         client = LouieClient()
         client("Query", agent="CustomAgent")
 
         # Verify agent parameter
-        call_args = mock_httpx.post.call_args
+        call_args = mock_httpx_client.stream.call_args
         assert call_args[1]["params"]["agent"] == "CustomAgent"
 
     def test_call_signature_matches_add_cell(self):

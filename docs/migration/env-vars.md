@@ -16,6 +16,8 @@ Starting with LouieAI v0.2.0, we've simplified environment variable naming to us
 | `LOUIE_ORG_NAME` | `GRAPHISTRY_ORG_NAME` | Organization name |
 | `LOUIE_SERVER` | *Removed* | Use PyGraphistry's server parameter |
 | `LOUIE_URL` | `LOUIE_URL` | *Unchanged* - Louie-specific server URL |
+| N/A | `LOUIE_TIMEOUT` | *New* - Overall request timeout (default: 300s) |
+| N/A | `LOUIE_STREAMING_TIMEOUT` | *New* - Streaming chunk timeout (default: 120s) |
 
 ## Quick Migration Steps
 
@@ -100,13 +102,20 @@ The authentication system checks credentials in this order:
 
 ## Special Cases
 
-### Louie-Specific Server URL
+### Louie-Specific Configuration
 
-The `LOUIE_URL` environment variable remains unchanged as it's specific to the Louie service endpoint:
+Some environment variables remain Louie-specific and don't follow the `GRAPHISTRY_*` pattern:
 
 ```bash
-export LOUIE_URL=https://custom.louie.ai  # Still valid
+# Louie service endpoint
+export LOUIE_URL=https://custom.louie.ai
+
+# Timeout configuration (new in v0.3.0)
+export LOUIE_TIMEOUT=600  # Overall timeout in seconds (default: 300)
+export LOUIE_STREAMING_TIMEOUT=180  # Per-chunk timeout in seconds (default: 120)
 ```
+
+These timeout settings are useful for long-running agentic workflows.
 
 ### Server Configuration
 

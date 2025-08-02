@@ -48,6 +48,8 @@ def louie(graphistry_client: Any | None = None, **kwargs: Any) -> Cursor:
             - org_name: Organization name (optional)
             - server_url: Louie server URL (default: "https://den.louie.ai")
             - server: PyGraphistry server (default: from env or "hub.graphistry.com")
+            - timeout: Overall timeout in seconds (default: 300s/5min)
+            - streaming_timeout: Timeout for streaming chunks (default: 120s/2min)
 
     Returns:
         Cursor: A callable interface for natural language queries
@@ -72,6 +74,15 @@ def louie(graphistry_client: Any | None = None, **kwargs: Any) -> Cursor:
         ...     org_name="my-org"
         ... )
         >>> lui("Analyze fraud patterns")
+
+        >>> # Custom timeouts for long-running agentic flows
+        >>> lui = louie(
+        ...     username="alice",
+        ...     password="pass",
+        ...     timeout=600,  # 10 minutes for complex analysis
+        ...     streaming_timeout=180  # 3 minutes per chunk
+        ... )
+        >>> lui("Run comprehensive data analysis with multiple steps")
     """
     from ._client import LouieClient
 

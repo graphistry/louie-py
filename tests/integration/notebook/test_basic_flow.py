@@ -161,7 +161,7 @@ class TestBasicFlow:
         with open(output_dir / "history_test.json", "w") as f:
             json.dump(
                 {
-                    "history_length": len(lui._get_cursor()._history),
+                    "history_length": len(lui._cursor._history),
                     "latest_text": lui.text,
                     "previous_text": lui[-2].text,
                     "all_texts": [lui[i].text for i in range(-3, 0)],

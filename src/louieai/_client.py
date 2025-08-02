@@ -1,6 +1,7 @@
 """Enhanced Louie client that matches the documented API."""
 
 import json
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -85,6 +86,8 @@ class LouieClient:
         org_name: str | None = None,
         api: int = 3,
         server: str | None = None,
+        timeout: float = 300.0,  # 5 minutes default for agentic flows
+        streaming_timeout: float = 120.0,  # 2 minutes for streaming chunks
     ):
         """Initialize the Louie client.
 
@@ -99,6 +102,8 @@ class LouieClient:
             org_name: Organization name (optional for all auth methods)
             api: API version (default: 3)
             server: Graphistry server URL for direct authentication
+            timeout: Overall timeout in seconds for requests (default: 300s/5min)
+            streaming_timeout: Timeout for streaming chunks (default: 120s/2min)
 
         Examples:
             # Use existing graphistry authentication
@@ -131,7 +136,9 @@ class LouieClient:
             client = LouieClient(graphistry_client=g)
         """
         self.server_url = server_url.rstrip("/")
-        self._client = httpx.Client(timeout=60.0)
+        self._timeout = timeout
+        self._streaming_timeout = streaming_timeout
+        self._client = httpx.Client(timeout=timeout)
 
         # Set up authentication
         self._auth_manager = AuthManager(
@@ -293,14 +300,81 @@ class LouieClient:
         if thread_id:
             params["dthread_id"] = thread_id
 
-        # Make request
-        response = self._client.post(
-            f"{self.server_url}/api/chat/", headers=headers, params=params
-        )
-        response.raise_for_status()
+        # Make streaming request with custom timeout handling
+        response_text = ""
+        lines_received = 0
+        start_time = time.time()
+
+        # Use configured timeouts
+        with (
+            httpx.Client(
+                timeout=httpx.Timeout(
+                    self._timeout,  # Overall timeout
+                    read=self._streaming_timeout,  # Per-chunk timeout
+                )
+            ) as stream_client,
+            stream_client.stream(
+                "POST", f"{self.server_url}/api/chat/", headers=headers, params=params
+            ) as response,
+        ):
+            response.raise_for_status()
+
+            # Collect streaming lines
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        response_text += line + "\n"
+                        lines_received += 1
+
+                        # Check if we got a complete response
+                        # (thread ID + at least one element)
+                        if lines_received >= 2:
+                            # Parse to check if we have a text element
+                            try:
+                                data = json.loads(line)
+                                payload = data.get("payload", {})
+                                if payload.get("type") == "TextElement":
+                                    # We have a complete response, stop reading
+                                    break
+                            except json.JSONDecodeError:
+                                pass
+
+                    # Safety timeout - use configured timeout
+                    if time.time() - start_time > self._timeout:
+                        break
+
+            except httpx.ReadTimeout as e:
+                elapsed = time.time() - start_time
+                # This is expected - the server keeps the connection open
+                # If we have at least 2 lines, that's a valid response
+                if lines_received >= 2:
+                    pass
+                else:
+                    raise RuntimeError(
+                        f"Louie API timeout after {elapsed:.1f}s waiting for "
+                        f"response. Only received {lines_received} lines. "
+                        f"Agentic flows can take time - consider increasing "
+                        f"timeout (current: {self._streaming_timeout}s per chunk, "
+                        f"{self._timeout}s total). "
+                        f"Set timeout parameter when creating LouieClient."
+                    ) from e
+
+        # Log if request took a long time
+        total_time = time.time() - start_time
+        if total_time > 30:
+            import warnings
+
+            warnings.warn(
+                f"Louie API request took {total_time:.1f}s to complete. "
+                f"This is normal for complex agentic flows, but if you're "
+                f"seeing timeouts, consider increasing the timeout parameter "
+                f"when creating LouieClient.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
         # Parse JSONL response
-        result = self._parse_jsonl_response(response.text)
+        result = self._parse_jsonl_response(response_text)
 
         # Get the thread ID
         actual_thread_id = result["dthread_id"]
