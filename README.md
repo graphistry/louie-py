@@ -83,7 +83,13 @@ graphistry.register(
     password="SecurePassword123!"
 )
 
-# Now import and use LouieAI
+# Now import and use LouieAI (two options)
+
+# Option 1: New clean import (recommended)
+import louieai
+lui = louieai()  # Automatically uses PyGraphistry auth
+
+# Option 2: Traditional import
 from louieai.notebook import lui
 
 # Ask questions in natural language  
