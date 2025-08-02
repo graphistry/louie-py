@@ -2,8 +2,7 @@
 """Simple test to verify org_name cascade fix."""
 
 import os
-import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import louieai
 

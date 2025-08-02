@@ -102,8 +102,10 @@ class TestDataFrameFetching:
         mock_stream_response.iter_lines.return_value = iter(
             [
                 '{"dthread_id": "D_test123"}',
-                '{"payload": {"id": "B_001", "type": "TextElement", "text": "Analysis complete"}}',
-                '{"payload": {"id": "B_002", "type": "DfElement", "df_id": "df_456", "metadata": {"shape": [3, 3]}}}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Analysis complete"}}',
+                '{"payload": {"id": "B_002", "type": "DfElement", '
+                '"df_id": "df_456", "metadata": {"shape": [3, 3]}}}',
             ]
         )
 
@@ -152,8 +154,10 @@ class TestDataFrameFetching:
         mock_stream_response.iter_lines.return_value = iter(
             [
                 '{"dthread_id": "D_test123"}',
-                '{"payload": {"id": "B_001", "type": "TextElement", "text": "No dataframe here"}}',
-                '{"payload": {"id": "B_002", "type": "DfElement", "metadata": {"empty": true}}}',  # No df_id
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "No dataframe here"}}',
+                '{"payload": {"id": "B_002", "type": "DfElement", '
+                '"metadata": {"empty": true}}}',  # No df_id
             ]
         )
 

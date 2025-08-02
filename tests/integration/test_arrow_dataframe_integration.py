@@ -51,8 +51,10 @@ class TestArrowDataFrameIntegration:
         mock_stream_response.iter_lines.return_value = iter(
             [
                 '{"dthread_id": "D_test123"}',
-                '{"payload": {"id": "B_001", "type": "TextElement", "text": "Here is your data analysis:"}}',
-                '{"payload": {"id": "B_002", "type": "DfElement", "df_id": "df_456", "metadata": {"shape": [5, 3]}}}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Here is your data analysis:"}}',
+                '{"payload": {"id": "B_002", "type": "DfElement", '
+                '"df_id": "df_456", "metadata": {"shape": [5, 3]}}}',
             ]
         )
 
@@ -110,9 +112,12 @@ class TestArrowDataFrameIntegration:
         mock_stream_response.iter_lines.return_value = iter(
             [
                 '{"dthread_id": "D_test123"}',
-                '{"payload": {"id": "B_001", "type": "TextElement", "text": "Analysis with multiple datasets:"}}',
-                '{"payload": {"id": "B_002", "type": "DfElement", "df_id": "df_111", "metadata": {"shape": [3, 2]}}}',
-                '{"payload": {"id": "B_003", "type": "DfElement", "df_id": "df_222", "metadata": {"shape": [3, 2]}}}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Analysis with multiple datasets:"}}',
+                '{"payload": {"id": "B_002", "type": "DfElement", '
+                '"df_id": "df_111", "metadata": {"shape": [3, 2]}}}',
+                '{"payload": {"id": "B_003", "type": "DfElement", '
+                '"df_id": "df_222", "metadata": {"shape": [3, 2]}}}',
             ]
         )
 
@@ -162,8 +167,10 @@ class TestArrowDataFrameIntegration:
         mock_stream_response.iter_lines.return_value = iter(
             [
                 '{"dthread_id": "D_test123"}',
-                '{"payload": {"id": "B_001", "type": "TextElement", "text": "Data analysis:"}}',
-                '{"payload": {"id": "B_002", "type": "DfElement", "df_id": "df_bad", "metadata": {"shape": [5, 3]}}}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Data analysis:"}}',
+                '{"payload": {"id": "B_002", "type": "DfElement", '
+                '"df_id": "df_bad", "metadata": {"shape": [5, 3]}}}',
             ]
         )
 
@@ -183,9 +190,10 @@ class TestArrowDataFrameIntegration:
             mock_httpx.return_value.__enter__.return_value = mock_httpx_instance
 
             # Patch the client's _client attribute
-            with patch.object(lui._client, "_client", mock_httpx_instance):
-                # Make the query - should warn but not fail
-                with pytest.warns(RuntimeWarning, match="Failed to fetch dataframe"):
+            with (
+                patch.object(lui._client, "_client", mock_httpx_instance),
+                pytest.warns(RuntimeWarning, match="Failed to fetch dataframe"),
+            ):
                     result = lui("Show data that will fail to fetch")
 
         # Should still return cursor
@@ -211,8 +219,10 @@ class TestArrowDataFrameIntegration:
         mock_stream_response.iter_lines.return_value = iter(
             [
                 '{"dthread_id": "D_test123"}',
-                '{"payload": {"id": "B_001", "type": "TextElement", "text": "Data with block_id:"}}',
-                '{"payload": {"id": "B_002", "type": "DfElement", "block_id": "block_789", "metadata": {"shape": [3, 1]}}}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Data with block_id:"}}',
+                '{"payload": {"id": "B_002", "type": "DfElement", '
+                '"block_id": "block_789", "metadata": {"shape": [3, 1]}}}',
             ]
         )
 

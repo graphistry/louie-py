@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Test org_name authentication flow to detect confused deputy problem."""
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 import louieai
 from louieai._client import LouieClient
@@ -40,7 +41,8 @@ class TestOrgAuthFlow:
             assert headers["X-Graphistry-Org"] == target_org
 
     def test_louie_factory_with_graphistry_client_confused_deputy(self):
-        """Test the confused deputy problem: louie() factory loses org_name from pre-registered graphistry."""
+        """Test the confused deputy problem: louie() factory loses org_name from 
+        pre-registered graphistry."""
         target_org = "databricks-pat-botsv3"
 
         # Mock a pre-registered PyGraphistry client (simulating user's scenario)

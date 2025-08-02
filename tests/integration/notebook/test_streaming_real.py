@@ -63,7 +63,8 @@ class TestStreamingRealIntegration:
 
         # Query that generates data
         lui(
-            "Create a sample dataset with 10 rows of sales data including date, product, quantity, and revenue."
+            "Create a sample dataset with 10 rows of sales data including "
+            "date, product, quantity, and revenue."
         )
 
         total_time = time.time() - start_time
