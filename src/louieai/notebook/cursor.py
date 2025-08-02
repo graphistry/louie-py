@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from louieai import LouieClient, Response
+from louieai._client import LouieClient, Response
 
 logger = logging.getLogger(__name__)
 
@@ -124,8 +124,8 @@ class ResponseProxy:
         return dfs
 
 
-class GlobalCursor:
-    """Global cursor for notebook-friendly API.
+class Cursor:
+    """Cursor for natural language queries.
 
     Provides implicit thread management and history tracking for
     natural notebook workflows.
@@ -166,20 +166,41 @@ class GlobalCursor:
             # Check for Louie-specific URL
             server_url = os.environ.get('LOUIE_URL', 'https://louie-dev.grph.xyz')
 
-            # Check for credentials
-            username = (os.environ.get('LOUIE_USER') or
-                       os.environ.get('GRAPHISTRY_USERNAME'))
-            password = (os.environ.get('LOUIE_PASS') or
-                       os.environ.get('GRAPHISTRY_PASSWORD'))
-            server = (os.environ.get('LOUIE_SERVER') or
-                     os.environ.get('GRAPHISTRY_SERVER'))
+            # Check for credentials - support multiple auth methods
+            # 1. Personal key authentication (PyGraphistry service accounts)
+            personal_key_id = os.environ.get('GRAPHISTRY_PERSONAL_KEY_ID')
+            personal_key_secret = os.environ.get('GRAPHISTRY_PERSONAL_KEY_SECRET')
+
+            # 2. API key authentication (legacy)
+            api_key = os.environ.get('GRAPHISTRY_API_KEY')
+
+            # 3. Username/password authentication
+            username = os.environ.get('GRAPHISTRY_USERNAME')
+            password = os.environ.get('GRAPHISTRY_PASSWORD')
+
+            # 4. Organization name (optional for all auth methods)
+            org_name = os.environ.get('GRAPHISTRY_ORG_NAME')
+
+            # 5. Server configuration
+            server = os.environ.get('GRAPHISTRY_SERVER')
 
             # Build client kwargs
             client_kwargs: dict[str, Any] = {'server_url': server_url}
+
+            # Add all available authentication parameters
+            # The LouieClient will handle priority internally
+            if personal_key_id:
+                client_kwargs['personal_key_id'] = personal_key_id
+            if personal_key_secret:
+                client_kwargs['personal_key_secret'] = personal_key_secret
+            if api_key:
+                client_kwargs['api_key'] = api_key
             if username:
                 client_kwargs['username'] = username
             if password:
                 client_kwargs['password'] = password
+            if org_name:
+                client_kwargs['org_name'] = org_name
             if server:
                 client_kwargs['server'] = server
 

@@ -3,7 +3,7 @@
 from unittest.mock import Mock, patch
 
 from louieai import Response
-from louieai.notebook.cursor import GlobalCursor
+from louieai.notebook.cursor import Cursor
 
 
 class TestTraceControl:
@@ -11,12 +11,12 @@ class TestTraceControl:
 
     def test_traces_default_off(self):
         """Test traces are off by default."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
         assert cursor.traces is False
 
     def test_traces_setter(self):
         """Test setting traces for session."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Enable traces
         cursor.traces = True
@@ -32,7 +32,7 @@ class TestTraceControl:
         mock_response = Mock(spec=Response, thread_id='test-thread')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Default traces off
         cursor("Test query")
@@ -53,7 +53,7 @@ class TestTraceControl:
         mock_response = Mock(spec=Response, thread_id='test-thread')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Session default off, override on
         cursor("Test query", traces=True)
@@ -87,7 +87,7 @@ class TestTraceControl:
             louieai.notebook._global_cursor = None
 
             # Import lui
-            from louieai.notebook import lui
+            from louieai.globals import lui
 
             # Test setting traces
             lui.traces = True
@@ -108,10 +108,10 @@ class TestTraceControl:
         # Check that client.py doesn't have hardcoded ignore_traces
         import inspect
 
-        import louieai.client
+        import louieai._client
 
         # Get source of add_cell method
-        source = inspect.getsource(louieai.client.LouieClient.add_cell)
+        source = inspect.getsource(louieai._client.LouieClient.add_cell)
 
         # Should not have hardcoded "true"
         assert '"ignore_traces": "true"' not in source

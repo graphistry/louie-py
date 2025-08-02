@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from louieai import Response
-from louieai.notebook import lui
+from louieai.globals import lui
 
 
 @pytest.fixture(scope="module")

@@ -5,8 +5,7 @@ from unittest.mock import Mock, patch
 import httpx
 import pytest
 
-from louieai import LouieClient
-from louieai.client import Response
+from louieai._client import LouieClient, Response
 
 # Import from same directory when running tests
 # (mocks are not used in this test file)
@@ -345,6 +344,8 @@ class TestLouieClient:
         mock_graphistry_client.register = Mock()
 
         # Test initialization with various credential combinations
+        # When multiple auth types are provided, personal key takes priority,
+        # then API key, then username/password
         client = LouieClient(
             server_url="https://test.louie.ai",
             graphistry_client=mock_graphistry_client,
@@ -355,10 +356,9 @@ class TestLouieClient:
             server="test.server.com",
         )
 
-        # Should call register with provided credentials
+        # Should call register with API key (since no personal key provided)
+        # Username/password are lower priority than API key
         client._auth_manager._graphistry_client.register.assert_called_once_with(
-            username="test_user",
-            password="test_pass",
             key="test-key",  # api_key becomes 'key'
             api=3,
             server="test.server.com",

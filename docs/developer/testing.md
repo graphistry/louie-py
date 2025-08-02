@@ -9,6 +9,24 @@ Tests are split into two main categories:
 - **Unit Tests** (`tests/unit/`): Fast tests with no external dependencies
 - **Integration Tests** (`tests/integration/`): Tests against real Louie API
 
+## Python Version Requirements
+
+This project requires **Python 3.10 or higher**. Always use the provided scripts to ensure the correct Python version:
+
+```bash
+# Correct way - uses uv and correct Python version
+./scripts/pytest.sh
+
+# Alternative with uv
+uv run python -m pytest
+
+# ⚠️  Avoid running pytest directly
+# This may use your system Python which could be too old
+pytest  # Don't do this!
+```
+
+If you run `pytest` directly with an older Python version, you'll see a warning directing you to use the correct command.
+
 ## Quick Start
 
 ```bash
@@ -61,7 +79,7 @@ Integration tests connect to a real Louie instance and require credentials.
    GRAPHISTRY_SERVER=your-server.example.com
    GRAPHISTRY_USERNAME=your_username
    GRAPHISTRY_PASSWORD=your_password
-   LOUIE_SERVER=https://louie.your-server.com  # Optional
+   LOUIE_URL=https://louie.your-server.com  # Optional, Louie-specific server
    ```
 
 3. Run integration tests:

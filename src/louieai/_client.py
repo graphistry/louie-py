@@ -80,6 +80,9 @@ class LouieClient:
         username: str | None = None,
         password: str | None = None,
         api_key: str | None = None,
+        personal_key_id: str | None = None,
+        personal_key_secret: str | None = None,
+        org_name: str | None = None,
         api: int = 3,
         server: str | None = None,
     ):
@@ -90,7 +93,10 @@ class LouieClient:
             graphistry_client: Existing Graphistry client to use for auth
             username: Username for direct authentication
             password: Password for direct authentication
-            api_key: API key for direct authentication
+            api_key: API key for direct authentication (legacy)
+            personal_key_id: Personal key ID for service account authentication
+            personal_key_secret: Personal key secret for service account authentication
+            org_name: Organization name (optional for all auth methods)
             api: API version (default: 3)
             server: Graphistry server URL for direct authentication
 
@@ -98,10 +104,25 @@ class LouieClient:
             # Use existing graphistry authentication
             client = LouieClient()
 
-            # Pass credentials directly
+            # Pass username/password credentials
             client = LouieClient(
                 username="user",
                 password="pass",
+                server="hub.graphistry.com"
+            )
+
+            # Use personal key authentication (recommended for service accounts)
+            client = LouieClient(
+                personal_key_id="ZD5872XKNF",
+                personal_key_secret="SA0JJ2DTVT6LLO2S",
+                server="hub.graphistry.com"
+            )
+
+            # Specify organization
+            client = LouieClient(
+                username="user",
+                password="pass",
+                org_name="my-org",
                 server="hub.graphistry.com"
             )
 
@@ -118,20 +139,32 @@ class LouieClient:
             username=username,
             password=password,
             api_key=api_key,
+            personal_key_id=personal_key_id,
+            personal_key_secret=personal_key_secret,
+            org_name=org_name,
             api=api,
             server=server,
         )
 
         # If credentials provided, authenticate immediately
-        if any([username, password, api_key]):
+        if any([username, password, api_key, personal_key_id, personal_key_secret]):
             # Build kwargs for register, excluding None values
             register_kwargs: dict[str, Any] = {}
-            if username is not None:
-                register_kwargs["username"] = username
-            if password is not None:
-                register_kwargs["password"] = password
-            if api_key is not None:
+            if personal_key_id is not None and personal_key_secret is not None:
+                # Use personal key authentication
+                register_kwargs["personal_key_id"] = personal_key_id
+                register_kwargs["personal_key_secret"] = personal_key_secret
+            elif api_key is not None:
+                # Use API key authentication
                 register_kwargs["key"] = api_key  # graphistry uses 'key' parameter
+            elif username is not None and password is not None:
+                # Use username/password authentication
+                register_kwargs["username"] = username
+                register_kwargs["password"] = password
+
+            # Add common parameters
+            if org_name is not None:
+                register_kwargs["org_name"] = org_name
             if api is not None:
                 register_kwargs["api"] = api
             if server is not None:
@@ -274,6 +307,58 @@ class LouieClient:
 
         # Return Response with all elements
         return Response(thread_id=actual_thread_id, elements=result["elements"])
+
+    def __call__(
+        self,
+        prompt: str,
+        *,
+        thread_id: str | None = None,
+        traces: bool = False,
+        agent: str = "LouieAgent",
+        **kwargs: Any
+    ) -> Response:
+        """Make the client callable for ergonomic usage.
+
+        This allows using the client like a function:
+        ```python
+        client = LouieClient()
+        response = client("What's the weather?")
+        ```
+
+        Args:
+            prompt: Natural language query
+            thread_id: Thread ID to use (None creates new thread)
+            traces: Whether to include reasoning traces
+            agent: Agent to use (default: LouieAgent)
+            **kwargs: Additional arguments (reserved for future use)
+
+        Returns:
+            Response object containing thread_id and all elements
+        """
+        # Use empty string for new thread if thread_id is None
+        tid = thread_id if thread_id is not None else ""
+
+        # Store the thread_id for subsequent calls if not provided
+        if not hasattr(self, '_current_thread_id'):
+            self._current_thread_id = None
+
+        # Use stored thread_id if none provided
+        if thread_id is None and self._current_thread_id is not None:
+            tid = self._current_thread_id
+
+        # Make the call
+        response = self.add_cell(
+            thread_id=tid,
+            prompt=prompt,
+            agent=agent,
+            traces=traces
+        )
+
+        # Store thread_id for next call
+        if response.thread_id:
+            self._current_thread_id = response.thread_id
+
+        return response
 
     @auto_retry_auth
     def list_threads(self, page: int = 1, page_size: int = 20) -> list[Thread]:

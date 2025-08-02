@@ -58,7 +58,7 @@ class AuthenticationError(NotebookError):
     def __init__(self):
         super().__init__(
             "Authentication failed. Check your credentials.",
-            "Set LOUIE_USER and LOUIE_PASS environment variables, "
+            "Set GRAPHISTRY_USERNAME and GRAPHISTRY_PASSWORD environment variables, "
             "or pass credentials to LouieClient."
         )
 

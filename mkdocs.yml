@@ -7,10 +7,17 @@ nav:
     - Installation: getting-started/installation.md
     - Authentication: getting-started/authentication.md
     - Quick Start: getting-started/quick-start.md
+    - Example Notebooks:
+      - Getting Started: getting-started/notebooks/01-getting-started.ipynb
+      - Data Science Workflow: getting-started/notebooks/02-data-science-workflow.ipynb
+      - Fraud Investigation: getting-started/notebooks/03-fraud-investigation.ipynb
+      - Error Handling: getting-started/notebooks/04-error-handling.ipynb
   - User Guides:
     - Examples: guides/examples.md
     - Query Patterns: guides/query-patterns.md
     - Authentication Guide: guides/authentication.md
+  - Migration:
+    - Environment Variables: migration/env-vars.md
   - API Reference:
     - Overview: api/index.md
     - Notebook API: api/notebook.md

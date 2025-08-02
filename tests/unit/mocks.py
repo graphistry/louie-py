@@ -120,6 +120,16 @@ class MockResponse:
         # Add elements list and convenience properties
         self._setup_elements(response_type)
 
+        # Ensure text_elements is always populated for text responses
+        if response_type == "text" and not self.text_elements:
+            # Force add a text element
+            self.elements.append({
+                "type": "TextElement",
+                "id": self.id,
+                "content": self.text,
+                "language": "Markdown"
+            })
+
     def _setup_elements(self, response_type: str):
         """Set up elements list and convenience properties."""
         # Create elements list based on response type
@@ -130,7 +140,10 @@ class MockResponse:
 
         if response_type == "text":
             element.update(
-                {"text": self.text, "language": getattr(self, "language", "Markdown")}
+                {
+                    "content": self.text,
+                    "language": getattr(self, "language", "Markdown")
+                }
             )
         elif response_type == "dataframe":
             element.update({"metadata": self.metadata, "table": MockDataFrame()})
@@ -193,7 +206,19 @@ class MockThread:
 
 def create_mock_client():
     """Create a fully mocked LouieClient for testing."""
-    client = Mock()
+
+    # Create a wrapper class that makes Mock callable
+    class CallableMock(Mock):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._call_func = None
+
+        def __call__(self, *args, **kwargs):
+            if self._call_func:
+                return self._call_func(*args, **kwargs)
+            return super().__call__(*args, **kwargs)
+
+    client = CallableMock()
 
     # Thread management
     thread_counter = 0
@@ -215,7 +240,7 @@ def create_mock_client():
 
         return thread
 
-    def add_cell(thread_id, prompt, agent="LouieAgent"):
+    def add_cell(thread_id, prompt, agent="LouieAgent", traces=False):
         if not thread_id:
             thread = create_thread()
             thread_id = thread.id
@@ -240,6 +265,16 @@ def create_mock_client():
     client.list_threads = Mock(side_effect=list_threads)
     client.get_thread = Mock(side_effect=get_thread)
     client.register = Mock(return_value=client)
+
+    # Make client callable (for v0.2.0+ interface)
+    def client_call(prompt, *args, **kwargs):
+        thread_id = kwargs.get('thread_id', '')
+        agent = kwargs.get('agent', 'LouieAgent')
+        traces = kwargs.get('traces', False)
+        return add_cell(thread_id, prompt, agent, traces)
+
+    # Set the callable function
+    client._call_func = client_call
 
     return client
 

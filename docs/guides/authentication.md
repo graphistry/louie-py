@@ -73,6 +73,56 @@ g.register(api=3, username="your_user", password="your_pass")
 client = lui.LouieClient(graphistry_client=g)
 ```
 
+### Method 5: API Key Authentication
+
+Use PyGraphistry API keys for programmatic access:
+
+```python
+# Using legacy API key
+client = lui.LouieClient(
+    api_key="your_api_key",
+    server="hub.graphistry.com"
+)
+
+# Using personal key (service accounts)
+client = lui.LouieClient(
+    personal_key_id="pk_123...",
+    personal_key_secret="sk_123...",
+    org_name="my-org",  # Optional
+    server="hub.graphistry.com"
+)
+```
+
+### Method 6: Environment Variables
+
+Set authentication credentials via environment variables:
+
+```bash
+# Username/password authentication
+export GRAPHISTRY_USERNAME=your_username
+export GRAPHISTRY_PASSWORD=your_password
+
+# API key authentication
+export GRAPHISTRY_API_KEY=your_api_key
+
+# Personal key authentication (service accounts)
+export GRAPHISTRY_PERSONAL_KEY_ID=pk_123...
+export GRAPHISTRY_PERSONAL_KEY_SECRET=sk_123...
+export GRAPHISTRY_ORG_NAME=my-org  # Optional
+```
+
+Then use the notebook API or create a client without explicit credentials:
+
+```python
+# Notebook API automatically uses environment variables
+from louieai.notebook import lui
+lui("Your query here")
+
+# Or with traditional client
+import louieai as lui
+client = lui.LouieClient()  # Uses env vars automatically
+```
+
 ## Multi-tenant Authentication
 
 For applications serving multiple users or requiring concurrent sessions with different credentials.
@@ -157,7 +207,10 @@ def handle_user_request(user_credentials):
 |-----------|------|-------------|---------|
 | `username` | str | PyGraphistry username | `"alice"` |
 | `password` | str | PyGraphistry password | `"secure_pass"` |
-| `api_key` | str | API key (alternative to username/password) | `"pk_123..."` |
+| `api_key` | str | API key (alternative to username/password) | `"api_key_123..."` |
+| `personal_key_id` | str | Personal key ID for service accounts | `"pk_123..."` |
+| `personal_key_secret` | str | Personal key secret for service accounts | `"sk_123..."` |
+| `org_name` | str | Organization name (optional) | `"my-org"` |
 | `server` | str | Graphistry server URL | `"hub.graphistry.com"` |
 | `api` | int | API version (usually 3) | `3` |
 | `graphistry_client` | Any | Existing PyGraphistry client or plottable | `graphistry.client()` |
@@ -203,8 +256,8 @@ import os
 import louieai as lui
 
 client = lui.LouieClient(
-    username=os.environ["GRAPHISTRY_USER"],
-    password=os.environ["GRAPHISTRY_PASS"]
+    username=os.environ["GRAPHISTRY_USERNAME"],
+    password=os.environ["GRAPHISTRY_PASSWORD"]
 )
 ```
 

@@ -13,14 +13,13 @@ def extract_code_blocks(filepath):
     blocks = []
 
     # Find all ```python blocks
-    pattern = r"```python\n(.*?)\n```"
+    pattern = r'```python\n(.*?)\n```'
     for match in re.finditer(pattern, content, re.DOTALL):
         code = match.group(1)
-        line_num = content[: match.start()].count("\n") + 1
+        line_num = content[:match.start()].count('\n') + 1
         blocks.append((code, line_num))
 
     return blocks
-
 
 def create_mock_client():
     """Create a properly mocked LouieClient."""
@@ -45,17 +44,17 @@ def create_mock_client():
     # Client methods
     client.create_thread = Mock(return_value=thread)
     client.add_cell = Mock(return_value=text_response)
+    client.ask = Mock(return_value=text_response)
     client.list_threads = Mock(return_value=[thread])
     client.register = Mock(return_value=client)
 
     return client, thread, text_response
 
-
 def test_code_block(code, context):
     """Test a single code block with proper context."""
     # Skip non-executable code
-    if any(skip in code for skip in ["...", "$ ", "pip install", "uv pip"]):
-        return "SKIP", "Non-executable"
+    if any(skip in code for skip in ['...', '$ ', 'pip install', 'uv pip']):
+        return 'SKIP', 'Non-executable'
 
     # Replace placeholders
     code = code.replace('"your_user"', '"test_user"')
@@ -76,42 +75,38 @@ def test_code_block(code, context):
 
     # Create namespace with common variables
     namespace = {
-        "__builtins__": __builtins__,
-        "print": lambda *args: None,  # Suppress prints
-        "client": client,
-        "thread": thread,
-        "response": response,
-        "df": Mock(),
-        "df2": Mock(),
-        "g": mock_graphistry,
-        "threads": [thread],
-        "response1": response,
-        "response2": response,
+        '__builtins__': __builtins__,
+        'print': lambda *args: None,  # Suppress prints
+        'client': client,
+        'thread': thread,
+        'response': response,
+        'df': Mock(),
+        'df2': Mock(),
+        'g': mock_graphistry,
+        'threads': [thread],
+        'response1': response,
+        'response2': response,
     }
 
     try:
         # Patch imports
-        with patch.dict(
-            "sys.modules",
-            {
-                "graphistry": mock_graphistry,
-                "louieai": mock_louieai,
-            },
-        ):
+        with patch.dict('sys.modules', {
+            'graphistry': mock_graphistry,
+            'louieai': mock_louieai,
+        }):
             # Handle imports in code
-            if "import" in code:
+            if 'import' in code:
                 exec(code, namespace)
             else:
                 # For snippets, ensure imports are available
-                namespace["graphistry"] = mock_graphistry
-                namespace["LouieClient"] = Mock(return_value=client)
-                namespace["louieai"] = mock_louieai
+                namespace['graphistry'] = mock_graphistry
+                namespace['LouieClient'] = Mock(return_value=client)
+                namespace['louieai'] = mock_louieai
                 exec(code, namespace)
 
-        return "PASS", None
+        return 'PASS', None
     except Exception as e:
-        return "FAIL", f"{type(e).__name__}: {e}"
-
+        return 'FAIL', f"{type(e).__name__}: {e}"
 
 def test_file(filepath):
     """Test all code blocks in a file."""
@@ -127,16 +122,16 @@ def test_file(filepath):
     for code, line_num in blocks:
         status, message = test_code_block(code, {})
 
-        if status == "PASS":
+        if status == 'PASS':
             passed += 1
             print(f"  Line {line_num}: ✓ PASS")
-        elif status == "SKIP":
+        elif status == 'SKIP':
             skipped += 1
             print(f"  Line {line_num}: - SKIP ({message})")
         else:
             failed += 1
             print(f"  Line {line_num}: ✗ FAIL ({message})")
-            if "--verbose" in sys.argv:
+            if '--verbose' in sys.argv:
                 print(f"    Code: {code[:50]}...")
 
     success_rate = (passed / (passed + failed) * 100) if (passed + failed) > 0 else 0
@@ -144,7 +139,6 @@ def test_file(filepath):
     print(f"  Success rate: {success_rate:.1f}%")
 
     return failed == 0, passed, failed, skipped
-
 
 def main():
     """Run tests on documentation files."""
@@ -178,7 +172,6 @@ def main():
     else:
         print("\n❌ Some documentation tests failed")
         return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())

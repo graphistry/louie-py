@@ -7,12 +7,14 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from louieai.notebook import lui
+from louieai.globals import lui
 
 # Skip if no credentials provided
+has_username = os.environ.get('GRAPHISTRY_USERNAME') is not None
+has_password = os.environ.get('GRAPHISTRY_PASSWORD') is not None
 pytestmark = pytest.mark.skipif(
-    not os.environ.get('LOUIE_USER') or not os.environ.get('LOUIE_PASS'),
-    reason="Integration tests require LOUIE_USER and LOUIE_PASS env vars"
+    not (has_username and has_password),
+    reason="Integration tests require GRAPHISTRY_USERNAME and GRAPHISTRY_PASSWORD"
 )
 
 

@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pandas as pd
 
 from louieai import Response
-from louieai.notebook import lui
+from louieai.globals import lui
 
 
 class TestLuiProxy:

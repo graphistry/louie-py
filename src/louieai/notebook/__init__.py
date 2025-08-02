@@ -12,21 +12,21 @@ Example:
 
 from typing import TYPE_CHECKING
 
-from .cursor import GlobalCursor
+from .cursor import Cursor
 
 if TYPE_CHECKING:
     # Type hints without circular imports
-    from louieai import LouieClient  # noqa: F401
+    from louieai._client import LouieClient  # noqa: F401
 
 # Create singleton instance
-_global_cursor: GlobalCursor | None = None
+_global_cursor: Cursor | None = None
 
 
-def _get_cursor() -> GlobalCursor:
+def _get_cursor() -> Cursor:
     """Get or create the global cursor instance."""
     global _global_cursor
     if _global_cursor is None:
-        _global_cursor = GlobalCursor()
+        _global_cursor = Cursor()
     return _global_cursor
 
 
@@ -57,5 +57,5 @@ class _LuiProxy:
 lui = _LuiProxy()
 
 # Also export for direct access if needed
-__all__ = ['GlobalCursor', 'lui']
+__all__ = ['Cursor']
 

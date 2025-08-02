@@ -1,4 +1,4 @@
-"""Unit tests for GlobalCursor implementation."""
+"""Unit tests for Cursor implementation."""
 
 from collections import deque
 from unittest.mock import Mock, patch
@@ -6,16 +6,16 @@ from unittest.mock import Mock, patch
 import pytest
 
 from louieai import Response
-from louieai.notebook.cursor import GlobalCursor
+from louieai.notebook.cursor import Cursor
 
 
-class TestGlobalCursor:
-    """Test GlobalCursor functionality."""
+class TestCursor:
+    """Test Cursor functionality."""
 
     def test_init_creates_client(self):
         """Test cursor initializes with default client."""
         with patch('louieai.notebook.cursor.LouieClient') as mock_client:
-            cursor = GlobalCursor()
+            cursor = Cursor()
             mock_client.assert_called_once()
             assert len(cursor._history) == 0
             assert cursor._current_thread is None
@@ -24,7 +24,7 @@ class TestGlobalCursor:
     def test_init_with_custom_client(self):
         """Test cursor accepts custom client."""
         mock_client = Mock()
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
         assert cursor._client is mock_client
 
     def test_call_creates_thread_on_first_use(self):
@@ -33,7 +33,7 @@ class TestGlobalCursor:
         mock_response = Mock(spec=Response, thread_id='test-thread-123')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
         cursor("Test query")
 
         # Should start with empty thread
@@ -51,7 +51,7 @@ class TestGlobalCursor:
         mock_response = Mock(spec=Response, thread_id='test-thread-123')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # First call creates thread
         cursor("First query")
@@ -75,7 +75,7 @@ class TestGlobalCursor:
         response2 = Mock(spec=Response, thread_id='test-thread', id='resp2')
         mock_client.add_cell.side_effect = [response1, response2]
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Execute queries
         resp1 = cursor("Query 1")
@@ -91,7 +91,7 @@ class TestGlobalCursor:
     def test_history_maxlen(self):
         """Test history respects max length."""
         # Create cursor with small history for testing
-        cursor = GlobalCursor()
+        cursor = Cursor()
         cursor._history = deque(maxlen=3)
 
         # Add 5 items
@@ -108,7 +108,7 @@ class TestGlobalCursor:
         mock_response = Mock(spec=Response, thread_id='test-thread')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
         cursor("Test query")
 
         # Check traces parameter passed to client
@@ -122,7 +122,7 @@ class TestGlobalCursor:
         mock_response = Mock(spec=Response, thread_id='test-thread')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Query with traces enabled
         cursor("Test query", traces=True)
@@ -140,7 +140,7 @@ class TestGlobalCursor:
         mock_response = Mock(spec=Response, thread_id='test-thread')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
         cursor("Test query", agent="custom")
 
         call_args = mock_client.add_cell.call_args[1]
@@ -151,7 +151,7 @@ class TestGlobalCursor:
         mock_client = Mock()
         mock_client.add_cell.side_effect = ValueError("API Error")
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         with pytest.raises(ValueError, match="API Error"):
             cursor("Test query")
@@ -162,7 +162,7 @@ class TestGlobalCursor:
         mock_client = Mock()
         mock_client.add_cell.side_effect = ValueError("API Error")
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         with pytest.raises(ValueError):
             cursor("Test query")
@@ -172,7 +172,7 @@ class TestGlobalCursor:
 
     def test_jupyter_detection(self):
         """Test Jupyter environment detection."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Our implementation checks sys.modules
         import sys
@@ -196,7 +196,7 @@ class TestGlobalCursor:
         mock_response = Mock(spec=Response, thread_id='test-thread')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Mock not in Jupyter
         with patch.object(cursor, '_in_jupyter', return_value=False), \
@@ -210,7 +210,7 @@ class TestGlobalCursor:
         mock_response = Mock(spec=Response, thread_id='test-thread')
         mock_client.add_cell.return_value = mock_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Mock in Jupyter
         with patch.object(cursor, '_in_jupyter', return_value=True), \

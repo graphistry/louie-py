@@ -43,8 +43,32 @@ elif response.type == "GraphElement":
 
 ```python
 # For quick queries without maintaining thread context
-response = client.ask("Summarize the key findings")
-print(response.text)
+response = client.add_cell("", "Summarize the key findings")
+
+# Or use the new callable interface (v0.2.0+)
+response = client("Summarize the key findings")
+print(response.text_elements[0]['content'])
+```
+
+### Callable Interface (New in v0.2.0)
+
+LouieClient instances can now be called directly, providing a more ergonomic API:
+
+```python
+# Create client
+client = louieai.LouieClient()
+
+# Call it like a function
+response = client("What patterns do you see in the data?")
+
+# Thread context is maintained automatically
+response2 = client("Tell me more about the anomalies")  # Same thread
+
+# Or specify a thread explicitly
+response3 = client("New topic", thread_id="custom_thread_id")
+
+# Enable traces for debugging
+response4 = client("Complex analysis", traces=True)
 ```
 
 ### Custom Server URL

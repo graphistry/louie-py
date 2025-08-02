@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pandas as pd
 
 from louieai import Response
-from louieai.notebook.cursor import GlobalCursor, ResponseProxy
+from louieai.notebook.cursor import Cursor, ResponseProxy
 
 
 class TestDataFrameAccess:
@@ -13,7 +13,7 @@ class TestDataFrameAccess:
 
     def test_df_returns_none_when_no_dataframe(self):
         """Test df returns None when no dataframe in response."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
         assert cursor.df is None
 
         # Add response without dataframes
@@ -26,7 +26,7 @@ class TestDataFrameAccess:
 
     def test_df_returns_first_dataframe(self):
         """Test df returns first dataframe when available."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Create test dataframes
         df1 = pd.DataFrame({'a': [1, 2, 3]})
@@ -47,7 +47,7 @@ class TestDataFrameAccess:
 
     def test_dfs_returns_empty_list_when_none(self):
         """Test dfs returns empty list when no dataframes."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
         assert cursor.dfs == []
 
         # Add response without dataframes
@@ -59,7 +59,7 @@ class TestDataFrameAccess:
 
     def test_dfs_returns_all_dataframes(self):
         """Test dfs returns all dataframes."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Create test dataframes
         df1 = pd.DataFrame({'a': [1, 2, 3]})
@@ -80,7 +80,7 @@ class TestDataFrameAccess:
 
     def test_text_returns_none_when_no_text(self):
         """Test text returns None when no text elements."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
         assert cursor.text is None
 
         # Add response without text
@@ -92,7 +92,7 @@ class TestDataFrameAccess:
 
     def test_text_returns_first_text(self):
         """Test text returns first text element."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         mock_response = Mock(spec=Response)
         mock_response.text_elements = [
@@ -105,7 +105,7 @@ class TestDataFrameAccess:
 
     def test_texts_returns_all_text_elements(self):
         """Test texts returns all text elements."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         mock_response = Mock(spec=Response)
         mock_response.text_elements = [
@@ -119,7 +119,7 @@ class TestDataFrameAccess:
 
     def test_elements_returns_all_typed_elements(self):
         """Test elements returns all elements with type tags."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Create mixed response
         df1 = pd.DataFrame({'a': [1, 2, 3]})
@@ -147,7 +147,7 @@ class TestDataFrameAccess:
 
     def test_history_access_with_getitem(self):
         """Test accessing history with lui[-1] syntax."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Add multiple responses
         df1 = pd.DataFrame({'a': [1, 2, 3]})
@@ -175,7 +175,7 @@ class TestDataFrameAccess:
 
     def test_history_access_out_of_bounds(self):
         """Test history access with invalid index returns empty proxy."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Empty history
         proxy = cursor[-1]
@@ -199,7 +199,7 @@ class TestDataFrameAccess:
 
     def test_charts_and_images_empty(self):
         """Test charts and images return empty lists (not implemented yet)."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Even with response
         response = Mock(spec=Response)
@@ -210,7 +210,7 @@ class TestDataFrameAccess:
 
     def test_dataframe_without_table_key(self):
         """Test handling dataframe elements without 'table' key."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         mock_response = Mock(spec=Response)
         mock_response.dataframe_elements = [

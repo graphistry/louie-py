@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from louieai import Response
-from louieai.notebook.cursor import GlobalCursor
+from louieai.notebook.cursor import Cursor
 from louieai.notebook.exceptions import (
     AuthenticationError,
     NoDataFrameError,
@@ -47,8 +47,8 @@ class TestErrorMessages:
         error = AuthenticationError()
 
         assert "Authentication failed" in str(error)
-        assert "LOUIE_USER" in str(error)
-        assert "LOUIE_PASS" in str(error)
+        assert "GRAPHISTRY_USERNAME" in str(error)
+        assert "GRAPHISTRY_PASSWORD" in str(error)
 
     def test_connection_error(self):
         """Test ConnectionError with server info."""
@@ -66,7 +66,7 @@ class TestErrorHandlingIntegration:
         mock_client = Mock()
         mock_client.add_cell.side_effect = ValueError("API Error")
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Should re-raise but log
         with pytest.raises(ValueError, match="API Error"):
@@ -74,7 +74,7 @@ class TestErrorHandlingIntegration:
 
     def test_properties_return_none_not_errors(self):
         """Test properties return None/empty instead of raising."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # No responses yet
         assert cursor.df is None
@@ -94,7 +94,7 @@ class TestErrorHandlingIntegration:
         error = RuntimeError("Test error")
         mock_client.add_cell.side_effect = error
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         with pytest.raises(RuntimeError):
             cursor("Test query")
@@ -106,7 +106,7 @@ class TestErrorHandlingIntegration:
 
     def test_empty_dataframe_elements_handled(self):
         """Test handling of malformed dataframe elements."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Mock response with bad dataframe elements
         mock_response = Mock(spec=Response)
@@ -124,7 +124,7 @@ class TestErrorHandlingIntegration:
 
     def test_missing_attributes_handled(self):
         """Test handling of responses missing expected attributes."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Create a mock response that truly doesn't have the attributes
         mock_response = Mock(spec=['thread_id'])  # Only has thread_id

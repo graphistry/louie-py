@@ -16,6 +16,17 @@ df = lui.df          # Latest dataframe
 all_dfs = lui.dfs    # All dataframes
 ```
 
+## Alternative Import Methods
+
+You can also import the global `lui` singleton from the globals module:
+
+```python
+from louieai.globals import lui
+
+# Works the same as importing from notebook
+lui("Your query here")
+```
+
 ## The `lui` Object
 
 The `lui` object is a singleton that manages your LouieAI session with implicit thread management.
@@ -108,20 +119,33 @@ lui.traces = False
 
 ## Environment Variables
 
-The notebook API uses environment variables for authentication:
+The notebook API supports multiple authentication methods via environment variables:
+
+### Personal Key Authentication (Recommended for Service Accounts)
 
 ```bash
-export LOUIE_USER=your_username
-export LOUIE_PASS=your_password
-export LOUIE_SERVER=your_server  # Optional, defaults to hub
-export LOUIE_URL=https://custom-louie.ai  # Optional
+export GRAPHISTRY_PERSONAL_KEY_ID=your_key_id
+export GRAPHISTRY_PERSONAL_KEY_SECRET=your_key_secret
+export GRAPHISTRY_ORG_NAME=your_org  # Optional
 ```
 
-Alternatively, it will use existing Graphistry authentication:
+### API Key Authentication (Legacy)
+
+```bash
+export GRAPHISTRY_API_KEY=your_api_key
+```
+
+### Username/Password Authentication
 
 ```bash
 export GRAPHISTRY_USERNAME=your_username
 export GRAPHISTRY_PASSWORD=your_password
+```
+
+### Custom Server URL
+
+```bash
+export LOUIE_URL=https://custom-louie.ai  # Custom Louie server
 ```
 
 ## Properties Reference
@@ -187,13 +211,54 @@ help(lui)
 
 ## Advanced Usage
 
+### Using the louie() Factory Function
+
+The `louie()` factory function provides a convenient way to create cursors with different authentication methods:
+
+```python
+from louieai import louie
+
+# Create cursor with default configuration
+cursor = louie()
+
+# Create cursor with PyGraphistry client
+import graphistry
+g = graphistry.register(api=3, username="user", password="pass")
+cursor = louie(g)
+
+# Create cursor with personal key authentication
+cursor = louie(
+    personal_key_id="your_key_id",
+    personal_key_secret="your_key_secret",
+    org_name="your_org"
+)
+
+# Create cursor with API key
+cursor = louie(api_key="your_api_key")
+
+# Use any cursor
+cursor("Your query here")
+print(cursor.text)
+```
+
 ### Custom Client Configuration
+
+For more control, you can create a client directly:
 
 ```python
 from louieai import LouieClient
-from louieai.notebook import GlobalCursor
+from louieai.notebook import Cursor
 
-# Create custom client
+# Create custom client with personal key auth
+client = LouieClient(
+    server_url="https://custom.louie.ai",
+    personal_key_id="your_key_id",
+    personal_key_secret="your_key_secret",
+    org_name="your_org",
+    server="hub.graphistry.com"
+)
+
+# Or with username/password
 client = LouieClient(
     server_url="https://custom.louie.ai",
     username="user",
@@ -201,7 +266,7 @@ client = LouieClient(
 )
 
 # Create cursor with custom client
-cursor = GlobalCursor(client=client)
+cursor = Cursor(client=client)
 
 # Use the cursor
 cursor("Your query here")
@@ -223,6 +288,43 @@ from louieai.notebook import lui
 3. **Use history** for comparing results: `lui[-1].df` vs `lui.df`
 4. **Enable traces** only when needed to avoid performance overhead
 5. **Handle errors gracefully** using `lui.has_errors` instead of try/except
+
+## Factory Function
+
+The `louie()` factory function provides flexible ways to create callable Louie interfaces:
+
+```python
+from louieai import louie
+
+# 1. Global client (uses environment variables)
+lui = louie()
+
+# 2. From existing PyGraphistry client
+import graphistry
+gc = graphistry.client()
+gc.register(api=3, username="user", password="pass")
+lui = louie(gc)
+
+# 3. With direct credentials
+lui = louie(username="user", password="pass")
+lui = louie(personal_key_id="pk_123", personal_key_secret="sk_456")
+lui = louie(api_key="your_api_key")
+
+# All return a callable interface
+response = lui("What insights can you find?")
+print(lui.text)
+```
+
+### Parameters
+
+- `graphistry_client` (optional): Existing PyGraphistry client instance
+- `**kwargs`: Authentication parameters:
+  - `username`, `password`: Basic authentication
+  - `personal_key_id`, `personal_key_secret`: Service account auth
+  - `api_key`: API key authentication
+  - `org_name`: Organization name (optional)
+  - `server`: PyGraphistry server URL
+  - `server_url`: Custom Louie server URL
 
 ## See Also
 

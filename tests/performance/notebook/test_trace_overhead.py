@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 
-from louieai.notebook import GlobalCursor
+from louieai.notebook import Cursor
 
 
 class MockResponse:
@@ -55,7 +55,7 @@ class TestTraceOverhead:
         # Mock responses without traces
         mock_client.add_cell.return_value = MockResponse(include_traces=False)
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Warm up
         cursor("warmup query")
@@ -90,7 +90,7 @@ class TestTraceOverhead:
         # Mock responses with traces
         mock_client.add_cell.return_value = MockResponse(include_traces=True)
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
         cursor.traces = True
 
         # Warm up
@@ -122,7 +122,7 @@ class TestTraceOverhead:
 
         mock_client.add_cell.return_value = MockResponse(include_traces=False)
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Fill history to max (100 items)
         for i in range(100):
@@ -167,7 +167,7 @@ class TestTraceOverhead:
 
         mock_client.add_cell.return_value = large_response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
 
         # Measure baseline
         sys.getsizeof(cursor._history)  # Baseline measurement
@@ -206,7 +206,7 @@ class TestTraceOverhead:
 
         mock_client.add_cell.return_value = response
 
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
         cursor("test query")
 
         # Benchmark df access
@@ -252,13 +252,13 @@ class TestOverheadComparison:
         for _ in range(100):
             start = time.perf_counter()
             resp = mock_client.add_cell("", "test query", traces=False)
-            df = resp.dataframe_elements[0]['table']
-            text = resp.text_elements[0]['content']
+            _ = resp.dataframe_elements[0]['table']
+            _ = resp.text_elements[0]['content']
             end = time.perf_counter()
             direct_times.append(end - start)
 
         # Benchmark notebook API
-        cursor = GlobalCursor(client=mock_client)
+        cursor = Cursor(client=mock_client)
         notebook_times = []
         for _ in range(100):
             start = time.perf_counter()

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pandas as pd
 
 from louieai import Response
-from louieai.notebook.cursor import GlobalCursor, ResponseProxy
+from louieai.notebook.cursor import Cursor, ResponseProxy
 
 
 class TestErrorElements:
@@ -87,8 +87,8 @@ class TestErrorElements:
         assert proxy.has_errors is False
 
     def test_global_cursor_error_access(self):
-        """Test accessing errors through GlobalCursor."""
-        cursor = GlobalCursor()
+        """Test accessing errors through Cursor."""
+        cursor = Cursor()
 
         # Mock response with errors
         response = Mock(spec=Response)

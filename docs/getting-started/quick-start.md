@@ -20,8 +20,8 @@ LouieAI offers two API styles:
 from louieai.notebook import lui
 
 # That's it! Authentication uses environment variables:
-# export LOUIE_USER=your_username
-# export LOUIE_PASS=your_password
+# export GRAPHISTRY_USERNAME=your_username
+# export GRAPHISTRY_PASSWORD=your_password
 ```
 
 #### Traditional Client API

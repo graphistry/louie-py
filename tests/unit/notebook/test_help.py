@@ -3,15 +3,15 @@
 from unittest.mock import Mock, patch
 
 from louieai import Response
-from louieai.notebook.cursor import GlobalCursor
+from louieai.notebook.cursor import Cursor
 
 
 class TestHelpDiscovery:
     """Test help and discovery functionality."""
 
     def test_cursor_has_docstring(self):
-        """Test GlobalCursor has comprehensive docstring."""
-        cursor = GlobalCursor()
+        """Test Cursor has comprehensive docstring."""
+        cursor = Cursor()
         assert cursor.__doc__ is not None
         assert "Quick Start:" in cursor.__doc__
         assert "lui(" in cursor.__doc__
@@ -21,7 +21,7 @@ class TestHelpDiscovery:
 
     def test_cursor_repr_empty(self):
         """Test repr when no queries made."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
         repr_str = repr(cursor)
 
         assert "<LouieAI Notebook Interface" in repr_str
@@ -31,7 +31,7 @@ class TestHelpDiscovery:
 
     def test_cursor_repr_with_data(self):
         """Test repr with response history."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Mock response
         mock_response = Mock(spec=Response)
@@ -51,7 +51,7 @@ class TestHelpDiscovery:
 
     def test_cursor_repr_html_empty(self):
         """Test HTML repr for Jupyter."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
         html = cursor._repr_html_()
 
         assert "<h4" in html
@@ -62,7 +62,7 @@ class TestHelpDiscovery:
 
     def test_cursor_repr_html_with_data(self):
         """Test HTML repr with data."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # Mock response
         mock_response = Mock(spec=Response)
@@ -90,7 +90,7 @@ class TestHelpDiscovery:
             import louieai.notebook
             louieai.notebook._global_cursor = None
 
-            from louieai.notebook import lui
+            from louieai.globals import lui
 
             # Test repr delegation
             repr_str = repr(lui)
@@ -102,7 +102,7 @@ class TestHelpDiscovery:
 
     def test_help_function_works(self):
         """Test Python's help() function provides useful info."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
 
         # help() uses __doc__ attribute
         assert hasattr(cursor, '__doc__')
@@ -114,7 +114,7 @@ class TestHelpDiscovery:
 
     def test_quick_help_in_html(self):
         """Test quick help section in HTML repr."""
-        cursor = GlobalCursor()
+        cursor = Cursor()
         html = cursor._repr_html_()
 
         # Check for collapsible help section

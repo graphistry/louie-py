@@ -216,7 +216,7 @@ class TestDocumentationIntegration:
         # Import real modules
         from graphistry.pygraphistry import GraphistryClient
 
-        from louieai import LouieClient
+        from louieai._client import LouieClient
 
         # Create GraphistryClient and register credentials
         graphistry_client = GraphistryClient()
