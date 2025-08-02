@@ -100,6 +100,9 @@ def test_render_graph_element_with_id():
     assert 'https://hub.graphistry.com/graph/graph.html?dataset=xyz456' in html
     assert 'width="100%"' in html
     assert 'height="600"' in html
+    # Check for links below iframes
+    assert 'Open graph in new tab' in html
+    assert 'target="_blank"' in html
 
 
 def test_render_graph_element_without_id():

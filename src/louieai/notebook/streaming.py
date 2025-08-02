@@ -141,6 +141,11 @@ class StreamingDisplay:
                     f'width="100%" height="600" '
                     f'style="border: 1px solid #ddd; border-radius: 5px;">'
                     f'</iframe>'
+                    f'<div style="text-align: center; margin-top: 5px;">'
+                    f'<a href="{iframe_url}" target="_blank" '
+                    f'style="color: #0066cc; text-decoration: none;">'
+                    f'🔗 Open graph in new tab</a>'
+                    f'</div>'
                     f'</div>'
                 )
             else:
