@@ -65,11 +65,12 @@ lui = louieai(
 ### Method 3: Using the Register Method
 
 ```python
-client = lui.LouieClient()
-client.register(
+from louieai import louie
+
+# Create client with credentials
+lui = louie(
     username="your_user",
-    password="your_pass",
-    api=3
+    password="your_pass"
 )
 ```
 

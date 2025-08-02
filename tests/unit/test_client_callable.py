@@ -37,6 +37,13 @@ class TestClientCallable:
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
         mock_auth_manager.get_token.return_value = "test-token"
 
+        # Set up credentials as dict so it's subscriptable
+        mock_auth_manager._credentials = {
+            "org_name": "test_org",
+            "username": "test_user",
+            "api": 3
+        }
+
         # Mock streaming response
         mock_stream_cm = mock_streaming_response(
             [
@@ -71,6 +78,13 @@ class TestClientCallable:
         mock_auth_manager_class.return_value = mock_auth_manager
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
         mock_auth_manager.get_token.return_value = "test-token"
+
+        # Set up credentials as dict so it's subscriptable
+        mock_auth_manager._credentials = {
+            "org_name": "test_org",
+            "username": "test_user",
+            "api": 3
+        }
 
         # Mock first response (creates thread)
         mock_stream_cm1 = mock_streaming_response(
@@ -121,6 +135,13 @@ class TestClientCallable:
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
         mock_auth_manager.get_token.return_value = "test-token"
 
+        # Set up credentials as dict so it's subscriptable
+        mock_auth_manager._credentials = {
+            "org_name": "test_org",
+            "username": "test_user",
+            "api": 3
+        }
+
         # Mock response
         mock_stream_cm = mock_streaming_response(
             [
@@ -155,6 +176,13 @@ class TestClientCallable:
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
         mock_auth_manager.get_token.return_value = "test-token"
 
+        # Set up credentials as dict so it's subscriptable
+        mock_auth_manager._credentials = {
+            "org_name": "test_org",
+            "username": "test_user",
+            "api": 3
+        }
+
         # Mock response
         mock_stream_cm = mock_streaming_response(
             [
@@ -187,6 +215,13 @@ class TestClientCallable:
         mock_auth_manager_class.return_value = mock_auth_manager
         mock_auth_manager.get_headers.return_value = {"Authorization": "Bearer test"}
         mock_auth_manager.get_token.return_value = "test-token"
+
+        # Set up credentials as dict so it's subscriptable
+        mock_auth_manager._credentials = {
+            "org_name": "test_org",
+            "username": "test_user",
+            "api": 3
+        }
 
         # Mock response
         mock_stream_cm = mock_streaming_response(

@@ -347,7 +347,7 @@ class Cursor:
             import os
 
             # Check for Louie-specific URL
-            server_url = os.environ.get("LOUIE_URL", "https://louie-dev.grph.xyz")
+            server_url = os.environ.get("LOUIE_URL", "https://den.louie.ai")
 
             # Check for credentials - support multiple auth methods
             # 1. Personal key authentication (PyGraphistry service accounts)
@@ -488,9 +488,8 @@ class Cursor:
 
             # Auto-display in Jupyter if available (only if not streaming)
             # Streaming handles its own display
-            if not (self._in_jupyter() and self._last_display_id is None):
-                if self._in_jupyter() and kwargs.get("display", True):
-                    self._display(response)
+            if not (self._in_jupyter() and self._last_display_id is None) and self._in_jupyter() and kwargs.get("display", True):
+                self._display(response)
 
             # Return self for chaining and property access
             return self

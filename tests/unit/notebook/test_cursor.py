@@ -34,7 +34,10 @@ class TestCursor:
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
-        cursor("Test query")
+
+        # Mock _in_jupyter to return False so it uses add_cell instead of streaming
+        with patch.object(cursor, "_in_jupyter", return_value=False):
+            cursor("Test query")
 
         # Should start with empty thread
         assert cursor._current_thread == "test-thread-123"
@@ -53,13 +56,15 @@ class TestCursor:
 
         cursor = Cursor(client=mock_client)
 
-        # First call creates thread
-        cursor("First query")
-        assert mock_client.add_cell.call_count == 1
+        # Mock _in_jupyter to return False so it uses add_cell instead of streaming
+        with patch.object(cursor, "_in_jupyter", return_value=False):
+            # First call creates thread
+            cursor("First query")
+            assert mock_client.add_cell.call_count == 1
 
-        # Second call reuses thread
-        cursor("Second query")
-        assert mock_client.add_cell.call_count == 2
+            # Second call reuses thread
+            cursor("Second query")
+            assert mock_client.add_cell.call_count == 2
 
         # Check calls
         calls = mock_client.add_cell.call_args_list
@@ -77,9 +82,11 @@ class TestCursor:
 
         cursor = Cursor(client=mock_client)
 
-        # Execute queries
-        resp1 = cursor("Query 1")
-        resp2 = cursor("Query 2")
+        # Mock _in_jupyter to return False so it uses add_cell instead of streaming
+        with patch.object(cursor, "_in_jupyter", return_value=False):
+            # Execute queries
+            resp1 = cursor("Query 1")
+            resp2 = cursor("Query 2")
 
         # Check history
         assert len(cursor._history) == 2
@@ -110,7 +117,10 @@ class TestCursor:
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
-        cursor("Test query")
+
+        # Mock _in_jupyter to return False so it uses add_cell instead of streaming
+        with patch.object(cursor, "_in_jupyter", return_value=False):
+            cursor("Test query")
 
         # Check traces parameter passed to client
         assert cursor._traces is False
@@ -125,15 +135,17 @@ class TestCursor:
 
         cursor = Cursor(client=mock_client)
 
-        # Query with traces enabled
-        cursor("Test query", traces=True)
-        call_kwargs = mock_client.add_cell.call_args[1]
-        assert call_kwargs["traces"] is True
+        # Mock _in_jupyter to return False so it uses add_cell instead of streaming
+        with patch.object(cursor, "_in_jupyter", return_value=False):
+            # Query with traces enabled
+            cursor("Test query", traces=True)
+            call_kwargs = mock_client.add_cell.call_args[1]
+            assert call_kwargs["traces"] is True
 
-        # Query with traces disabled explicitly
-        cursor("Test query 2", traces=False)
-        call_kwargs = mock_client.add_cell.call_args[1]
-        assert call_kwargs["traces"] is False
+            # Query with traces disabled explicitly
+            cursor("Test query 2", traces=False)
+            call_kwargs = mock_client.add_cell.call_args[1]
+            assert call_kwargs["traces"] is False
 
     def test_agent_override(self):
         """Test agent can be overridden."""
@@ -142,7 +154,10 @@ class TestCursor:
         mock_client.add_cell.return_value = mock_response
 
         cursor = Cursor(client=mock_client)
-        cursor("Test query", agent="custom")
+
+        # Mock _in_jupyter to return False so it uses add_cell instead of streaming
+        with patch.object(cursor, "_in_jupyter", return_value=False):
+            cursor("Test query", agent="custom")
 
         call_args = mock_client.add_cell.call_args[1]
         assert call_args["agent"] == "custom"
@@ -154,8 +169,10 @@ class TestCursor:
 
         cursor = Cursor(client=mock_client)
 
-        with pytest.raises(ValueError, match="API Error"):
-            cursor("Test query")
+        # Mock _in_jupyter to return False so it uses add_cell instead of streaming
+        with patch.object(cursor, "_in_jupyter", return_value=False):
+            with pytest.raises(ValueError, match="API Error"):
+                cursor("Test query")
 
     @patch("louieai.notebook.cursor.logger")
     def test_error_logging(self, mock_logger):
@@ -165,8 +182,10 @@ class TestCursor:
 
         cursor = Cursor(client=mock_client)
 
-        with pytest.raises(ValueError):
-            cursor("Test query")
+        # Mock _in_jupyter to return False so it uses add_cell instead of streaming
+        with patch.object(cursor, "_in_jupyter", return_value=False):
+            with pytest.raises(ValueError):
+                cursor("Test query")
 
         mock_logger.error.assert_called_once()
         assert "Query failed" in str(mock_logger.error.call_args)
@@ -215,10 +234,17 @@ class TestCursor:
 
         cursor = Cursor(client=mock_client)
 
+        # Mock streaming response to prevent HTTP calls
+        mock_stream_result = {
+            "dthread_id": "test-thread",
+            "elements": [{"type": "TextElement", "id": "test", "text": "test"}]
+        }
+
         # Mock in Jupyter
         with (
             patch.object(cursor, "_in_jupyter", return_value=True),
             patch.object(cursor, "_display") as mock_display,
+            patch("louieai.notebook.streaming.stream_response", return_value=mock_stream_result),
         ):
             cursor("Test query", display=False)
             mock_display.assert_not_called()

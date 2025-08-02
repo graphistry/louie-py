@@ -194,6 +194,12 @@ class MockResponse:
         """Check if response has error elements."""
         return any(e.get("type") == "ExceptionElement" for e in self.elements)
 
+    def to_dataframe(self):
+        """Return mock dataframe (for backward compatibility)."""
+        if self.type == "DfElement":
+            return MockDataFrame()
+        return None
+
 
 class MockThread:
     """Mock thread object."""
@@ -221,6 +227,29 @@ def create_mock_client():
             return super().__call__(*args, **kwargs)
 
     client = CallableMock()
+
+    # Set up authentication manager mock with proper credentials structure
+    auth_manager = Mock()
+    auth_manager._credentials = {
+        "username": "test_user",
+        "password": "test_password",
+        "api_key": "test_api_key",
+        "personal_key_id": "test_personal_key_id",
+        "personal_key_secret": "test_personal_key_secret",
+        "org_name": "test_org",
+        "api": 3,
+        "server": "test.graphistry.com"
+    }
+    auth_manager.get_token.return_value = "fake-token-123"
+    client._auth_manager = auth_manager
+
+    # Mock _get_headers method
+    def mock_get_headers():
+        return {
+            "Authorization": "Bearer fake-token-123",
+            "X-Graphistry-Org": "test-org"
+        }
+    client._get_headers = Mock(return_value=mock_get_headers())
 
     # Thread management
     thread_counter = 0

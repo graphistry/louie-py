@@ -234,7 +234,9 @@ class LouieClient:
         except Exception as e:
             import warnings
 
-            warnings.warn(f"Failed to fetch dataframe {block_id}: {e}", RuntimeWarning, stacklevel=2)
+            warnings.warn(
+                f"Failed to fetch dataframe {block_id}: {e}", RuntimeWarning, stacklevel=2
+            )
             return None
 
     def _get_headers(self) -> dict[str, str]:

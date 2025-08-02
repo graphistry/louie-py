@@ -391,7 +391,7 @@ export LOUIE_STREAMING_TIMEOUT=180
 Or configure them when creating a client:
 
 ```python
-from louieai import LouieClient
+from louieai._client import LouieClient
 from louieai.notebook import Cursor
 
 # Create client with custom timeouts
