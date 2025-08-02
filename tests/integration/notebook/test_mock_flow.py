@@ -56,11 +56,16 @@ def create_mock_response(thread_id="test-123", **kwargs):
 class TestElementDiscovery:
     """Test discovery of different element types."""
 
+    @patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=False)
     @patch("louieai.notebook.cursor.LouieClient")
-    def test_text_elements(self, mock_client_class, output_dir):
+    def test_text_elements(self, mock_client_class, mock_jupyter, output_dir):
         """Test handling of text elements."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
+
+        # Mock the _get_headers method to return a proper dict
+        mock_client._get_headers.return_value = {"Authorization": "Bearer fake-token"}
+        mock_client.server_url = "https://test.louie.ai"
 
         # Create response with text
         response = create_mock_response(
@@ -90,11 +95,16 @@ class TestElementDiscovery:
                 indent=2,
             )
 
+    @patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=False)
     @patch("louieai.notebook.cursor.LouieClient")
-    def test_dataframe_elements(self, mock_client_class, output_dir):
+    def test_dataframe_elements(self, mock_client_class, mock_jupyter, output_dir):
         """Test handling of dataframe elements."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
+
+        # Mock the _get_headers method to return a proper dict
+        mock_client._get_headers.return_value = {"Authorization": "Bearer fake-token"}
+        mock_client.server_url = "https://test.louie.ai"
 
         # Create sample dataframes
         df1 = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
@@ -136,11 +146,16 @@ class TestElementDiscovery:
                 default=str,
             )
 
+    @patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=False)
     @patch("louieai.notebook.cursor.LouieClient")
-    def test_graph_elements(self, mock_client_class, output_dir):
+    def test_graph_elements(self, mock_client_class, mock_jupyter, output_dir):
         """Test handling of graph elements."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
+
+        # Mock the _get_headers method to return a proper dict
+        mock_client._get_headers.return_value = {"Authorization": "Bearer fake-token"}
+        mock_client.server_url = "https://test.louie.ai"
 
         response = create_mock_response(
             graph_elements=[
@@ -173,11 +188,16 @@ class TestElementDiscovery:
                 indent=2,
             )
 
+    @patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=False)
     @patch("louieai.notebook.cursor.LouieClient")
-    def test_markdown_elements(self, mock_client_class, output_dir):
+    def test_markdown_elements(self, mock_client_class, mock_jupyter, output_dir):
         """Test handling of markdown elements."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
+
+        # Mock the _get_headers method to return a proper dict
+        mock_client._get_headers.return_value = {"Authorization": "Bearer fake-token"}
+        mock_client.server_url = "https://test.louie.ai"
 
         # Try markdown elements (may not exist yet)
         response = create_mock_response(
@@ -208,11 +228,16 @@ class TestElementDiscovery:
                 indent=2,
             )
 
+    @patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=False)
     @patch("louieai.notebook.cursor.LouieClient")
-    def test_all_element_types(self, mock_client_class, output_dir):
+    def test_all_element_types(self, mock_client_class, mock_jupyter, output_dir):
         """Discover all element types supported by Response."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
+
+        # Mock the _get_headers method to return a proper dict
+        mock_client._get_headers.return_value = {"Authorization": "Bearer fake-token"}
+        mock_client.server_url = "https://test.louie.ai"
 
         # Create a real Response object to inspect
         from louieai import Response

@@ -230,8 +230,14 @@ class LouieClient:
             response.raise_for_status()
 
             # Parse Arrow format
-            reader = pa.ipc.open_stream(response.content)
-            table = reader.read_all()
+            # Try file format first (most common), then stream format
+            try:
+                reader = pa.ipc.open_file(response.content)
+                table = reader.read_all()
+            except Exception:
+                # Fallback to stream format
+                reader = pa.ipc.open_stream(response.content)
+                table = reader.read_all()
 
             # Convert to pandas
             df = table.to_pandas()

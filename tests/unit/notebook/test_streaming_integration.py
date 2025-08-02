@@ -65,12 +65,13 @@ class TestStreamingIntegration:
             mock_httpx_instance.stream.return_value = mock_stream_cm
             mock_httpx.return_value.__enter__.return_value = mock_httpx_instance
 
-            # Mock IPython display functions
+            # Mock IPython display functions AND ensure we're in Jupyter mode
             with (
                 patch("louieai.notebook.streaming.HAS_IPYTHON", True),
                 patch("louieai.notebook.streaming.clear_output") as mock_clear,
                 patch("louieai.notebook.streaming.display") as mock_display,
                 patch("louieai.notebook.streaming.HTML") as mock_html,
+                patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=True),
             ):
                 # Create cursor with mocked auth
                 lui = louie(graphistry_client=mock_graphistry)
@@ -125,6 +126,7 @@ class TestStreamingIntegration:
             with (
                 patch("louieai.notebook.streaming.HAS_IPYTHON", True),
                 patch("louieai.notebook.streaming.HTML") as mock_html,
+                patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=True),
             ):
                 lui = louie(graphistry_client=mock_graphistry)
 
@@ -153,6 +155,7 @@ class TestStreamingIntegration:
                 patch("louieai.notebook.streaming.HAS_IPYTHON", True),
                 patch("louieai.notebook.streaming.HTML") as mock_html,
                 patch("louieai.notebook.streaming.update_display"),
+                patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=True),
             ):
                 lui = louie(graphistry_client=mock_graphistry)
 
@@ -230,6 +233,7 @@ class TestStreamingIntegration:
                 ),
                 patch("louieai.notebook.streaming.display"),
                 patch("louieai.notebook.streaming.HTML"),
+                patch("louieai.notebook.cursor.Cursor._in_jupyter", return_value=True),
             ):
                 lui = louie(graphistry_client=mock_graphistry)
 
