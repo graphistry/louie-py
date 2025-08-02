@@ -118,6 +118,7 @@ def create_test_namespace(client):
         "open": Mock(return_value=mock_file),
         "client": client,
         "thread": thread,
+        "thread_id": thread.id,  # Add thread_id for code examples
         "response": response,
         "response1": response1,
         "response2": response2,
@@ -159,6 +160,8 @@ class TestDocumentation:
         mock_lui.elements = []
         mock_lui.errors = []
         mock_lui.has_errors = False
+        mock_lui._client = client  # Add the client reference
+        mock_lui.traces = False  # Add traces property
 
         # Mock lui as callable
         def mock_lui_call(*args, **kwargs):
@@ -166,13 +169,22 @@ class TestDocumentation:
 
         mock_lui.side_effect = mock_lui_call
 
+        # Create mock louie function that returns mock_lui
+        def mock_louie_factory(*args, **kwargs):
+            return mock_lui
+        
         # Mock imports
         with patch.dict(
             "sys.modules",
             {
                 "graphistry": namespace["graphistry"],
-                "louieai": Mock(LouieClient=Mock(return_value=client)),
+                "louieai": Mock(
+                    LouieClient=Mock(return_value=client),
+                    louie=mock_louie_factory,
+                    Cursor=Mock
+                ),
                 "louieai.notebook": Mock(lui=mock_lui),
+                "louieai.globals": Mock(lui=mock_lui),
                 "pandas": pd,
             },
         ):
@@ -246,17 +258,26 @@ def test_documentation_file(doc_file):
         code = preprocess_code(code)
 
         # Create a comprehensive mock lui object
-        mock_lui = _create_comprehensive_mock_lui()
+        mock_lui = _create_comprehensive_mock_lui(client)
 
         # Add lui to namespace for notebook API code
         namespace["lui"] = mock_lui
 
+        # Create mock louie factory that returns mock_lui
+        def mock_louie_factory(*args, **kwargs):
+            return mock_lui
+            
         with patch.dict(
             "sys.modules",
             {
                 "graphistry": namespace["graphistry"],
-                "louieai": Mock(LouieClient=Mock(return_value=client)),
+                "louieai": Mock(
+                    LouieClient=Mock(return_value=client),
+                    louie=mock_louie_factory,
+                    Cursor=Mock
+                ),
                 "louieai.notebook": Mock(lui=mock_lui),
+                "louieai.globals": Mock(lui=mock_lui),
                 "pandas": pd,
             },
         ):
@@ -272,9 +293,14 @@ def test_documentation_file(doc_file):
         pytest.fail(msg)
 
 
-def _create_comprehensive_mock_lui():
+def _create_comprehensive_mock_lui(client=None):
     """Create a comprehensive mock lui object that works like the real one."""
     mock_lui = Mock()
+    
+    # Create client if not provided
+    if client is None:
+        client = create_mock_client()
+    mock_lui._client = client
 
     # Basic attributes
     mock_lui.text = "Mocked text response"
@@ -294,6 +320,7 @@ def _create_comprehensive_mock_lui():
     mock_lui.elements = []
     mock_lui.errors = []
     mock_lui.has_errors = False
+    mock_lui.traces = False
 
     # Make lui callable
     def mock_lui_call(*args, **kwargs):

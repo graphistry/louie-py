@@ -1,107 +1,121 @@
-# LouieClient
+# Client API (Advanced)
 
-The main client class for interacting with the Louie.ai service.
+> **Note**: For most users, we recommend using the [Notebook API](notebook.md) with the `lui` interface. This page documents the lower-level client API for advanced use cases.
 
-## API Documentation
+## Overview
 
-::: louieai._client.LouieClient
+The LouieClient is the core class that handles communication with the Louie.ai service. While it's now an internal class (`louieai._client.LouieClient`), you can still access its functionality through the public API.
 
-## Usage Examples
+## Creating a Client
 
-### Thread-Based Conversations
+### Using the louie() Factory (Recommended)
 
 ```python
-from louieai._client import LouieClient
+from louieai import louie
 import graphistry
 
 # First authenticate with Graphistry
 graphistry.register(api=3, username="your_user", password="your_pass")
 
-# Create client
-client = LouieClient()
+# Create a callable cursor
+lui = louie()
 
-# Start a new thread with a query
-thread = client.create_thread(
-    name="Network Analysis",
-    initial_prompt="Analyze the network patterns in my dataset"
-)
-
-# Continue analysis in the same thread
-response = client.add_cell(
-    thread.id,
-    "Focus on the largest connected component"
-)
-
-# Response types vary based on the query
-if response.type == "TextElement":
-    print(response.text)
-elif response.type == "GraphElement":
-    print(f"Visualization available at: {response.dataset_id}")
+# Use it like the notebook API
+response = lui("Analyze the network patterns in my dataset")
+print(lui.text)
 ```
 
-### Simple One-Shot Queries
+### Direct Instantiation (Advanced)
+
+For advanced use cases where you need direct access to the client:
 
 ```python
-# For quick queries without maintaining thread context
-response = client.add_cell("", "Summarize the key findings")
+from louieai import louie
+import graphistry
 
-# Or use the new callable interface (v0.2.0+)
-response = client("Summarize the key findings")
-print(response.text_elements[0]['content'])
+# Authenticate and get graphistry client
+g = graphistry.register(api=3, username="your_user", password="your_pass")
+
+# Create cursor with specific configuration
+lui = louie(g)
+
+# Access the underlying client if needed
+client = lui._client  # Note: This is accessing internal API
 ```
 
-### Callable Interface (New in v0.2.0)
+## Thread Management
 
-LouieClient instances can now be called directly, providing a more ergonomic API:
+### Using the Cursor API
 
 ```python
-# Create client
-client = LouieClient()
+from louieai import louie
 
-# Call it like a function
-response = client("What patterns do you see in the data?")
+# Create cursor
+lui = louie()
 
-# Thread context is maintained automatically
-response2 = client("Tell me more about the anomalies")  # Same thread
+# Threads are managed automatically
+lui("Start analyzing the network data")
+thread_id = lui._client._current_thread_id  # Access current thread
 
-# Or specify a thread explicitly
-response3 = client("New topic", thread_id="custom_thread_id")
+# Continue in same thread
+lui("Focus on the largest connected component")
 
-# Enable traces for debugging
-response4 = client("Complex analysis", traces=True)
+# Start a new thread
+lui("", display=False)  # Empty query creates new thread
+lui("New topic here")
 ```
 
-### Custom Server URL
+### Low-Level Thread Operations
+
+If you need direct thread control:
 
 ```python
-# Use a different Louie.ai endpoint
-client = LouieClient(server_url="https://custom.louie.ai")
-```
+from louieai import louie
+lui = louie()
 
-### Managing Threads
+# Access the internal client
+client = lui._client
 
-```python
-# List existing threads
-threads = client.list_threads(page_size=10)
+# List threads
+threads = client.list_threads()
 for thread in threads:
     print(f"{thread.id}: {thread.name}")
 
-# Continue an existing thread
-if threads:
-    response = client.add_cell(
-        threads[0].id,
-        "What were the main conclusions?"
-    )
+# Get specific thread
+thread = client.get_thread(thread_id)
 ```
 
-### Error Handling
+## Response Handling
+
+Responses are automatically parsed and made available through the cursor interface:
 
 ```python
+from louieai import louie
+lui = louie()
+
+# Make a query
+lui("Generate a summary report of the data")
+
+# Access different response types
+if lui.text:
+    print("Text response:", lui.text)
+
+if lui.df is not None:
+    print("DataFrame shape:", lui.df.shape)
+
+# Access raw response elements
+for element in lui.elements:
+    print(f"Element type: {element['type']}")
+```
+
+## Error Handling
+
+```python
+from louieai import louie
+lui = louie()
+
 try:
-    thread = client.create_thread(
-        initial_prompt="Query the sales database"
-    )
-    response = client.add_cell(thread.id, "Show top customers")
+    lui("Query the sales database")
 except RuntimeError as e:
     if "No Graphistry API token" in str(e):
         print("Please authenticate with graphistry.register() first")
@@ -111,16 +125,69 @@ except RuntimeError as e:
         print(f"Network error: {e}")
 ```
 
-## Common Issues
+## Configuration Options
 
-### Authentication Errors
+### Custom Server URL
 
-If you see "No Graphistry API token found", ensure you've called `graphistry.register()` with valid credentials before creating the LouieClient.
+```python
+from louieai import louie
 
-### Network Errors
+# Use a custom Louie server
+lui = louie(server_url="https://custom.louie.ai")
+```
 
-Network errors are wrapped in `RuntimeError` with descriptive messages. Check your internet connection and verify the server URL is accessible.
+### Authentication Methods
 
-### API Errors
+```python
+from louieai import louie
 
-HTTP errors from the API include the status code and any error message from the server response.
+# Username/Password
+lui = louie(username="user", password="pass")
+
+# Personal Key (Service Account)
+lui = louie(
+    personal_key_id="pk_123",
+    personal_key_secret="sk_456",
+    org_name="my-org"
+)
+
+# API Key (Legacy)
+lui = louie(api_key="your_api_key")
+```
+
+### Trace Control
+
+```python
+from louieai import louie
+lui = louie()
+
+# Enable traces for debugging
+lui.traces = True
+lui("Complex analysis query")
+
+# Or per-query
+lui("Another query", traces=True)
+```
+
+## Migration from Direct LouieClient
+
+If you have code using the old `LouieClient` directly:
+
+```python
+# Old way (no longer public)
+# from louieai import LouieClient
+# client = LouieClient()
+# response = client.add_cell("", "Query")
+
+# New way
+from louieai import louie
+lui = louie()
+lui("Query")
+response = lui._response  # If you need the raw response
+```
+
+## See Also
+
+- [Notebook API Reference](notebook.md) - Recommended high-level API
+- [Response Types](response-types.md) - Understanding response formats
+- [Authentication Guide](../guides/authentication.md) - Detailed auth setup
