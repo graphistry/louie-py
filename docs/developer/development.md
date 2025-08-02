@@ -189,9 +189,6 @@ We provide intelligent wrapper scripts that mirror CI exactly with sensible defa
 The project includes validation for `.readthedocs.yml` to catch configuration errors before they reach ReadTheDocs:
 
 ```bash
-# Validate ReadTheDocs config
-./scripts/validate-readthedocs.sh
-
 # Test validation with known errors
 ./scripts/test-rtd-validation.sh
 ```
@@ -349,17 +346,17 @@ pre-commit run --all-files
 ./scripts/test-env-check.sh
 
 # Common issue: global Python being used instead of venv
-# Solution 1: Always use uv run
-uv run python --version          # Should show 3.12.x
-uv run pytest                    # Correct way to run tests
+# Solution 1: Always use ./bin/uv run  
+./bin/uv run python --version    # Should show 3.12.x
+./bin/uv run pytest              # Correct way to run tests
 
 # Solution 2: Use python -m pattern
-uv run python -m pytest          # Even more explicit
+./bin/uv run python -m pytest    # Even more explicit
 
 # Solution 3: Reset environment if corrupted
 rm -rf .venv
 uv venv --python 3.12
-uv sync
+uv pip install -e ".[dev]"
 ```
 
 **Other Environment Issues:**
