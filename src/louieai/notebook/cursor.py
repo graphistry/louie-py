@@ -430,6 +430,19 @@ class Cursor:
         self._traces = value
 
     @property
+    def thread_id(self) -> str | None:
+        """Get the current thread ID."""
+        return self._current_thread
+
+    @property
+    def url(self) -> str | None:
+        """Get the URL for the current thread."""
+        if not self._current_thread:
+            return None
+        base_url = self._client.server_url.rstrip('/')
+        return f"{base_url}/threads/{self._current_thread}"
+
+    @property
     def df(self) -> pd.DataFrame | None:
         """Latest dataframe or None."""
         dfs = self.dfs
