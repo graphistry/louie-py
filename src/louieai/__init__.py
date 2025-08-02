@@ -202,8 +202,11 @@ class CallableModule(types.ModuleType):
     """A module that can be called like a function."""
 
     def __init__(self, module):
-        self.__dict__.update(module.__dict__)
-        super().__init__(module.__name__)
+        if module is not None:
+            self.__dict__.update(module.__dict__)
+            super().__init__(module.__name__)
+        else:
+            super().__init__(__name__)
 
     def __call__(self, *args, **kwargs):
         return louie(*args, **kwargs)
