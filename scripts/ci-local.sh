@@ -80,6 +80,13 @@ print_step "Validate ReadTheDocs config"
 ./scripts/validate-readthedocs.sh || print_error "ReadTheDocs config is invalid"
 print_success "ReadTheDocs config valid"
 
+print_step "Building documentation with MkDocs (including notebooks)"
+# Install docs dependencies
+./bin/uv pip install -r requirements-docs.txt > /dev/null 2>&1 || print_error "Failed to install docs dependencies"
+# Build the docs
+./bin/uv run mkdocs build --strict > /dev/null || print_error "Documentation build failed"
+print_success "Documentation built successfully"
+
 echo ""
 echo -e "${GREEN}🎉 All CI checks passed! Ready for push/PR${NC}"
 echo "================================================"
