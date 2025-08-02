@@ -128,7 +128,7 @@ Ready to dive deeper? These guides cover common use cases and advanced features:
 - **[Query Patterns](guides/query-patterns.md)** - Advanced query techniques and best practices
 - **[Authentication Guide](guides/authentication.md)** - Multi-tenant usage, API keys, and troubleshooting
 - **[Agent Selection](guides/agent-selection.md)** - How to choose and use different agents
-- **[Interactive Notebooks](getting-started/notebooks/)** - Hands-on Jupyter notebook examples
+- **[Interactive Notebooks](getting-started/notebooks/01-getting-started.ipynb)** - Hands-on Jupyter notebook examples
 
 ## API Reference
 
