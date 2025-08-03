@@ -463,11 +463,11 @@ class LouieClient:
             if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
                 # Check for df_id, block_id, or id (including nested data)
                 df_id = elem.get("df_id") or elem.get("block_id")
-                
+
                 # Check nested data field if exists
                 if not df_id and isinstance(elem.get("data"), dict):
                     df_id = elem["data"].get("df_id") or elem["data"].get("block_id")
-                
+
                 # Fall back to element ID if no specific df_id found
                 if not df_id:
                     df_id = elem.get("id")
