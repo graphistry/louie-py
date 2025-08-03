@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-08-03
+
+### Fixed
+- Fixed Databricks DataFrame population bug where `lui.df` returned None after DatabricksPassthroughAgent queries
+- Enhanced DataFrame ID extraction to support nested `data.df_id` structures from various agents
+- Added support for more DataFrame element type variations (DataFrame, dataframe)
+- Improved error logging with thread ID, URL, and full element context for better debugging
+
 ## [0.5.0] - 2025-08-03
 
 ### Added
