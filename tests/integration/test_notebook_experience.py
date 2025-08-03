@@ -48,10 +48,13 @@ class TestNotebookExperience:
 
         mock_client.add_cell.side_effect = [mock_response1, mock_response2]
 
-        # Create cursor using factory function with patched client
-        with patch("louieai._client.LouieClient", return_value=mock_client):
-            lui = louie(graphistry_client=MagicMock())
+        # Create cursor with our mock client
+        from louieai.notebook.cursor import Cursor
 
+        lui = Cursor(client=mock_client)
+
+        # Mock to avoid streaming in tests
+        with patch.object(lui, "_in_jupyter", return_value=False):
             # First query - returns cursor, not Response
             result1 = lui("sing me a song")
             assert result1 is lui
@@ -65,16 +68,16 @@ class TestNotebookExperience:
             result2 = lui("show me some data")
             assert result2 is lui
 
-            # Can access both text and dataframe
-            assert lui.text == "Here's your data analysis:"
-            assert lui.df is not None
-            assert isinstance(lui.df, pd.DataFrame)
-            assert len(lui.df) == 3
+        # Can access both text and dataframe
+        assert lui.text == "Here's your data analysis:"
+        assert lui.df is not None
+        assert isinstance(lui.df, pd.DataFrame)
+        assert len(lui.df) == 3
 
-            # History access works
-            # lui[-1] gives ResponseProxy for the latest response
-            assert lui[-1].text == "Here's your data analysis:"
-            assert lui[-2].text == "Here's a song for you:\n\nTwinkle twinkle little star"
+        # History access works
+        # lui[-1] gives ResponseProxy for the latest response
+        assert lui[-1].text == "Here's your data analysis:"
+        assert lui[-2].text == ("Here's a song for you:\n\nTwinkle twinkle little star")
 
     def test_notebook_display_modes(self):
         """Test different display scenarios in notebooks."""
@@ -142,11 +145,15 @@ class TestNotebookExperience:
         )
         mock_client.add_cell.return_value = mock_response
 
-        lui = louie(graphistry_client=MagicMock())
-        lui._client = mock_client
+        # Create cursor with our mock client
+        from louieai.notebook.cursor import Cursor
 
-        # Query with error
-        result = lui("complex query")
+        lui = Cursor(client=mock_client)
+
+        # Mock to avoid streaming in tests
+        with patch.object(lui, "_in_jupyter", return_value=False):
+            # Query with error
+            result = lui("complex query")
 
         # Should still return cursor
         assert result is lui
