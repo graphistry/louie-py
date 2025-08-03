@@ -178,7 +178,9 @@ class TestDataFrameFetching:
             mock_httpx.return_value = mock_httpx_instance
 
             # Spy on _fetch_dataframe_arrow - return None to simulate failed fetch
-            with patch.object(client, "_fetch_dataframe_arrow", return_value=None) as mock_fetch:
+            with patch.object(
+                client, "_fetch_dataframe_arrow", return_value=None
+            ) as mock_fetch:
                 response = client.add_cell("", "Test query")
 
                 # Should have tried to fetch but got None

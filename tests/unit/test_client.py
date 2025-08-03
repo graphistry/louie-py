@@ -187,7 +187,7 @@ class TestLouieClient:
             mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
             mock_client_instance.__exit__ = Mock(return_value=None)
             mock_client_class.return_value = mock_client_instance
-            
+
             response = client.add_cell("D_test001", "What is 2+2?")
 
         assert response.thread_id == "D_test001"
@@ -324,7 +324,9 @@ class TestLouieClient:
         ):
             # Handle both direct instantiation and context manager usage
             mock_client_instance = Mock()
-            mock_client_instance.stream.side_effect = mock_httpx_client.stream.side_effect
+            mock_client_instance.stream.side_effect = (
+                mock_httpx_client.stream.side_effect
+            )
             mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
             mock_client_instance.__exit__ = Mock(return_value=None)
             mock_client_class.return_value = mock_client_instance
@@ -344,7 +346,7 @@ class TestLouieClient:
 
         # Store mock_client_instance outside the with block
         mock_client_instance = None
-        
+
         with patch("louieai._client.httpx.Client") as mock_client_class:
             # Handle both direct instantiation and context manager usage
             mock_client_instance = Mock()

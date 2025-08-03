@@ -29,8 +29,11 @@ class TestStreamingResponse:
         with patch("httpx.Client") as mock_httpx:
             # Handle both direct instantiation and context manager usage
             mock_client_instance = MagicMock()
-            mock_client_instance.stream.return_value.__enter__.return_value = mock_response
-            mock_client_instance.__enter__ = MagicMock(return_value=mock_client_instance)
+            mock_stream = mock_client_instance.stream.return_value
+            mock_stream.__enter__.return_value = mock_response
+            mock_client_instance.__enter__ = MagicMock(
+                return_value=mock_client_instance
+            )
             mock_client_instance.__exit__ = MagicMock(return_value=None)
             mock_httpx.return_value = mock_client_instance
 
@@ -71,8 +74,11 @@ class TestStreamingResponse:
         with patch("httpx.Client") as mock_httpx:
             # Handle both direct instantiation and context manager usage
             mock_client_instance = MagicMock()
-            mock_client_instance.stream.return_value.__enter__.return_value = mock_response
-            mock_client_instance.__enter__ = MagicMock(return_value=mock_client_instance)
+            mock_stream = mock_client_instance.stream.return_value
+            mock_stream.__enter__.return_value = mock_response
+            mock_client_instance.__enter__ = MagicMock(
+                return_value=mock_client_instance
+            )
             mock_client_instance.__exit__ = MagicMock(return_value=None)
             mock_httpx.return_value = mock_client_instance
 
