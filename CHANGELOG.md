@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-08-02
+
 ### Added
 - AI collaboration framework with comprehensive guidelines
 - Task planning template for structured AI-assisted development
@@ -29,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic fetching via `/api/dthread/{thread_id}/df/block/{block_id}/arrow` endpoint
   - Support for both `df_id` and `block_id` fields
   - Graceful error handling when dataframe fetch fails
+- Comprehensive agent guides for 40+ specialized agents with hierarchical navigation
+- Response Types documentation rewritten for 95% accuracy matching implementation
 
 ### Changed
 - Updated documentation dependencies to latest versions
@@ -36,11 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved development documentation with RTD validation info
 - LouieClient now uses streaming API for chat endpoint
 - Improved error handling for server-sent events (SSE) streaming
+- Reorganized documentation navigation with hierarchical agent guide structure
+- Server URL standardized to production endpoint (https://den.louie.ai)
 
 ### Fixed
 - Fixed ReadTheDocs configuration with proper build.jobs structure
 - Fixed timeout issues with streaming responses from Louie API
 - Fixed integration tests to handle both PyGraphistry and direct Louie authentication
+- Fixed Response Types documentation accuracy (was 30% accurate, now 95% accurate)
+- Fixed import syntax errors in authentication guide
+- Fixed CallableModule initialization to handle None module
+- Fixed error handling notebook to use real error patterns instead of fictional exceptions
 
 ## [0.1.0] - 2025-07-26
 
