@@ -247,10 +247,13 @@ class LouieClient:
             import warnings
 
             warnings.warn(
-                f"Failed to fetch dataframe {block_id}: {e}",
+                f"Failed to fetch dataframe {block_id} from thread {thread_id}. "
+                f"URL: {url if 'url' in locals() else 'not constructed'}. "
+                f"Error: {type(e).__name__}: {e}",
                 RuntimeWarning,
                 stacklevel=2,
             )
+            logger.debug("Full error details: ", exc_info=True)
             return None
 
     def _get_headers(self) -> dict[str, str]:
@@ -457,9 +460,17 @@ class LouieClient:
 
         # Fetch dataframes for any DfElements
         for elem in result["elements"]:
-            if elem.get("type") in ["DfElement", "df"]:
-                # Check for df_id, block_id, or id
-                df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
+            if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
+                # Check for df_id, block_id, or id (including nested data)
+                df_id = elem.get("df_id") or elem.get("block_id")
+
+                # Check nested data field if exists
+                if not df_id and isinstance(elem.get("data"), dict):
+                    df_id = elem["data"].get("df_id") or elem["data"].get("block_id")
+
+                # Fall back to element ID if no specific df_id found
+                if not df_id:
+                    df_id = elem.get("id")
                 if df_id:
                     # Fetch the actual dataframe via Arrow
                     df = self._fetch_dataframe_arrow(actual_thread_id, df_id)
@@ -467,7 +478,8 @@ class LouieClient:
                         elem["table"] = df
                     else:
                         logger.warning(
-                            f"Failed to fetch dataframe {df_id} for DfElement"
+                            f"Failed to fetch dataframe {df_id} from thread "
+                            f"{actual_thread_id} for DfElement. Element: {elem}"
                         )
                 else:
                     logger.warning(f"DfElement missing identifier: {elem}")
