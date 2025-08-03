@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-08-03
+
+### Added
+- Python 3.13 support with CI matrix testing
+- CI scripts for formatting, linting, type checking, and testing
+- Comprehensive test coverage improvements (from ~30% to 86%)
+- Additional unit tests for edge cases and error handling
+- Session-scoped fixture to prevent global cursor initialization in tests
+
+### Changed
+- Improved test isolation to prevent network connections during CI runs
+- Enhanced mock patterns for httpx.Client to handle both direct instantiation and context manager usage
+- Simplified CallableModule test for Python 3.13 compatibility
+
+### Fixed
+- Fixed httpx.Client mocking pattern across multiple test files
+- Fixed integration tests that were attempting real network connections
+- Fixed performance test thresholds for CI environment
+- Fixed test_client_callable.py mock reference errors
+- Fixed dataframe fetching test to properly test "no df_id" case
+- Fixed documentation example test that required authentication
+
 ## [0.4.0] - 2025-08-02
 
 ### Added
