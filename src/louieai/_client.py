@@ -303,7 +303,7 @@ class LouieClient:
         result: dict[str, Any] = {"dthread_id": None, "elements": []}
 
         # Track elements by ID to handle streaming updates
-        elements_by_id = {}
+        elements_by_id: dict[str, dict[str, Any]] = {}
 
         for line in response_text.strip().split("\n"):
             if not line:
@@ -320,8 +320,28 @@ class LouieClient:
                     elem = data["payload"]
                     elem_id = elem.get("id")
                     if elem_id:
-                        # Update or add element
-                        elements_by_id[elem_id] = elem
+                        # For text elements, merge content to handle incremental updates
+                        if elem_id in elements_by_id and elem.get("type") in [
+                            "TextElement",
+                            "text",
+                        ]:
+                            existing = elements_by_id[elem_id]
+                            # Merge text content fields, preferring new content
+                            # but preserving incremental updates
+                            for field in ["content", "text", "value"]:
+                                if elem.get(field):
+                                    existing[field] = elem[field]
+                            # Update other fields
+                            existing.update(
+                                {
+                                    k: v
+                                    for k, v in elem.items()
+                                    if k not in ["content", "text", "value"]
+                                }
+                            )
+                        else:
+                            # Update or add element
+                            elements_by_id[elem_id] = elem
 
             except json.JSONDecodeError:
                 continue
@@ -409,25 +429,41 @@ class LouieClient:
                 response.raise_for_status()
 
                 # Collect streaming lines
+                last_activity = start_time
                 try:
                     for line in response.iter_lines():
                         if line:
                             response_text += line + "\n"
                             lines_received += 1
+                            last_activity = time.time()
 
                             # Keep reading all elements until stream ends
                             # Don't break early just because we got a text element
 
-                        # Safety timeout - use configured timeout
-                        if time.time() - start_time > self._timeout:
+                        # Only timeout if no activity for streaming_timeout duration
+                        # Allow total_timeout for overall request
+                        # but don't break active streams
+                        time_since_activity = time.time() - last_activity
+                        if time_since_activity > self._streaming_timeout:
+                            logger.warning(
+                                f"Streaming timeout after {time_since_activity:.1f}s "
+                                f"of inactivity. "
+                                f"Received {lines_received} lines. "
+                                f"This may result in truncated responses."
+                            )
                             break
 
                 except httpx.ReadTimeout as e:
                     elapsed = time.time() - start_time
-                    # This is expected - the server keeps the connection open
-                    # If we have at least 2 lines, that's a valid response
-                    if lines_received >= 2:
-                        pass
+                    # Accept any response with at least the thread ID line
+                    # Don't require minimum line count that could drop
+                    # valid short responses
+                    if lines_received >= 1:
+                        logger.debug(
+                            f"ReadTimeout after {elapsed:.1f}s with "
+                            f"{lines_received} lines received. "
+                            f"Treating as complete response."
+                        )
                     else:
                         raise RuntimeError(
                             f"Louie API timeout after {elapsed:.1f}s waiting for "
