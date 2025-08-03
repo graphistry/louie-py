@@ -2,9 +2,6 @@
 
 from unittest.mock import Mock
 
-import pytest
-
-from louieai import louie  # Import to ensure module is loaded
 from louieai.__init__ import _extract_org_name_from_graphistry
 
 
@@ -18,12 +15,10 @@ class TestExtractOrgNameFromGraphistry:
         mock_client._credentials = None
         mock_client._auth_manager = None
         mock_client._org_name = None
-        
+
         # Set up get_auth_info to return org
-        mock_client.get_auth_info.return_value = {
-            "org_name": "test-org-from-auth-info"
-        }
-        
+        mock_client.get_auth_info.return_value = {"org_name": "test-org-from-auth-info"}
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result == "test-org-from-auth-info"
 
@@ -36,7 +31,7 @@ class TestExtractOrgNameFromGraphistry:
         mock_client.get_auth_info.side_effect = Exception("Auth error")
         # Also make org_name fail
         del mock_client.org_name
-        
+
         # Should not raise, just continue to next method
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
@@ -48,10 +43,10 @@ class TestExtractOrgNameFromGraphistry:
         mock_client._auth_manager = None
         mock_client._org_name = None
         mock_client.get_auth_info.side_effect = Exception("No auth info")
-        
+
         # Set up org_name as callable
         mock_client.org_name = Mock(return_value="test-org-from-method")
-        
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result == "test-org-from-method"
 
@@ -59,11 +54,11 @@ class TestExtractOrgNameFromGraphistry:
         """Test org_name() method that raises exception."""
         mock_client = Mock()
         mock_client._credentials = None
-        mock_client._auth_manager = None  
+        mock_client._auth_manager = None
         mock_client._org_name = None
         mock_client.get_auth_info.side_effect = Exception("No auth info")
         mock_client.org_name = Mock(side_effect=Exception("Org error"))
-        
+
         # Should not raise, just return None
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
@@ -77,7 +72,7 @@ class TestExtractOrgNameFromGraphistry:
         # Remove the methods entirely
         del mock_client.get_auth_info
         del mock_client.org_name
-        
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
 
@@ -87,12 +82,10 @@ class TestExtractOrgNameFromGraphistry:
         mock_client._credentials = None
         mock_client._auth_manager = None
         mock_client._org_name = None
-        mock_client.get_auth_info.return_value = {
-            "org_name": "<MagicMock id='123'>"
-        }
+        mock_client.get_auth_info.return_value = {"org_name": "<MagicMock id='123'>"}
         # Also remove org_name to prevent fallback
         del mock_client.org_name
-        
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
 
@@ -104,7 +97,7 @@ class TestExtractOrgNameFromGraphistry:
         mock_client._org_name = None
         mock_client.get_auth_info.side_effect = Exception("No auth info")
         mock_client.org_name = Mock(return_value="<MagicMock id='456'>")
-        
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
 
@@ -116,7 +109,7 @@ class TestExtractOrgNameFromGraphistry:
         mock_client._org_name = None
         mock_client.get_auth_info.return_value = "not a dict"
         del mock_client.org_name
-        
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
 
@@ -128,7 +121,7 @@ class TestExtractOrgNameFromGraphistry:
         mock_client._org_name = None
         mock_client.get_auth_info.return_value = {"other_field": "value"}
         del mock_client.org_name
-        
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
 
@@ -140,7 +133,7 @@ class TestExtractOrgNameFromGraphistry:
         mock_client._org_name = None
         mock_client.get_auth_info.return_value = {"org_name": ""}
         del mock_client.org_name
-        
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
 
@@ -152,6 +145,6 @@ class TestExtractOrgNameFromGraphistry:
         mock_client._org_name = None
         mock_client.get_auth_info.side_effect = Exception("No auth info")
         mock_client.org_name = Mock(return_value="")
-        
+
         result = _extract_org_name_from_graphistry(mock_client)
         assert result is None
