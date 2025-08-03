@@ -57,7 +57,12 @@ class TestClientCallable:
         mock_httpx_client.stream.return_value = mock_stream_cm
 
         # Make httpx.Client return our mock
-        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
+        # Handle both direct instantiation and context manager usage
+        mock_client_instance = Mock()
+        mock_client_instance.stream.return_value = mock_stream_cm
+        mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+        mock_client_instance.__exit__ = Mock(return_value=None)
+        mock_httpx_class.return_value = mock_client_instance
 
         # Create client and call it
         client = LouieClient()
@@ -108,7 +113,12 @@ class TestClientCallable:
         mock_httpx_client.stream.side_effect = [mock_stream_cm1, mock_stream_cm2]
 
         # Make httpx.Client return our mock
-        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
+        # Handle both direct instantiation and context manager usage
+        mock_client_instance = Mock()
+        mock_client_instance.stream.side_effect = [mock_stream_cm1, mock_stream_cm2]
+        mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+        mock_client_instance.__exit__ = Mock(return_value=None)
+        mock_httpx_class.return_value = mock_client_instance
 
         # Create client and make two calls
         client = LouieClient()
@@ -120,7 +130,7 @@ class TestClientCallable:
         assert response2.thread_id == "thread_123"
 
         # Check second call used the thread_id
-        second_call_args = mock_httpx_client.stream.call_args_list[1]
+        second_call_args = mock_client_instance.stream.call_args_list[1]
         assert second_call_args[1]["params"]["dthread_id"] == "thread_123"
 
     @patch("louieai._client.httpx.Client")
@@ -155,7 +165,12 @@ class TestClientCallable:
         mock_httpx_client.stream.return_value = mock_stream_cm
 
         # Make httpx.Client return our mock
-        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
+        # Handle both direct instantiation and context manager usage
+        mock_client_instance = Mock()
+        mock_client_instance.stream.return_value = mock_stream_cm
+        mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+        mock_client_instance.__exit__ = Mock(return_value=None)
+        mock_httpx_class.return_value = mock_client_instance
 
         # Create client and call with thread_id
         client = LouieClient()
@@ -163,7 +178,9 @@ class TestClientCallable:
 
         # Verify
         assert response.thread_id == "custom_thread"
-        call_args = mock_httpx_client.stream.call_args
+        # Get the actual instance that was used
+        used_client = mock_httpx_class.return_value
+        call_args = used_client.stream.call_args
         assert call_args[1]["params"]["dthread_id"] == "custom_thread"
 
     @patch("louieai._client.httpx.Client")
@@ -196,14 +213,21 @@ class TestClientCallable:
         mock_httpx_client.stream.return_value = mock_stream_cm
 
         # Make httpx.Client return our mock
-        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
+        # Handle both direct instantiation and context manager usage
+        mock_client_instance = Mock()
+        mock_client_instance.stream.return_value = mock_stream_cm
+        mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+        mock_client_instance.__exit__ = Mock(return_value=None)
+        mock_httpx_class.return_value = mock_client_instance
 
         # Create client and call with traces
         client = LouieClient()
         client("Complex query", traces=True)
 
         # Verify traces parameter
-        call_args = mock_httpx_client.stream.call_args
+        # Get the actual instance that was used
+        used_client = mock_httpx_class.return_value
+        call_args = used_client.stream.call_args
         assert call_args[1]["params"]["ignore_traces"] == "false"
 
     @patch("louieai._client.httpx.Client")
@@ -236,14 +260,21 @@ class TestClientCallable:
         mock_httpx_client.stream.return_value = mock_stream_cm
 
         # Make httpx.Client return our mock
-        mock_httpx_class.return_value.__enter__.return_value = mock_httpx_client
+        # Handle both direct instantiation and context manager usage
+        mock_client_instance = Mock()
+        mock_client_instance.stream.return_value = mock_stream_cm
+        mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+        mock_client_instance.__exit__ = Mock(return_value=None)
+        mock_httpx_class.return_value = mock_client_instance
 
         # Create client and call with custom agent
         client = LouieClient()
         client("Query", agent="CustomAgent")
 
         # Verify agent parameter
-        call_args = mock_httpx_client.stream.call_args
+        # Get the actual instance that was used
+        used_client = mock_httpx_class.return_value
+        call_args = used_client.stream.call_args
         assert call_args[1]["params"]["agent"] == "CustomAgent"
 
     def test_call_signature_matches_add_cell(self):
