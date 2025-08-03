@@ -53,18 +53,20 @@ class TestNotebookExperience:
 
         lui = Cursor(client=mock_client)
 
-        # First query - returns cursor, not Response
-        result1 = lui("sing me a song")
-        assert result1 is lui
-        assert isinstance(result1, type(lui))
+        # Mock to avoid streaming in tests
+        with patch.object(lui, "_in_jupyter", return_value=False):
+            # First query - returns cursor, not Response
+            result1 = lui("sing me a song")
+            assert result1 is lui
+            assert isinstance(result1, type(lui))
 
-        # Can access text directly
-        assert lui.text == "Here's a song for you:\n\nTwinkle twinkle little star"
-        assert lui.df is None
+            # Can access text directly
+            assert lui.text == "Here's a song for you:\n\nTwinkle twinkle little star"
+            assert lui.df is None
 
-        # Second query with data
-        result2 = lui("show me some data")
-        assert result2 is lui
+            # Second query with data
+            result2 = lui("show me some data")
+            assert result2 is lui
 
         # Can access both text and dataframe
         assert lui.text == "Here's your data analysis:"
@@ -148,8 +150,10 @@ class TestNotebookExperience:
 
         lui = Cursor(client=mock_client)
 
-        # Query with error
-        result = lui("complex query")
+        # Mock to avoid streaming in tests
+        with patch.object(lui, "_in_jupyter", return_value=False):
+            # Query with error
+            result = lui("complex query")
 
         # Should still return cursor
         assert result is lui
