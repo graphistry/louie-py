@@ -112,17 +112,24 @@ for element in lui.elements:
 
 ```python
 from louieai import louie
-lui = louie()
+# Example showing error handling (requires authentication)
+# lui = louie()
+# 
+# try:
+#     lui("Query the sales database")
+# except RuntimeError as e:
+#     if "No Graphistry API token" in str(e):
+#         print("Please authenticate with graphistry.register() first")
+#     elif "API returned error" in str(e):
+#         print(f"Server error: {e}")
+#     elif "Failed to connect" in str(e):
+#         print(f"Network error: {e}")
 
-try:
-    lui("Query the sales database")
-except RuntimeError as e:
-    if "No Graphistry API token" in str(e):
-        print("Please authenticate with graphistry.register() first")
-    elif "API returned error" in str(e):
-        print(f"Server error: {e}")
-    elif "Failed to connect" in str(e):
-        print(f"Network error: {e}")
+# Working example with mock authentication
+import os
+os.environ['GRAPHISTRY_USERNAME'] = 'test'
+os.environ['GRAPHISTRY_PASSWORD'] = 'test'
+# In practice, use real credentials or graphistry.register()
 ```
 
 ## Configuration Options

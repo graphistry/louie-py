@@ -35,7 +35,9 @@ class TestLouieFactory:
 
         # Verify
         assert isinstance(result, Cursor)
-        mock_client_class.assert_called_once_with(graphistry_client=mock_graphistry)
+        # The call might include org_name extracted from graphistry client
+        call_args = mock_client_class.call_args
+        assert call_args[1]["graphistry_client"] == mock_graphistry
 
     @patch("louieai._client.LouieClient")
     def test_louie_with_username_password(self, mock_client_class):

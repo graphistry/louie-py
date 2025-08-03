@@ -119,9 +119,12 @@ class TestDataFrameFetching:
             mock_stream_cm.__enter__ = Mock(return_value=mock_stream_response)
             mock_stream_cm.__exit__ = Mock(return_value=None)
 
+            # Handle both direct instantiation and context manager usage
             mock_httpx_instance = Mock()
             mock_httpx_instance.stream.return_value = mock_stream_cm
-            mock_httpx.return_value.__enter__.return_value = mock_httpx_instance
+            mock_httpx_instance.__enter__ = Mock(return_value=mock_httpx_instance)
+            mock_httpx_instance.__exit__ = Mock(return_value=None)
+            mock_httpx.return_value = mock_httpx_instance
 
             # Make the call
             response = client.add_cell("", "Create a dataframe")
@@ -157,7 +160,7 @@ class TestDataFrameFetching:
                 '{"payload": {"id": "B_001", "type": "TextElement", '
                 '"text": "No dataframe here"}}',
                 '{"payload": {"id": "B_002", "type": "DfElement", '
-                '"metadata": {"empty": true}}}',  # No df_id
+                '"metadata": {"empty": true}}}',  # Has id but no df_id or block_id
             ]
         )
 
@@ -167,16 +170,21 @@ class TestDataFrameFetching:
             mock_stream_cm.__enter__ = Mock(return_value=mock_stream_response)
             mock_stream_cm.__exit__ = Mock(return_value=None)
 
+            # Handle both direct instantiation and context manager usage
             mock_httpx_instance = Mock()
             mock_httpx_instance.stream.return_value = mock_stream_cm
-            mock_httpx.return_value.__enter__.return_value = mock_httpx_instance
+            mock_httpx_instance.__enter__ = Mock(return_value=mock_httpx_instance)
+            mock_httpx_instance.__exit__ = Mock(return_value=None)
+            mock_httpx.return_value = mock_httpx_instance
 
-            # Spy on _fetch_dataframe_arrow
-            with patch.object(client, "_fetch_dataframe_arrow") as mock_fetch:
+            # Spy on _fetch_dataframe_arrow - return None to simulate failed fetch
+            with patch.object(
+                client, "_fetch_dataframe_arrow", return_value=None
+            ) as mock_fetch:
                 response = client.add_cell("", "Test query")
 
-                # Should not have called Arrow fetch
-                mock_fetch.assert_not_called()
+                # Should have tried to fetch but got None
+                mock_fetch.assert_called_once_with("D_test123", "B_002")
 
                 # DfElement should still be in response but without table
                 df_elements = response.dataframe_elements

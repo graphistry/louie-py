@@ -16,15 +16,15 @@ check_uv
 check_project_root
 
 print_step "Quick lint check (errors only)"
-./bin/uv run ruff check . || print_error "Critical linting errors found"
+./scripts/ci/lint.sh --errors-only || print_error "Critical linting errors found"
 print_success "No critical errors"
 
 print_step "Validate ReadTheDocs config"
-./scripts/validate-readthedocs.sh || print_error "ReadTheDocs config is invalid"
+./scripts/ci/validate-rtd.sh || print_error "ReadTheDocs config is invalid"
 print_success "ReadTheDocs config valid"
 
-print_step "Running tests (fail fast)"
-./bin/uv run pytest -x --tb=short || print_error "Tests failed"
+print_step "Running tests (fail fast, no coverage)"
+./scripts/ci/test-coverage.sh --threshold=0 --fail-fast || print_error "Tests failed"
 print_success "Tests passed"
 
 echo ""

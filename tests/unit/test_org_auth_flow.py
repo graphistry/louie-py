@@ -21,9 +21,7 @@ class TestOrgAuthFlow:
         mock_graphistry = MagicMock()
         mock_graphistry.api_token.return_value = "fake-jwt-token-123"
 
-        with patch(
-            "graphistry.pygraphistry.GraphistryClient", return_value=mock_graphistry
-        ):
+        with patch("louieai.auth.GraphistryClient", return_value=mock_graphistry):
             client = LouieClient(
                 personal_key_id="CU5V6VZJB7",
                 personal_key_secret="32RBP6PUCSUVAIYJ",
@@ -107,9 +105,7 @@ class TestOrgAuthFlow:
         mock_graphistry = MagicMock()
         mock_graphistry.api_token.return_value = "fake-token"
 
-        with patch(
-            "graphistry.pygraphistry.GraphistryClient", return_value=mock_graphistry
-        ):
+        with patch("louieai.auth.GraphistryClient", return_value=mock_graphistry):
             for org_input, expected_slug in test_cases:
                 client = LouieClient(
                     personal_key_id="test_key",

@@ -154,3 +154,27 @@ def skip_if_integration_mode(func):
     return pytest.mark.skipif(
         get_test_mode() == "integration", reason="Unit test skipped in integration mode"
     )(func)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def prevent_global_cursor_init():
+    """Prevent global cursor from making real connections during tests."""
+    # Patch the notebook module's _global_cursor to prevent initialization
+    import louieai.notebook
+
+    # Save original value
+    original_global_cursor = louieai.notebook._global_cursor
+
+    # Set to a mock to prevent real initialization
+    mock_cursor = Mock()
+    mock_cursor.text = ""
+    mock_cursor.df = None
+    mock_cursor._client = Mock()
+    mock_cursor.__call__ = Mock(return_value=mock_cursor)
+
+    louieai.notebook._global_cursor = mock_cursor
+
+    yield
+
+    # Restore original
+    louieai.notebook._global_cursor = original_global_cursor

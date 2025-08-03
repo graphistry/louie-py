@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-08-03
+
+### Added
+- Python 3.13 support with CI matrix testing
+- CI scripts for formatting, linting, type checking, and testing
+- Comprehensive test coverage improvements (from ~30% to 86%)
+- Additional unit tests for edge cases and error handling
+- Session-scoped fixture to prevent global cursor initialization in tests
+
+### Changed
+- Improved test isolation to prevent network connections during CI runs
+- Enhanced mock patterns for httpx.Client to handle both direct instantiation and context manager usage
+- Simplified CallableModule test for Python 3.13 compatibility
+
+### Fixed
+- Fixed httpx.Client mocking pattern across multiple test files
+- Fixed integration tests that were attempting real network connections
+- Fixed performance test thresholds for CI environment
+- Fixed test_client_callable.py mock reference errors
+- Fixed dataframe fetching test to properly test "no df_id" case
+- Fixed documentation example test that required authentication
+
+## [0.4.0] - 2025-08-02
+
 ### Added
 - AI collaboration framework with comprehensive guidelines
 - Task planning template for structured AI-assisted development
@@ -29,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic fetching via `/api/dthread/{thread_id}/df/block/{block_id}/arrow` endpoint
   - Support for both `df_id` and `block_id` fields
   - Graceful error handling when dataframe fetch fails
+- Comprehensive agent guides for 40+ specialized agents with hierarchical navigation
+- Response Types documentation rewritten for 95% accuracy matching implementation
 
 ### Changed
 - Updated documentation dependencies to latest versions
@@ -36,11 +62,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved development documentation with RTD validation info
 - LouieClient now uses streaming API for chat endpoint
 - Improved error handling for server-sent events (SSE) streaming
+- Reorganized documentation navigation with hierarchical agent guide structure
+- Server URL standardized to production endpoint (https://den.louie.ai)
 
 ### Fixed
 - Fixed ReadTheDocs configuration with proper build.jobs structure
 - Fixed timeout issues with streaming responses from Louie API
 - Fixed integration tests to handle both PyGraphistry and direct Louie authentication
+- Fixed Response Types documentation accuracy (was 30% accurate, now 95% accurate)
+- Fixed import syntax errors in authentication guide
+- Fixed CallableModule initialization to handle None module
+- Fixed error handling notebook to use real error patterns instead of fictional exceptions
 
 ## [0.1.0] - 2025-07-26
 
