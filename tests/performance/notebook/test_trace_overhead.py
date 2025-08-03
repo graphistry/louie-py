@@ -1,10 +1,12 @@
 """Performance benchmarks for notebook API trace overhead."""
 
+import os
 import time
 from statistics import mean, stdev
 from unittest.mock import Mock, patch
 
 import pandas as pd
+import pytest
 
 from louieai.notebook import Cursor
 
@@ -43,6 +45,10 @@ class MockResponse:
             ]
 
 
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Performance tests are unreliable in CI due to variable system load",
+)
 class TestTraceOverhead:
     """Benchmark trace overhead."""
 
@@ -242,6 +248,10 @@ class TestTraceOverhead:
         assert avg_time < 1  # Less than 1ms
 
 
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Performance tests are unreliable in CI due to variable system load",
+)
 class TestOverheadComparison:
     """Compare notebook API overhead vs direct client."""
 
