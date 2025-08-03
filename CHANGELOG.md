@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-08-03
+
+### Fixed
+- Fixed streaming read logic to prevent text truncation in `lui.text`
+  - Track last activity time instead of total elapsed time for timeouts
+  - Only timeout after periods of inactivity, not during active streaming
+  - Accept responses with at least one line (thread ID) instead of requiring 2
+  - Merge incremental text updates instead of overwriting elements
+  - Improve logging with warnings about potential truncation
+
+### Added
+- Comprehensive "Vibes Investigation Tutorial" notebook
+  - Installation, setup, and basic usage examples
+  - Agent usage examples (DatabricksPassthroughAgent, DatabricksAgent, LouieAgent)
+  - DataFrame access patterns and investigation workflows
+  - Prompt template examples for reusable investigations
+
+### Changed
+- Configure ruff to ignore F821 (undefined names) in tutorial notebooks for intentional placeholders
+
 ## [0.5.1] - 2025-08-03
 
 ### Fixed
