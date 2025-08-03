@@ -86,6 +86,8 @@ ignore = []
 "src/louieai/_version.py" = ["UP035", "UP006", "UP007", "I001"]
 # Can't combine nested with statements when second depends on first
 "src/louieai/_client.py" = ["SIM117"]
+# Tutorial notebooks have intentional placeholders
+"docs/getting-started/notebooks/*.ipynb" = ["F821"]
 
 [tool.ruff.format]
 # Exclude generated files from formatting
