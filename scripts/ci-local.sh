@@ -37,6 +37,9 @@ if ! command -v uv &> /dev/null; then
     print_error "uv is not installed. Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"
 fi
 
+# Source common utilities for shared functions
+source "$(dirname "$0")/common.sh"
+
 print_step "Environment sanity check"
 # Ensure we have .venv and it's using the right Python
 if [ ! -f ".venv/bin/python" ]; then
@@ -57,34 +60,31 @@ echo "✓ Host Python: $HOST_PYTHON_VERSION"
 print_success "Environment verified"
 
 print_step "Installing dependencies with uv"
-./bin/uv pip install -e ".[dev]" || print_error "Failed to install dependencies"
+./scripts/ci/install-deps.sh || print_error "Failed to install dependencies"
 print_success "Dependencies installed"
 
 print_step "Linting with ruff"
-./bin/uv run ruff check . || print_error "Linting failed"
+./scripts/ci/lint.sh || print_error "Linting failed"
 print_success "Linting passed"
 
 print_step "Format checking with ruff"
-./bin/uv run ruff format --check . || print_error "Format check failed"
+./scripts/ci/format.sh || print_error "Format check failed"
 print_success "Format check passed"
 
 print_step "Type checking with mypy"
-./bin/uv run mypy . || print_error "Type checking failed"
+./scripts/ci/typecheck.sh || print_error "Type checking failed"  
 print_success "Type checking passed"
 
 print_step "Running tests with coverage (85% threshold)"
-./bin/uv run pytest -q --cov=louieai --cov-report=xml --cov-report=term --cov-fail-under=85 || print_error "Tests or coverage threshold failed"
+./scripts/ci/test-coverage.sh --threshold=85 -q || print_error "Tests or coverage threshold failed"
 print_success "Tests and coverage passed"
 
 print_step "Validate ReadTheDocs config"
-./scripts/validate-readthedocs.sh || print_error "ReadTheDocs config is invalid"
+./scripts/ci/validate-rtd.sh || print_error "ReadTheDocs config is invalid"
 print_success "ReadTheDocs config valid"
 
 print_step "Building documentation with MkDocs (including notebooks)"
-# Install docs dependencies
-./bin/uv pip install -r requirements-docs.txt > /dev/null 2>&1 || print_error "Failed to install docs dependencies"
-# Build the docs
-./bin/uv run mkdocs build --strict > /dev/null || print_error "Documentation build failed"
+./scripts/ci/docs-build.sh || print_error "Documentation build failed"
 print_success "Documentation built successfully"
 
 echo ""
