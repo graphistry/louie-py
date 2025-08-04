@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] - 2025-08-04
+
+### Fixed
+- **Cursor properties**: `lui.df`, `lui.text`, and `lui.g` now correctly return the **last** (most recent) result instead of the first
+  - This matches user expectations where the most recent result is typically most relevant
+  - Affects both `Cursor` and `ResponseProxy` classes
+
+### Added
+- **Thread management documentation**: Added comprehensive documentation for `.url` and `.thread_id` properties
+- **Thread Management section** in notebook API docs with examples for sharing analysis results
+
+### Improved
+- **Security documentation**: Enhanced credential storage guidelines for AI assistants
+- **Cursor.url property**: Enhanced docstring with examples and use cases
+
 ## [0.5.5] - 2025-08-04
 
 ### Fixed
