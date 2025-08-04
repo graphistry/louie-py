@@ -32,23 +32,28 @@ def clean_notebook_outputs(notebook_path, dry_run=False):
     # Patterns to search for and their replacements
     secret_patterns = [
         # API keys and secrets - completely redact
-        (r'personal_key_id\s*=\s*["\'](?!your_key_id)[^"\']+["\']',
-         'personal_key_id="****"'),
-        (r'personal_key_secret\s*=\s*["\'](?!your_key_secret)[^"\']+["\']',
-         'personal_key_secret="****"'),
-        (r'PERSONAL_KEY_ID\s*=\s*["\'](?!your_key_id)[^"\']+["\']',
-         'PERSONAL_KEY_ID="****"'),
-        (r'PERSONAL_KEY_SECRET\s*=\s*["\'](?!your_key_secret)[^"\']+["\']',
-         'PERSONAL_KEY_SECRET="****"'),
+        (
+            r'personal_key_id\s*=\s*["\'](?!your_key_id)[^"\']+["\']',
+            'personal_key_id="****"',
+        ),
+        (
+            r'personal_key_secret\s*=\s*["\'](?!your_key_secret)[^"\']+["\']',
+            'personal_key_secret="****"',
+        ),
+        (
+            r'PERSONAL_KEY_ID\s*=\s*["\'](?!your_key_id)[^"\']+["\']',
+            'PERSONAL_KEY_ID="****"',
+        ),
+        (
+            r'PERSONAL_KEY_SECRET\s*=\s*["\'](?!your_key_secret)[^"\']+["\']',
+            'PERSONAL_KEY_SECRET="****"',
+        ),
         (r"pk_[a-zA-Z0-9]+", "pk_****"),
         (r"sk_[a-zA-Z0-9]+", "sk_****"),
         (r"FILL_ME_IN", "****"),
-        (r'password\s*=\s*["\'](?!your_password)[^"\']+["\']',
-         'password="****"'),
-        (r'api_key\s*=\s*["\'](?!your_api_key)[^"\']+["\']',
-         'api_key="****"'),
-        (r'api_secret\s*=\s*["\'](?!your_api_secret)[^"\']+["\']',
-         'api_secret="****"'),
+        (r'password\s*=\s*["\'](?!your_password)[^"\']+["\']', 'password="****"'),
+        (r'api_key\s*=\s*["\'](?!your_api_key)[^"\']+["\']', 'api_key="****"'),
+        (r'api_secret\s*=\s*["\'](?!your_api_secret)[^"\']+["\']', 'api_secret="****"'),
         # Development environment details - replace with generic
         (r"databricks-pat-botsv3", "example-org"),
         (r"graphistry-dev\.grph\.xyz", "hub.graphistry.com"),
