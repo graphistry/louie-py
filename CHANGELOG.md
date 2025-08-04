@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2025-08-04
+
+### Fixed
+- **Vibes investigation notebook**: Fixed remaining table references to use underscored `o365_management_activity_flat_tcook` instead of hyphenated names
+- **Notebook output cleaning**: Enhanced to handle `display_data` output type in addition to `execute_result`
+
 ## [0.5.4] - 2025-08-04
 
 ### Fixed
