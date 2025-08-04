@@ -52,7 +52,7 @@ jobs:
         run: |
           # Run only critical tests to quickly catch obvious failures
           source .venv/bin/activate
-          python -m pytest tests/unit/test_init.py tests/unit/test_louie_factory.py -v --tb=short
+          python -m pytest tests/unit/test_imports.py tests/unit/test_louie_factory.py -v --tb=short
 
   # Stage 3: Unit tests (only run if smoke test passes)
   unit-tests:
