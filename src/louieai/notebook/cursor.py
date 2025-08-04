@@ -716,14 +716,14 @@ class Cursor:
     @property
     def url(self) -> str | None:
         """Get the URL for the current thread.
-        
+
         Returns a shareable URL that opens the current conversation thread
         in the Louie web interface. Useful for sharing analysis results
         with team members or bookmarking conversations.
-        
+
         Returns:
             str | None: The thread URL if a thread exists, None otherwise.
-            
+
         Example:
             >>> lui("Analyze customer churn patterns")
             >>> print(f"Share this analysis: {lui.url}")
