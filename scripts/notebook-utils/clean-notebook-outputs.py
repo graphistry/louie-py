@@ -32,22 +32,22 @@ def clean_notebook_outputs(notebook_path, dry_run=False):
     # Patterns to search for and their replacements
     secret_patterns = [
         # API keys and secrets - completely redact
-        (r'personal_key_id\s*=\s*["\'](?!your_key_id)[^"\']+["\']', 
+        (r'personal_key_id\s*=\s*["\'](?!your_key_id)[^"\']+["\']',
          'personal_key_id="****"'),
-        (r'personal_key_secret\s*=\s*["\'](?!your_key_secret)[^"\']+["\']', 
+        (r'personal_key_secret\s*=\s*["\'](?!your_key_secret)[^"\']+["\']',
          'personal_key_secret="****"'),
-        (r'PERSONAL_KEY_ID\s*=\s*["\'](?!your_key_id)[^"\']+["\']', 
+        (r'PERSONAL_KEY_ID\s*=\s*["\'](?!your_key_id)[^"\']+["\']',
          'PERSONAL_KEY_ID="****"'),
-        (r'PERSONAL_KEY_SECRET\s*=\s*["\'](?!your_key_secret)[^"\']+["\']', 
+        (r'PERSONAL_KEY_SECRET\s*=\s*["\'](?!your_key_secret)[^"\']+["\']',
          'PERSONAL_KEY_SECRET="****"'),
         (r"pk_[a-zA-Z0-9]+", "pk_****"),
         (r"sk_[a-zA-Z0-9]+", "sk_****"),
         (r"FILL_ME_IN", "****"),
-        (r'password\s*=\s*["\'](?!your_password)[^"\']+["\']', 
+        (r'password\s*=\s*["\'](?!your_password)[^"\']+["\']',
          'password="****"'),
-        (r'api_key\s*=\s*["\'](?!your_api_key)[^"\']+["\']', 
+        (r'api_key\s*=\s*["\'](?!your_api_key)[^"\']+["\']',
          'api_key="****"'),
-        (r'api_secret\s*=\s*["\'](?!your_api_secret)[^"\']+["\']', 
+        (r'api_secret\s*=\s*["\'](?!your_api_secret)[^"\']+["\']',
          'api_secret="****"'),
         # Development environment details - replace with generic
         (r"databricks-pat-botsv3", "example-org"),
@@ -61,7 +61,7 @@ def clean_notebook_outputs(notebook_path, dry_run=False):
     for i, cell in enumerate(nb.get("cells", []), 1):
         if cell.get("cell_type") == "code":
             outputs = cell.get("outputs", [])
-            
+
             for output in outputs:
                 total_outputs += 1
                 output_modified = False
@@ -79,7 +79,7 @@ def clean_notebook_outputs(notebook_path, dry_run=False):
                             new_texts.append(new_text)
                         if not dry_run:
                             output["text"] = new_texts
-                            
+
                 elif output.get("output_type") == "execute_result":
                     # Redact in execute_result data
                     data = output.get("data", {})
@@ -93,7 +93,7 @@ def clean_notebook_outputs(notebook_path, dry_run=False):
                             new_html_list.append(new_html)
                         if not dry_run:
                             data["text/html"] = new_html_list
-                    
+
                     if "text/plain" in data:
                         plain_list = data["text/plain"]
                         new_plain_list = []
@@ -104,7 +104,7 @@ def clean_notebook_outputs(notebook_path, dry_run=False):
                             new_plain_list.append(new_plain)
                         if not dry_run:
                             data["text/plain"] = new_plain_list
-                
+
                 elif output.get("output_type") == "error":
                     # Redact in error tracebacks
                     traceback = output.get("traceback", [])
@@ -117,11 +117,11 @@ def clean_notebook_outputs(notebook_path, dry_run=False):
                             new_traceback.append(new_line)
                         if not dry_run:
                             output["traceback"] = new_traceback
-                
+
                 if output_modified:
                     cleaned_count += 1
                     if dry_run:
-                        print(f"Would redact: Cell {i}, output containing sensitive data")
+                        print(f"Would redact: Cell {i}, output with sensitive data")
 
     # Save back if not dry run
     if not dry_run and cleaned_count > 0:
