@@ -6,6 +6,14 @@
 
 AI-powered investigation platform for natural language data analysis.
 
+
+
+https://github.com/user-attachments/assets/de73f7b3-2862-4298-b9d8-2d38426ab255
+
+[Video: Louie <> Graphistry - Python edition!](https://www.loom.com/share/8d84c9abc0e34df6b233bd7b2e10af9a?sid=4a87707a-79e6-416b-a628-01b5c31c7db3)
+
+
+
 ## 🚀 Get Started in 30 Seconds
 
 ```python

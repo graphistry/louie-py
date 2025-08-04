@@ -1,0 +1,51 @@
+# Example GitHub Actions workflow for building notebooks
+# This would go in .github/workflows/build-notebooks.yml
+
+name: Build Notebooks
+
+on:
+  push:
+    paths:
+      - 'docs/getting-started/notebooks/*.ipynb'
+      - 'scripts/build-notebook.sh'
+      - 'scripts/notebook-utils/*'
+  workflow_dispatch:
+
+jobs:
+  build-notebooks:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -U pip
+        pip install jupyter nbconvert
+        pip install -e .
+    
+    - name: Build notebooks
+      env:
+        GRAPHISTRY_PERSONAL_KEY_ID: ${{ secrets.GRAPHISTRY_PERSONAL_KEY_ID }}
+        GRAPHISTRY_PERSONAL_KEY_SECRET: ${{ secrets.GRAPHISTRY_PERSONAL_KEY_SECRET }}
+        GRAPHISTRY_ORG_NAME: ${{ secrets.GRAPHISTRY_ORG_NAME }}
+      run: |
+        # Build specific notebook
+        ./scripts/build-notebook.sh docs/getting-started/notebooks/05-vibes-investigation-tutorial.ipynb
+        
+        # Or build all notebooks (when build-all-notebooks.sh is created)
+        # ./scripts/build-all-notebooks.sh
+    
+    - name: Commit changes
+      if: github.ref == 'refs/heads/main'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs/getting-started/notebooks/*.ipynb
+        git diff --staged --quiet || git commit -m "chore: update executed notebooks [skip ci]"
+        git push

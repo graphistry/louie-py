@@ -4,6 +4,13 @@ Welcome to the **LouieAI** Python client library documentation.
 
 **LouieAI** is Graphistry's genAI-native investigation platform. This library allows Python applications to interact with LouieAI via its API, leveraging Graphistry authentication.
 
+<video width="100%" controls autoplay muted loop>
+  <source src="https://github.com/user-attachments/assets/de73f7b3-2862-4298-b9d8-2d38426ab255" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+[Video: Louie <> Graphistry - Python edition!](https://www.loom.com/share/8d84c9abc0e34df6b233bd7b2e10af9a?sid=4a87707a-79e6-416b-a628-01b5c31c7db3)
+
 ## Install & Go
 
 ```bash
@@ -19,7 +26,7 @@ graphistry.register(
     api=3, 
     server="hub.graphistry.com",  # Your Graphistry server
     username="alice@example.com", 
-    password="secure123!"
+    password="<your_password>"
 )
 
 # Create Louie interface with server configuration
