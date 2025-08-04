@@ -109,6 +109,31 @@ git log --oneline -n 10
 - Docs: `docs/`
 - Plans: `plans/`
 
+### SECURITY: Credential Storage
+**NEVER save secrets to version-controlled directories!**
+
+**What counts as secrets:**
+- API keys and tokens
+- Passwords
+- Server URLs/hostnames
+- Organization names
+- Any customer-specific identifiers
+
+**Safe locations:**
+- ✅ **SAFE**: `plans/` and `tmp/` (gitignored)
+- ✅ **SAFE**: `.env` files in project root (gitignored)
+- ❌ **UNSAFE**: Any other directory (src/, tests/, docs/, scripts/, etc.)
+
+**Always use .env files for secrets:**
+```bash
+# Create secrets in tmp/ or plans/
+echo "export LOUIE_API_KEY='secret'" > tmp/.env.local
+echo "export LOUIE_SERVER='https://example.com'" >> tmp/.env.local
+echo "export LOUIE_ORG='org-name'" >> tmp/.env.local
+# Source when needed
+source tmp/.env.local
+```
+
 ## Step Protocol
 
 ### RULES:

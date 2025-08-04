@@ -34,7 +34,7 @@ class TestGraphAccess:
         # Test g property
         graph = proxy.g
         assert graph is not None
-        assert graph["dataset_id"] == "graph_123"  # First graph
+        assert graph["dataset_id"] == "graph_456"  # Last graph
 
     def test_cursor_graph_access(self):
         """Test accessing graphs through Cursor lui[-1].g syntax."""
@@ -61,14 +61,14 @@ class TestGraphAccess:
 
         # Test current graphs (from latest response)
         assert len(cursor.gs) == 2
-        assert cursor.g["dataset_id"] == "second_graph"
+        assert cursor.g["dataset_id"] == "third_graph"  # Last graph
 
         # Test historical access
         assert len(cursor[-2].gs) == 1
         assert cursor[-2].g["dataset_id"] == "first_graph"
 
         assert len(cursor[-1].gs) == 2
-        assert cursor[-1].g["dataset_id"] == "second_graph"
+        assert cursor[-1].g["dataset_id"] == "third_graph"  # Last graph
 
     def test_no_graphs(self):
         """Test behavior when no graphs are present."""

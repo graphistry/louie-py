@@ -80,7 +80,7 @@ class TestElementDiscovery:
         lui("test")
 
         # Verify text access
-        assert lui.text == "Hello world"
+        assert lui.text == "Second text"  # Now returns last text
         assert lui.texts == ["Hello world", "Second text"]
 
         # Save for analysis
@@ -123,7 +123,7 @@ class TestElementDiscovery:
 
         # Verify dataframe access
         assert lui.df is not None
-        pd.testing.assert_frame_equal(lui.df, df1)
+        pd.testing.assert_frame_equal(lui.df, df2)  # Now returns last dataframe
         assert len(lui.dfs) == 2
 
         # Save for analysis
