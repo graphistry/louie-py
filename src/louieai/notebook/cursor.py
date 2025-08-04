@@ -253,7 +253,7 @@ class ResponseProxy:
     def df(self) -> pd.DataFrame | None:
         """Latest dataframe or None."""
         dfs = self.dfs
-        return dfs[0] if dfs else None
+        return dfs[-1] if dfs else None
 
     @property
     def dfs(self) -> list[pd.DataFrame]:
@@ -266,7 +266,7 @@ class ResponseProxy:
     def text(self) -> str | None:
         """Primary text or None."""
         texts = self.texts
-        return texts[0] if texts else None
+        return texts[-1] if texts else None
 
     @property
     def texts(self) -> list[str]:
@@ -288,7 +288,7 @@ class ResponseProxy:
     def g(self) -> dict[str, Any] | None:
         """Latest graph element or None."""
         gs = self.gs
-        return gs[0] if gs else None
+        return gs[-1] if gs else None
 
     @property
     def gs(self) -> list[dict[str, Any]]:
@@ -725,7 +725,7 @@ class Cursor:
     def df(self) -> pd.DataFrame | None:
         """Latest dataframe or None."""
         dfs = self.dfs
-        return dfs[0] if dfs else None
+        return dfs[-1] if dfs else None
 
     @property
     def dfs(self) -> list[pd.DataFrame]:
@@ -738,7 +738,7 @@ class Cursor:
     def text(self) -> str | None:
         """Primary text or None."""
         texts = self.texts
-        return texts[0] if texts else None
+        return texts[-1] if texts else None
 
     @property
     def texts(self) -> list[str]:
@@ -757,7 +757,7 @@ class Cursor:
     def g(self) -> dict[str, Any] | None:
         """Latest graph element or None."""
         gs = self.gs
-        return gs[0] if gs else None
+        return gs[-1] if gs else None
 
     @property
     def gs(self) -> list[dict[str, Any]]:

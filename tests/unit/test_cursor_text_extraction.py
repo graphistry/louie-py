@@ -22,7 +22,7 @@ class TestCursorTextExtraction:
         assert len(texts) == 2
         assert texts[0] == "Hello from text field"
         assert texts[1] == "Another text field"
-        assert proxy.text == "Hello from text field"  # First text
+        assert proxy.text == "Another text field"  # Last text
 
     def test_value_field_extraction(self):
         """Test extraction from 'value' field (new format)."""
@@ -148,4 +148,4 @@ class TestCursorTextExtraction:
         texts = proxy.texts
         assert len(texts) == 4
         assert all(isinstance(t, str) for t in texts)
-        assert proxy.text == "Old format with text"  # First element
+        assert proxy.text == "New format with text"  # Last element
