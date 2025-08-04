@@ -32,7 +32,7 @@ import graphistry
 import louieai as lui
 
 # Authenticate
-graphistry.register(api=3, username="your_user", password="your_pass")
+graphistry.register(api=3, username="your_user", password="<password>")
 
 # Create client and make a query
 client = lui.LouieClient()
@@ -133,6 +133,38 @@ lui("Which IP addresses triggered these errors?")
 # Access any previous response
 first_response_text = lui[-3].text
 error_codes_df = lui[-2].df
+```
+
+### Creating Separate Analysis Threads
+
+Sometimes you need to analyze different topics without mixing contexts:
+
+```python
+# Main security analysis thread
+security_lui = louie(name="Security Analysis - Week 47")
+security_lui("Load security logs and identify suspicious patterns")
+security_lui("Focus on failed authentication attempts")
+
+# Create a separate thread for performance analysis
+perf_lui = security_lui.new(name="Performance Analysis - Week 47")
+perf_lui("Analyze API response times for the same period")
+perf_lui("Which endpoints are slowest?")
+
+# Create a private thread for sensitive investigation
+private_lui = security_lui.new(
+    name="Executive Dashboard Investigation",
+    share_mode="Private"
+)
+private_lui("Check access patterns to executive dashboards")
+
+# Each thread maintains its own context
+security_lui("Back to security - correlate the failed logins with geo data")
+perf_lui("Show me the correlation between slow responses and error rates")
+
+# All threads share the same authentication
+print(f"Security findings: {security_lui.text}")
+print(f"Performance issues: {perf_lui.df}")
+print(f"Private investigation: {private_lui.text}")
 ```
 
 ### Traditional Client API - Manual Thread Management
@@ -314,14 +346,14 @@ lui("Load user data") \
 ```python
 # Method 1: Direct module call (NEW!)
 import louieai
-lui = louieai(username="user", password="pass")
+lui = louieai(username="user", password="<password>")
 
 # Method 2: Traditional notebook import
 from louieai.notebook import lui
 
 # Method 3: With PyGraphistry client
 import graphistry
-g = graphistry.register(api=3, server="hub.graphistry.com", username="user", password="pass")
+g = graphistry.register(api=3, server="hub.graphistry.com", username="user", password="<password>")
 lui = louieai(g, server_url="https://den.louie.ai")
 ```
 

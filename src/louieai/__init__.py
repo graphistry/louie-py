@@ -80,7 +80,10 @@ def _extract_org_name_from_graphistry(graphistry_client) -> str | None:
 
 
 def louie(
-    graphistry_client: Any | None = None, share_mode: str = "Private", **kwargs: Any
+    graphistry_client: Any | None = None,
+    share_mode: str = "Private",
+    name: str | None = None,
+    **kwargs: Any,
 ) -> Cursor:
     """Create a callable Louie interface.
 
@@ -96,14 +99,14 @@ def louie(
        ```python
        import graphistry
        gc = graphistry.client()
-       gc.register(api=3, username="user", password="pass")
+       gc.register(api=3, username="user", password="<password>")
        lui = louie(gc)
        lui("Analyze my data")
        ```
 
     3. With direct credentials:
        ```python
-       lui = louie(username="user", password="pass")
+       lui = louie(username="user", password="<password>")
        lui = louie(personal_key_id="pk_123", personal_key_secret="sk_456")
        lui = louie(api_key="your_api_key")
        ```
@@ -111,6 +114,7 @@ def louie(
     Args:
         graphistry_client: Optional PyGraphistry client or None for global
         share_mode: Default visibility mode - "Private", "Organization", or "Public"
+        name: Optional thread name (auto-generated from first message if not provided)
         **kwargs: Authentication parameters passed to LouieClient
             - username: PyGraphistry username
             - password: PyGraphistry password
@@ -135,7 +139,7 @@ def louie(
         >>> # With PyGraphistry client
         >>> import graphistry
         >>> g = graphistry.client()
-        >>> g.register(api=3, username="alice", password="pass")
+        >>> g.register(api=3, username="alice", password="<password>")
         >>> lui = louie(g)
         >>> lui("Show me the patterns")
 
@@ -152,7 +156,7 @@ def louie(
         >>> # Custom timeouts for long-running agentic flows
         >>> lui = louie(
         ...     username="alice",
-        ...     password="pass",
+        ...     password="<password>",
         ...     timeout=600,  # 10 minutes for complex analysis
         ...     streaming_timeout=180  # 3 minutes per chunk
         ... )
@@ -177,15 +181,15 @@ def louie(
                     kwargs["org_name"] = extracted_org
 
         client = LouieClient(graphistry_client=graphistry_client, **kwargs)
-        return Cursor(client=client, share_mode=share_mode)
+        return Cursor(client=client, share_mode=share_mode, name=name)
 
     # If kwargs provided, create LouieClient with them
     if kwargs:
         client = LouieClient(**kwargs)
-        return Cursor(client=client, share_mode=share_mode)
+        return Cursor(client=client, share_mode=share_mode, name=name)
 
     # Otherwise, create a new cursor with environment variables
-    return Cursor(share_mode=share_mode)
+    return Cursor(share_mode=share_mode, name=name)
 
 
 __all__ = [
