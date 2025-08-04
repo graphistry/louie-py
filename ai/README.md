@@ -45,11 +45,40 @@ pytest
 
 ### 3. Security Best Practices
 
-- **NEVER** commit credentials or API keys
-- Use `.env` files for test credentials (already in .gitignore)
-- Use `tmp/` folder for temporary test scripts with credentials (already in .gitignore)
+**CRITICAL: Secret Storage Rules**
+
+**What constitutes a secret:**
+- API keys and authentication tokens
+- Passwords and credentials
+- Server URLs and hostnames
+- Organization names
+- Customer identifiers
+- Any environment-specific configuration
+
+**Storage rules:**
+- **NEVER** save secrets to version-controlled directories
+- **ONLY SAFE DIRECTORIES**: 
+  - `tmp/` (gitignored)
+  - `plans/` (gitignored)
+  - `.env` files in project root (gitignored)
+- **UNSAFE DIRECTORIES**: `src/`, `tests/`, `docs/`, `scripts/`, `ai/`, etc.
+
+**Best Practice: Use .env files**
+```bash
+# Create secrets safely
+echo "export LOUIE_API_KEY='secret'" > tmp/.env.local
+echo "export GRAPHISTRY_TOKEN='token'" >> tmp/.env.local
+echo "export LOUIE_SERVER='https://server.example.com'" >> tmp/.env.local
+echo "export LOUIE_ORG='organization-name'" >> tmp/.env.local
+
+# Source when needed
+source tmp/.env.local
+```
+
 - Check for sensitive data before commits
 - Use secure token handling patterns
+- Never hardcode secrets in code or documentation
+- Treat server URLs and org names with same security as passwords
 
 ### 4. Documentation Standards
 
