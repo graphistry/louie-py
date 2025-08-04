@@ -456,13 +456,28 @@ class Cursor:
         - lui.elements: All elements with type tags
     """
 
-    def __init__(self, client: LouieClient | None = None, share_mode: str = "Private"):
+    def __init__(
+        self,
+        client: LouieClient | None = None,
+        share_mode: str = "Private",
+        name: str | None = None,
+    ):
         """Initialize global cursor.
 
         Args:
             client: LouieAI client instance. If None, creates default client.
             share_mode: Default visibility mode - "Private", "Organization", or "Public"
+            name: Optional thread name (auto-generated from first message if not
+                provided)
         """
+        # Validate share_mode
+        valid_modes = {"Private", "Organization", "Public"}
+        if share_mode not in valid_modes:
+            raise ValueError(
+                f"Invalid share_mode: '{share_mode}'. "
+                f"Must be one of: {', '.join(sorted(valid_modes))}"
+            )
+
         if client is None:
             # Create client with env credentials if available
             import os
@@ -530,6 +545,7 @@ class Cursor:
         self._current_thread: str | None = None
         self._traces: bool = False
         self._share_mode: str = share_mode
+        self._name: str | None = name
         self._last_display_id: str | None = None
 
     def __call__(
@@ -554,6 +570,12 @@ class Cursor:
         # Get or create thread
         if self._current_thread is None:
             self._current_thread = self._get_or_create_thread()
+
+            # If we have a name and this is the first message, generate a name
+            # from prompt
+            if self._name is None:
+                # Auto-generate name from first message (first 50 chars)
+                self._name = prompt[:50] + ("..." if len(prompt) > 50 else "")
 
         # Determine trace setting
         use_traces = traces if traces is not None else self._traces
@@ -972,6 +994,56 @@ class Cursor:
             return ResponseProxy(self._history[index])
         except IndexError:
             return ResponseProxy(None)
+
+    def new(self, share_mode: str | None = None, name: str | None = None) -> "Cursor":
+        """Create a new Cursor instance with a fresh thread while preserving config.
+
+        This method creates a new conversation thread but maintains all authentication
+        and configuration from the parent cursor, including:
+        - The authenticated LouieClient instance with all credentials
+        - Server URLs and connection settings
+        - Timeout configurations
+        - Default agent settings
+
+        Args:
+            share_mode: Override visibility mode for new cursor. If None, inherits
+                from parent.
+            name: Optional thread name for new cursor. Auto-generated from first
+                message if not provided.
+
+        Returns:
+            Cursor: A new Cursor instance with fresh thread but same configuration
+
+        Examples:
+            >>> lui = louie(username="alice", password="<password>",
+            ...             share_mode="Organization")
+            >>> # Start a new private conversation with same auth
+            >>> lui2 = lui.new(share_mode="Private", name="Analysis 2")
+            >>> lui2("Analyze different data")  # Uses same credentials but new thread
+
+            >>> # Create another thread inheriting organization visibility
+            >>> lui3 = lui.new()  # Inherits share_mode="Organization"
+            >>> lui3("Continue analysis")  # Shares within organization
+        """
+        # Use parent's share_mode if not explicitly provided
+        if share_mode is None:
+            share_mode = self._share_mode
+        else:
+            # Validate share_mode if provided
+            valid_modes = {"Private", "Organization", "Public"}
+            if share_mode not in valid_modes:
+                raise ValueError(
+                    f"Invalid share_mode: '{share_mode}'. "
+                    f"Must be one of: {', '.join(sorted(valid_modes))}"
+                )
+
+        # Create new Cursor with same client but fresh thread
+        # The client instance contains all auth and configuration
+        return Cursor(
+            client=self._client,  # Pass entire authenticated client instance
+            share_mode=share_mode,
+            name=name,
+        )
 
     def _extract_dataframes(self, response: Response) -> list[pd.DataFrame]:
         """Extract pandas DataFrames from response."""
