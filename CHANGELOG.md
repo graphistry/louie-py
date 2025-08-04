@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-08-04
+
+### Added
+- **Cursor.new() method** for creating fresh conversation threads while preserving authentication and configuration
+- **Thread naming support** via `name` parameter in both `louie()` factory and `new()` method
+- **Share mode validation** with clear error messages for invalid modes
+- **DataFrame metadata preservation** in elements (id, df_id, block_id fields)
+- **Notebook build utilities**:
+  - `build-notebook.sh` for executing notebooks with environment authentication
+  - `validate-notebook.py` for checking execution status and secrets
+  - `clean-notebook-outputs.py` for redacting sensitive data from outputs
+- **Demo video** added to documentation homepage
+- **CI improvements**:
+  - Concurrency control to cancel previous runs on new push
+  - Light smoke test stage for faster feedback
+
+### Fixed
+- **DatabricksAgent empty text elements**: ResponseProxy.elements now properly checks content/text/value fields
+- **Notebook output cleaning**: Fixed to redact sensitive data instead of removing entire outputs
+- **Pre-commit hook**: Now recognizes `****` as legitimate redaction pattern
+
+### Changed
+- **Vibes tutorial notebook** updated to use `lui.new()` pattern instead of deprecated `new_thread()`
+- **Pre-commit hook** improved to handle redaction patterns in security tools
+
+### Documentation
+- Added comprehensive examples for `Cursor.new()` method
+- Updated vibes tutorial with DataFrame ID extraction pattern
+- Improved notebook authentication documentation
+
 ## [0.5.2] - 2025-08-03
 
 ### Fixed
