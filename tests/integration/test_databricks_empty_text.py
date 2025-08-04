@@ -176,8 +176,8 @@ class TestDatabricksEmptyTextElements:
                 assert text_elements[2]["value"] == "Retrieved 4 events."
 
                 # Check lui.text property
-                # Should return first text element
-                assert lui.text == "Executing query..."
+                # Should return last text element
+                assert lui.text == "Retrieved 4 events."
 
     @pytest.mark.integration
     def test_databricks_agent_real_credentials(self):

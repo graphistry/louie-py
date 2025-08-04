@@ -24,8 +24,8 @@ class TestDataFrameAccess:
 
         assert cursor.df is None
 
-    def test_df_returns_first_dataframe(self):
-        """Test df returns first dataframe when available."""
+    def test_df_returns_last_dataframe(self):
+        """Test df returns last dataframe when available."""
         cursor = Cursor()
 
         # Create test dataframes
@@ -40,10 +40,10 @@ class TestDataFrameAccess:
         ]
         cursor._history.append(mock_response)
 
-        # Should return first dataframe
+        # Should return last dataframe
         result = cursor.df
         assert result is not None
-        pd.testing.assert_frame_equal(result, df1)
+        pd.testing.assert_frame_equal(result, df2)
 
     def test_dfs_returns_empty_list_when_none(self):
         """Test dfs returns empty list when no dataframes."""
@@ -90,8 +90,8 @@ class TestDataFrameAccess:
 
         assert cursor.text is None
 
-    def test_text_returns_first_text(self):
-        """Test text returns first text element."""
+    def test_text_returns_last_text(self):
+        """Test text returns last text element."""
         cursor = Cursor()
 
         mock_response = Mock(spec=Response)
@@ -101,7 +101,7 @@ class TestDataFrameAccess:
         ]
         cursor._history.append(mock_response)
 
-        assert cursor.text == "First text"
+        assert cursor.text == "Second text"
 
     def test_texts_returns_all_text_elements(self):
         """Test texts returns all text elements."""
@@ -165,7 +165,7 @@ class TestDataFrameAccess:
         assert cursor[-1].text == "Second"
         assert cursor[-2].text == "First"
 
-        # Test dataframe access
+        # Test dataframe access - now returns last df from each response
         pd.testing.assert_frame_equal(cursor[-1].df, df2)
         pd.testing.assert_frame_equal(cursor[-2].df, df1)
 
@@ -218,6 +218,43 @@ class TestDataFrameAccess:
         assert cursor.df is None
         assert cursor.dfs == []
 
+    def test_multiple_responses_returns_last(self):
+        """Test that df/text/g properties return last item from multiple results."""
+        cursor = Cursor()
+
+        # Create test data with 3 of each type
+        df1 = pd.DataFrame({"col": [1]})
+        df2 = pd.DataFrame({"col": [2]})
+        df3 = pd.DataFrame({"col": [3]})
+
+        mock_response = Mock(spec=Response)
+        mock_response.dataframe_elements = [
+            {"type": "DfElement", "table": df1},
+            {"type": "DfElement", "table": df2},
+            {"type": "DfElement", "table": df3},
+        ]
+        mock_response.text_elements = [
+            {"type": "TextElement", "content": "First"},
+            {"type": "TextElement", "content": "Middle"},
+            {"type": "TextElement", "content": "Last"},
+        ]
+        mock_response.graph_elements = [
+            {"type": "GraphElement", "id": "graph1"},
+            {"type": "GraphElement", "id": "graph2"},
+            {"type": "GraphElement", "id": "graph3"},
+        ]
+        cursor._history.append(mock_response)
+
+        # Verify properties return last items
+        pd.testing.assert_frame_equal(cursor.df, df3)
+        assert cursor.text == "Last"
+        assert cursor.g["id"] == "graph3"
+
+        # Verify all items are still accessible
+        assert len(cursor.dfs) == 3
+        assert len(cursor.texts) == 3
+        assert len(cursor.gs) == 3
+
 
 class TestResponseProxy:
     """Test ResponseProxy for historical access."""
@@ -246,3 +283,31 @@ class TestResponseProxy:
         assert proxy.text == "Hello"
         pd.testing.assert_frame_equal(proxy.df, df)
         assert len(proxy.elements) == 2
+
+    def test_proxy_returns_last_items(self):
+        """Test proxy returns last items from multiple results."""
+        df1 = pd.DataFrame({"a": [1]})
+        df2 = pd.DataFrame({"b": [2]})
+        df3 = pd.DataFrame({"c": [3]})
+
+        response = Mock(spec=Response)
+        response.dataframe_elements = [
+            {"type": "DfElement", "table": df1},
+            {"type": "DfElement", "table": df2},
+            {"type": "DfElement", "table": df3},
+        ]
+        response.text_elements = [
+            {"type": "TextElement", "content": "Start"},
+            {"type": "TextElement", "content": "End"},
+        ]
+        response.graph_elements = [
+            {"type": "GraphElement", "dataset_id": "g1"},
+            {"type": "GraphElement", "dataset_id": "g2"},
+        ]
+
+        proxy = ResponseProxy(response)
+
+        # Verify last items are returned
+        pd.testing.assert_frame_equal(proxy.df, df3)
+        assert proxy.text == "End"
+        assert proxy.g["dataset_id"] == "g2"

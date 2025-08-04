@@ -150,8 +150,8 @@ class TestArrowDataFrameIntegration:
         pd.testing.assert_frame_equal(lui.dfs[0], df1)
         pd.testing.assert_frame_equal(lui.dfs[1], df2)
 
-        # Verify df property returns first dataframe
-        pd.testing.assert_frame_equal(lui.df, df1)
+        # Verify df property returns last dataframe
+        pd.testing.assert_frame_equal(lui.df, df2)
 
         # Verify both Arrow endpoints were called
         assert mock_httpx_instance.get.call_count == 2
