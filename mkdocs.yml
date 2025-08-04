@@ -12,7 +12,8 @@ nav:
       - Data Science Workflow: getting-started/notebooks/02-data-science-workflow.ipynb
       - Fraud Investigation: getting-started/notebooks/03-fraud-investigation.ipynb
       - Error Handling: getting-started/notebooks/04-error-handling.ipynb
-      - Vibes Investigation Tutorial: getting-started/notebooks/05-vibes-investigation-tutorial.ipynb
+      - Vibes Investigation I: getting-started/notebooks/05-vibes-investigation-I.ipynb
+      - Vibes Investigation II - Planning: getting-started/notebooks/06-vibes-investigation-II-planning.ipynb
   - User Guides:
     - Examples: guides/examples.md
     - Query Patterns: guides/query-patterns.md
