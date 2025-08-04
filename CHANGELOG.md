@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2025-08-04
+
+### Fixed
+- **Vibes investigation notebook**: Fixed Databricks table references to use correct `o365_management_activity_flat_tcook` table name instead of incorrect hyphenated names
+
 ## [0.5.3] - 2025-08-04
 
 ### Added
