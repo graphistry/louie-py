@@ -30,7 +30,7 @@ The cleanest import method - make the module itself callable:
 import louieai
 
 # Create authenticated instance
-lui = louieai(username="user", password="pass")
+lui = louieai(username="user", password="<password>")
 # Or with existing PyGraphistry client
 lui = louieai(g)
 
@@ -271,7 +271,7 @@ cursor = louie()
 
 # Create cursor with PyGraphistry client
 import graphistry
-g = graphistry.register(api=3, username="user", password="pass")
+g = graphistry.register(api=3, username="user", password="<password>")
 cursor = louie(g)
 
 # Create cursor with personal key authentication
@@ -284,10 +284,49 @@ cursor = louie(
 # Create cursor with API key
 cursor = louie(api_key="your_api_key")
 
+# Create cursor with thread name and share mode
+cursor = louie(name="Security Analysis", share_mode="Organization")
+
 # Use any cursor
 cursor("Your query here")
 print(cursor.text)
 ```
+
+### Creating New Conversation Threads
+
+The `new()` method allows you to create fresh conversation threads while preserving all authentication and configuration:
+
+```python
+# Start with your main analysis
+lui = louie()
+lui("Analyze security incidents from last week")
+
+# Create a new thread for a different topic
+perf_analysis = lui.new(name="Performance Analysis")
+perf_analysis("Show me API response times")
+
+# Create another thread with different visibility
+private_investigation = lui.new(
+    name="Sensitive Investigation",
+    share_mode="Private"
+)
+private_investigation("Investigate user account anomalies")
+
+# Original thread is unchanged
+lui("Continue with security analysis...")  # Still in original thread
+```
+
+**Key features of `new()`:**
+- **Preserves all configuration**: Authentication, server URLs, timeouts
+- **Fresh context**: Each new thread starts without previous conversation history
+- **Optional naming**: Provide meaningful names to organize your analyses
+- **Share mode control**: Override visibility per thread (Private, Organization, Public)
+
+**Common use cases:**
+1. **Organize by topic**: Separate threads for security, performance, business analysis
+2. **Isolate investigations**: Keep sensitive queries in private threads
+3. **Parallel analysis**: Run different analyses without context confusion
+4. **Clean slate**: Start fresh when switching to unrelated topics
 
 ### Custom Client Configuration
 
@@ -310,7 +349,7 @@ client = LouieClient(
 client = LouieClient(
     server_url="https://custom.louie.ai",
     username="user",
-    password="pass"
+    password="<password>"
 )
 
 # Create cursor with custom client
@@ -350,11 +389,11 @@ lui = louie()
 # 2. From existing PyGraphistry client
 import graphistry
 gc = graphistry.client()
-gc.register(api=3, username="user", password="pass")
+gc.register(api=3, username="user", password="<password>")
 lui = louie(gc)
 
 # 3. With direct credentials
-lui = louie(username="user", password="pass")
+lui = louie(username="user", password="<password>")
 lui = louie(personal_key_id="pk_123", personal_key_secret="sk_456")
 lui = louie(api_key="your_api_key")
 
