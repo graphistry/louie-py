@@ -190,6 +190,13 @@ export LOUIE_URL=https://custom-louie.ai  # Custom Louie server
 | `lui.errors` | `list[dict]` | Error elements from latest response |
 | `lui.has_errors` | `bool` | Whether latest response contains errors |
 
+### Thread Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `lui.thread_id` | `str \| None` | Current conversation thread ID |
+| `lui.url` | `str \| None` | URL to view current thread in Louie web interface |
+
 ### Configuration Properties
 
 | Property | Type | Description |
@@ -203,6 +210,28 @@ export LOUIE_URL=https://custom-louie.ai  # Custom Louie server
 | `lui[-1]` | Previous response |
 | `lui[-2]` | Response from 2 queries ago |
 | `lui[index]` | Access response by index |
+
+### Thread Management
+
+Access thread information and share conversation links:
+
+```python
+# Get the current thread ID
+thread_id = lui.thread_id
+print(f"Current thread: {thread_id}")
+
+# Get a shareable URL to view the thread
+thread_url = lui.url
+print(f"View this conversation at: {thread_url}")
+
+# Example: Share analysis results with your team
+lui("Analyze customer churn patterns for Q4")
+if lui.url:
+    print(f"Share this analysis: {lui.url}")
+    # Outputs: Share this analysis: https://den.louie.ai/?dthread=abc123...
+```
+
+**Note**: The `.url` property returns `None` if no thread is active yet (before making any queries).
 
 ## Error Handling
 
