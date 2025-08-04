@@ -327,7 +327,8 @@ class ResponseProxy:
         if hasattr(self._response, "text_elements") and self._response.text_elements:
             for elem in self._response.text_elements:
                 if isinstance(elem, dict):
-                    # Check 'content', 'text', and 'value' keys for backward compatibility
+                    # Check 'content', 'text', and 'value' keys for backward
+                    # compatibility
                     value = (
                         elem.get("content")
                         or elem.get("text", "")

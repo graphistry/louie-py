@@ -66,7 +66,7 @@ class TestDataframeElementMetadata:
         proxy = ResponseProxy(response)
         elements = proxy.elements
 
-        df_elem = [e for e in elements if e["type"] == "dataframe"][0]
+        df_elem = next(e for e in elements if e["type"] == "dataframe")
 
         # Should have id but not df_id/block_id
         assert df_elem["id"] == "B_002"
@@ -88,7 +88,7 @@ class TestDataframeElementMetadata:
         proxy = ResponseProxy(response)
         elements = proxy.elements
 
-        df_elem = [e for e in elements if e["type"] == "dataframe"][0]
+        df_elem = next(e for e in elements if e["type"] == "dataframe")
 
         # Both value and df should work
         assert "value" in df_elem
