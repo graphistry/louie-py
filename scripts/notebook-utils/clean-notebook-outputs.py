@@ -85,8 +85,8 @@ def clean_notebook_outputs(notebook_path, dry_run=False):
                         if not dry_run:
                             output["text"] = new_texts
 
-                elif output.get("output_type") == "execute_result":
-                    # Redact in execute_result data
+                elif output.get("output_type") in ["execute_result", "display_data"]:
+                    # Redact in execute_result and display_data
                     data = output.get("data", {})
                     if "text/html" in data:
                         html_list = data["text/html"]
