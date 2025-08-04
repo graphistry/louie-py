@@ -328,7 +328,11 @@ class ResponseProxy:
             for elem in self._response.text_elements:
                 if isinstance(elem, dict):
                     # Check 'content', 'text', and 'value' keys for backward compatibility
-                    value = elem.get("content") or elem.get("text", "") or elem.get("value", "")
+                    value = (
+                        elem.get("content")
+                        or elem.get("text", "")
+                        or elem.get("value", "")
+                    )
                     result.append({"type": "text", "value": value})
 
         # Add dataframe elements
@@ -338,7 +342,16 @@ class ResponseProxy:
         ):
             for elem in self._response.dataframe_elements:
                 if isinstance(elem, dict) and "table" in elem:
-                    result.append({"type": "dataframe", "value": elem["table"]})
+                    df_element = {
+                        "type": "dataframe",
+                        "value": elem["table"],  # Backward compatibility
+                        "df": elem["table"],  # Convenient access as 'df'
+                    }
+                    # Include metadata from the original element
+                    for key in ["id", "df_id", "block_id"]:
+                        if key in elem:
+                            df_element[key] = elem[key]
+                    result.append(df_element)
 
         # Add graph elements
         if hasattr(self._response, "graph_elements") and self._response.graph_elements:
