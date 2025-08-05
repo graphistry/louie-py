@@ -61,8 +61,8 @@ class TestCursorDisplay:
         assert "History: 1 responses" in repr_str
         assert "Latest: 1 text, 1 dataframe" in repr_str
 
-    def test_repr_html_displays_response_content(self):
-        """Test _repr_html_ shows actual response content."""
+    def test_repr_html_no_longer_shows_response_content(self):
+        """Test _repr_html_ no longer shows response content to avoid double display."""
         cursor = Cursor(client=MagicMock())
 
         # Add a response
@@ -79,18 +79,18 @@ class TestCursorDisplay:
 
         # Check structure
         assert "<h4" in html
-        assert "LouieAI Response" in html
+        assert "LouieAI Session" in html  # Changed from "Response"
 
-        # Check content is displayed
-        assert "Here is your song:" in html
-        assert "La la la!" in html
+        # Check content is NOT displayed (to avoid double display)
+        assert "Here is your song:" not in html
+        assert "La la la!" not in html
 
-        # Check metadata
+        # Check metadata IS still shown
         assert "Session:</b> Active" in html
         assert "History:</b> 1 responses" in html
 
-    def test_repr_html_escapes_content(self):
-        """Test that HTML content is properly escaped."""
+    def test_repr_html_shows_session_info(self):
+        """Test that _repr_html_ shows session information."""
         cursor = Cursor(client=MagicMock())
 
         # Add response with HTML-like content
@@ -101,12 +101,16 @@ class TestCursorDisplay:
             ],
         )
         cursor._history.append(mock_response)
+        cursor._current_thread = "test-thread"
 
         html = cursor._repr_html_()
 
-        # Should escape the script tag
-        assert "&lt;script&gt;" in html
+        # Should show session info but not content
+        assert "Session:</b> Active" in html
+        assert "Thread ID:</b> <code>test-thread</code>" in html
+        # Content should NOT be displayed (no XSS risk from _repr_html_)
         assert "<script>" not in html
+        assert "alert" not in html
 
     def test_repr_html_shows_dataframe_notice(self):
         """Test that dataframe availability is noted."""
