@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.7] - 2025-08-05
+
+### Fixed
+- **Double display in Jupyter notebooks**: Fixed issue where responses were displayed twice when calling `lui("query")` in notebooks
+  - Modified `_repr_html_` to show only session metadata instead of response content
+  - Response content is now displayed only once via streaming or `_display()` method
+  - Prevents duplicate display while maintaining useful session information
+
 ## [0.5.6] - 2025-08-04
 
 ### Fixed
