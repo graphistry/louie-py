@@ -198,9 +198,9 @@ class TestNotebookExperience:
 
         # HTML repr
         html = lui._repr_html_()
-        assert "🤖 LouieAI Response" in html
-        assert "&lt;html&gt;" in html  # Escaped
-        assert "&amp; symbols" in html  # Escaped
+        assert "🤖 LouieAI Session" in html  # Changed from Response to Session
+        # Note: Content is no longer shown in _repr_html_ to avoid double display
+        # So HTML escaping tests are no longer relevant here
         assert "1 dataframe(s) - access with" in html
 
     def test_environment_variable_initialization(self):

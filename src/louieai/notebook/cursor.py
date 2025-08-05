@@ -868,17 +868,11 @@ class Cursor:
                 "<div style='border: 1px solid #ddd; padding: 10px; "
                 "border-radius: 5px; margin-bottom: 10px;'>"
             ),
-            "<h4 style='margin-top: 0;'>🤖 LouieAI Response</h4>",
+            "<h4 style='margin-top: 0;'>🤖 LouieAI Session</h4>",
         ]
 
-        # Show latest response content if available
-        if self._history:
-            latest = self._history[-1]
-
-            # Use the shared renderer for consistent display
-            response_html = _render_response_html(latest, self._client)
-            if response_html:
-                html_parts.append(response_html)
+        # Note: Response content is displayed separately via streaming or _display()
+        # This shows only session metadata to avoid double display
 
         # Session info footer
         html_parts.append("<hr style='margin: 10px 0;'>")
