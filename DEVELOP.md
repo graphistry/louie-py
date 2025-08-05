@@ -135,6 +135,26 @@ uv run python -m pytest
 ./scripts/ci-local.sh
 ```
 
+### Secret Detection
+
+The project uses `detect-secrets` to prevent accidental commits of sensitive information:
+
+```bash
+# Scan for secrets (happens automatically on commit)
+uv run detect-secrets scan
+
+# Update baseline after legitimate changes
+uv run detect-secrets scan --baseline .secrets.baseline
+
+# Audit baseline interactively
+uv run detect-secrets audit .secrets.baseline
+```
+
+**Handling false positives:**
+- Use clear placeholders: `<your-password>`, `sk-XXXXXXXX`, `****`
+- Add inline comment: `# pragma: allowlist secret`
+- See `.secret-patterns.md` for acceptable placeholder patterns
+
 ### Writing Tests
 
 - Unit tests: Mock all external dependencies

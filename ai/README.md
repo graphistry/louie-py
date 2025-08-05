@@ -63,6 +63,11 @@ pytest
   - `.env` files in project root (gitignored)
 - **UNSAFE DIRECTORIES**: `src/`, `tests/`, `docs/`, `scripts/`, `ai/`, etc.
 
+**Secret Detection:**
+- Pre-commit hooks automatically scan for secrets
+- Use clear placeholders in docs: `<your-password>`, `sk-XXXXXXXX`
+- See [DEVELOP.md](../DEVELOP.md#secret-detection) for details
+
 **Best Practice: Use .env files**
 ```bash
 # Create secrets safely
