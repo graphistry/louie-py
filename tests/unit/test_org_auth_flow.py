@@ -147,17 +147,17 @@ class TestOrgAuthFlow:
         auth_manager._refresh_auth()
 
         # Verify org_name was passed to PyGraphistry register
-        assert (
-            len(register_calls) == 1
-        ), "Expected exactly one call to graphistry.register()"
+        assert len(register_calls) == 1, (
+            "Expected exactly one call to graphistry.register()"
+        )
 
         register_kwargs = register_calls[0]
-        assert (
-            "org_name" in register_kwargs
-        ), "org_name should be passed to graphistry.register()"
-        assert (
-            register_kwargs["org_name"] == target_org
-        ), f"Expected org_name='{target_org}', got '{register_kwargs['org_name']}'"
+        assert "org_name" in register_kwargs, (
+            "org_name should be passed to graphistry.register()"
+        )
+        assert register_kwargs["org_name"] == target_org, (
+            f"Expected org_name='{target_org}', got '{register_kwargs['org_name']}'"
+        )
 
     @pytest.mark.skip(
         reason="This test demonstrates the confused deputy problem - will fail "
@@ -189,16 +189,16 @@ class TestOrgAuthFlow:
             stored_org = auth_manager._credentials.get("org_name")
 
             # This should be 'databricks-pat-botsv3' but is likely None
-            assert (
-                stored_org == "databricks-pat-botsv3"
-            ), f"Confused deputy: Expected 'databricks-pat-botsv3', got '{stored_org}'"
+            assert stored_org == "databricks-pat-botsv3", (
+                f"Confused deputy: Expected 'databricks-pat-botsv3', got '{stored_org}'"
+            )
 
             # Check headers that would be sent to LouieAI API
             headers = lui._client._get_headers()
-            assert (
-                "X-Graphistry-Org" in headers
-            ), "Missing org header - API calls will be made as 'personal'"
+            assert "X-Graphistry-Org" in headers, (
+                "Missing org header - API calls will be made as 'personal'"
+            )
 
-            assert (
-                headers["X-Graphistry-Org"] == "databricks-pat-botsv3"
-            ), f"Wrong org in API headers: {headers.get('X-Graphistry-Org')}"
+            assert headers["X-Graphistry-Org"] == "databricks-pat-botsv3", (
+                f"Wrong org in API headers: {headers.get('X-Graphistry-Org')}"
+            )

@@ -109,9 +109,9 @@ class TestDatabricksEmptyTextElements:
                 # The issue: all text values are empty
                 for i, elem in enumerate(text_elements):
                     print(f"Text element {i}: {elem}")
-                    assert (
-                        elem["value"] == ""
-                    ), f"Expected empty text, but got: {elem['value']}"
+                    assert elem["value"] == "", (
+                        f"Expected empty text, but got: {elem['value']}"
+                    )
 
                 # DataFrame element should be populated
                 df_elements = [e for e in lui.elements if e["type"] == "dataframe"]
