@@ -28,11 +28,7 @@ jobs:
           uv venv --python python3.12
           uv pip install -e ".[dev]"
       - name: Secret Detection
-        run: |
-          # Check for new secrets not in baseline
-          uv run detect-secrets scan --baseline .secrets.baseline
-          # Verify no high-confidence secrets
-          uv run detect-secrets scan --baseline .secrets.baseline --only-verified
+        run: ./scripts/ci/secret-detection.sh
       - name: Lint (ruff)
         run: uv run ruff check .
       - name: Format (ruff)
