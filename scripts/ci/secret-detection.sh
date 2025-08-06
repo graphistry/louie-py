@@ -2,6 +2,10 @@
 # secret-detection.sh - Centralized secret detection using detect-secrets
 # This script is used by both CI and pre-commit hooks
 # Usage: ./scripts/ci/secret-detection.sh [--check-only]
+#
+# To test changes to this script:
+#   ./scripts/test-secret-detection.sh
+# See also: tests/secret_patterns_reference.py for pattern examples
 
 set -e  # Exit on any error
 
