@@ -63,6 +63,10 @@ print_step "Installing dependencies with uv"
 ./scripts/ci/install-deps.sh || print_error "Failed to install dependencies"
 print_success "Dependencies installed"
 
+print_step "Secret detection scan"
+./scripts/ci/secret-detection.sh || print_error "Secrets detected"
+print_success "No secrets found"
+
 print_step "Linting with ruff"
 ./scripts/ci/lint.sh || print_error "Linting failed"
 print_success "Linting passed"
