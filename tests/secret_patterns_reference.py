@@ -7,13 +7,13 @@ the secret detection system. All secrets here are fake documentation examples.
 
 To test secret detection:
   ./scripts/test-secret-detection.sh
-  
+
 Or manually test this file:
   uv run detect-secrets scan tests/secret_patterns_reference.py
-  
+
 This file is only scanned when:
   - Running manual tests with ./scripts/test-secret-detection.sh
-  - Changes to secret detection files trigger .github/workflows/secret-detection-test.yml
+  - Changes to secret detection files trigger the CI workflow
 """
 
 # ============================================================================
@@ -68,9 +68,10 @@ How to test secret detection:
 2. Test manually:
    # Check if this file triggers detection
    uv run detect-secrets scan tests/secret_patterns_reference.py
-   
+
    # Check against baseline
-   uv run detect-secrets scan --baseline .secrets.baseline tests/secret_patterns_reference.py
+   uv run detect-secrets scan --baseline .secrets.baseline \
+       tests/secret_patterns_reference.py
 
 3. Update baseline if needed (when adding new example patterns):
    ./scripts/secrets.sh --update-baseline
@@ -88,7 +89,7 @@ How to test secret detection:
 # ============================================================================
 PATTERN_GUIDE = """
 SAFE PATTERNS (won't trigger):
-- sk-XXXXXXXX... (X's for redaction)  
+- sk-XXXXXXXX... (X's for redaction)
 - <your-password> (angle brackets)
 - **** (stars for masking)
 - ... (dots)
