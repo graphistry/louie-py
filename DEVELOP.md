@@ -141,10 +141,15 @@ The project uses `detect-secrets` to prevent accidental commits of sensitive inf
 
 ```bash
 # Scan for secrets (happens automatically on commit)
-uv run detect-secrets scan
+./scripts/secrets.sh
+# Or: uv run detect-secrets scan
 
-# Update baseline after legitimate changes
-uv run detect-secrets scan --baseline .secrets.baseline
+# Update baseline after legitimate changes  
+./scripts/secrets.sh --update-baseline
+# Or: uv run detect-secrets scan --baseline .secrets.baseline
+
+# Test secret detection system
+./scripts/test-secret-detection.sh
 
 # Audit baseline interactively
 uv run detect-secrets audit .secrets.baseline
