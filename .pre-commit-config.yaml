@@ -13,3 +13,11 @@ repos:
     rev: v1.10.0
     hooks:
       - id: python-check-blanket-noqa
+  - repo: local
+    hooks:
+      - id: detect-secrets
+        name: Detect secrets
+        entry: ./scripts/pre-commit-secret-check.sh
+        language: script
+        pass_filenames: false
+        always_run: true

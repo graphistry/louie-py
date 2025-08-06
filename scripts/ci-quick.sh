@@ -15,6 +15,10 @@ echo "=========================================="
 check_uv
 check_project_root
 
+print_step "Secret detection check"
+./scripts/ci/secret-detection.sh || print_error "Secrets detected"
+print_success "No secrets found"
+
 print_step "Quick lint check (errors only)"
 ./scripts/ci/lint.sh --errors-only || print_error "Critical linting errors found"
 print_success "No critical errors"

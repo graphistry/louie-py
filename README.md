@@ -26,7 +26,7 @@ graphistry.register(
     api=3,
     server="hub.graphistry.com",  # or your enterprise server
     username="bob@company.com",   # your actual username
-    password="MySecurePass456!"   # your actual password
+    password="<your-password>"    # your actual password
 )
 
 # 3. Start analyzing with natural language
@@ -68,7 +68,7 @@ graphistry.register(
     api=3, 
     server="hub.graphistry.com",  # or your enterprise server
     username="mike@investigations.org", 
-    password="Secure123!"
+    password="password123"  # example password
 )
 
 # Optional: Use custom Louie server
@@ -88,7 +88,7 @@ graphistry.register(
     api=3,
     server="hub.graphistry.com",  # or your private server
     username="alice@example.com",
-    password="SecurePassword123!"
+    password="password123"  # example password
 )
 
 # Now import and use LouieAI (two options)

@@ -90,7 +90,7 @@ client = lui.LouieClient(graphistry_client=g)
 ```python
 # Using legacy API key
 client = lui.LouieClient(
-    api_key="your_api_key",
+    api_key="<your-api-key>",
     server="hub.graphistry.com"
 )
 
