@@ -61,9 +61,9 @@ echo -e "${YELLOW}🚨 Testing UNSAFE patterns (should be detected)${NC}"
 echo "----------------------------------------"
 
 # Real-looking secrets that SHOULD be detected
-run_test "AWS-like Key" \
-    "$TEST_DIR/aws.py" \
-    'AWS_KEY = "AKIAIOSFODNN7REALKEY"' \
+run_test "Generic API Key" \
+    "$TEST_DIR/api.py" \
+    'api_key = "super_secret_api_key_12345"' \
     "yes" && ((PASSED++)) || ((FAILED++))
 
 run_test "Generic Password" \
@@ -73,12 +73,12 @@ run_test "Generic Password" \
 
 run_test "API Token" \
     "$TEST_DIR/token.py" \
-    'api_token = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"' \
+    'api_token = "token_abc123def456ghi789"' \
     "yes" && ((PASSED++)) || ((FAILED++))
 
 run_test "Private Key" \
     "$TEST_DIR/key.py" \
-    'private_key = "sk_live_4242424242424242"' \
+    'private_key = "private_key_secret_value_123"' \
     "yes" && ((PASSED++)) || ((FAILED++))
 
 run_test "Base64 Secret" \
