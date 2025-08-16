@@ -523,6 +523,121 @@ class LouieClient:
         # Return Response with all elements
         return Response(thread_id=actual_thread_id, elements=result["elements"])
 
+    @auto_retry_auth
+    def upload_dataframe(
+        self,
+        prompt: str,
+        df: pd.DataFrame,
+        thread_id: str = "",
+        *,
+        format: str = "parquet",
+        agent: str = "UploadPassthroughAgent",
+        traces: bool = False,
+        share_mode: str = "Private",
+        name: str | None = None,
+        parsing_options: dict[str, Any] | None = None,
+    ) -> Response:
+        """Upload a DataFrame with a natural language query for AI analysis.
+
+        This method enables data analysis by uploading a pandas DataFrame along
+        with a natural language prompt. The AI will analyze the data and respond
+        according to your query.
+
+        Args:
+            prompt: Natural language query about the data (e.g., "What are the main
+                trends?", "Find outliers", "Summarize by category")
+            df: Pandas DataFrame to analyze. Supports any pandas DataFrame including
+                those with datetime indices, categorical data, and missing values.
+            thread_id: Thread ID to continue an existing conversation. Use empty string
+                (default) to start a new thread.
+            format: Serialization format for the DataFrame:
+                - "parquet" (default): Best for performance and type preservation
+                - "csv": Universal compatibility, may lose type information
+                - "json": Good for nested data structures
+                - "arrow": Apache Arrow format for zero-copy operations
+            agent: AI agent to process the upload:
+                - "UploadPassthroughAgent" (default): Fast, automatic parsing
+                - "UploadAgent": LLM-powered parsing for complex formats
+            traces: If True, includes AI reasoning traces in the response
+            share_mode: Controls visibility of the analysis:
+                - "Private" (default): Only you can see it
+                - "Organization": Visible to your organization
+                - "Public": Publicly accessible
+            name: Optional name for the thread (auto-generated if not provided)
+            parsing_options: Format-specific parsing configuration as a dict.
+                For CSV: {"delimiter": ",", "header": True, "index_col": 0}
+                For JSON: {"orient": "records", "lines": False}
+                For Parquet/Arrow: Usually not needed
+
+        Returns:
+            Response object with:
+                - thread_id: Unique identifier for the conversation
+                - text: Primary text response from the AI
+                - df/dfs: Any DataFrames returned by the analysis
+                - elements: All response elements (text, dataframes, graphs, etc.)
+
+        Examples:
+            Simple analysis:
+            >>> import pandas as pd
+            >>> df = pd.DataFrame({
+            ...     "product": ["A", "B", "C"],
+            ...     "sales": [100, 200, 150],
+            ...     "profit": [20, 50, 35]
+            ... })
+            >>> response = client.upload_dataframe(
+            ...     "Which product is most profitable?", df
+            ... )
+            >>> print(response.text)
+
+            Time series analysis:
+            >>> df = pd.DataFrame({
+            ...     "date": pd.date_range("2024-01-01", periods=30),
+            ...     "value": np.random.randn(30).cumsum()
+            ... })
+            >>> response = client.upload_dataframe(
+            ...     "Identify trends and anomalies",
+            ...     df,
+            ...     format="parquet"  # Preserves datetime types
+            ... )
+
+            Continue conversation:
+            >>> # First query
+            >>> r1 = client.upload_dataframe("Summarize this data", df)
+            >>> # Follow-up in same thread
+            >>> r2 = client.upload_dataframe(
+            ...     "Now group by category",
+            ...     df,
+            ...     thread_id=r1.thread_id
+            ... )
+
+            With custom CSV parsing:
+            >>> response = client.upload_dataframe(
+            ...     "Analyze sales data",
+            ...     df,
+            ...     format="csv",
+            ...     parsing_options={
+            ...         "delimiter": ";",
+            ...         "decimal": ",",  # European format
+            ...         "thousands": "."
+            ...     }
+            ... )
+        """
+        # Lazy import to avoid circular dependency
+        from ._upload import UploadClient
+
+        upload_client = UploadClient(self)
+        return upload_client.upload_dataframe(
+            prompt=prompt,
+            df=df,
+            thread_id=thread_id,
+            format=format,
+            agent=agent,
+            traces=traces,
+            share_mode=share_mode,
+            name=name,
+            parsing_options=parsing_options,
+        )
+
     def __call__(
         self,
         prompt: str,
@@ -629,6 +744,101 @@ class LouieClient:
 
         data = response.json()
         return Thread(id=data.get("id", ""), name=data.get("name"))
+
+    def upload_image(
+        self,
+        prompt: str,
+        image: Any,
+        thread_id: str = "",
+        *,
+        agent: str = "UploadPassthroughAgent",
+        traces: bool = False,
+        share_mode: str = "Private",
+        name: str | None = None,
+    ) -> Response:
+        """Upload an image with a natural language query for analysis.
+
+        Delegates to UploadClient for actual upload.
+
+        Args:
+            prompt: Natural language query about the image
+            image: Image to analyze (file path, bytes, file-like, or PIL Image)
+            thread_id: Thread ID to continue conversation
+            agent: AI agent to use
+            traces: Whether to include reasoning traces
+            share_mode: Visibility setting
+            name: Optional thread name
+
+        Returns:
+            Response object containing AI analysis
+
+        Examples:
+            >>> response = client.upload_image("What's in this?", "photo.jpg")
+            >>> print(response.text)
+        """
+        if not hasattr(self, "_upload_client"):
+            from ._upload import UploadClient
+
+            self._upload_client = UploadClient(self)
+
+        return self._upload_client.upload_image(
+            prompt=prompt,
+            image=image,
+            thread_id=thread_id,
+            agent=agent,
+            traces=traces,
+            share_mode=share_mode,
+            name=name,
+        )
+
+    def upload_binary(
+        self,
+        prompt: str,
+        file: Any,
+        thread_id: str = "",
+        *,
+        agent: str = "UploadPassthroughAgent",
+        traces: bool = False,
+        share_mode: str = "Private",
+        name: str | None = None,
+        filename: str | None = None,
+    ) -> Response:
+        """Upload a binary file with a natural language query for analysis.
+
+        Delegates to UploadClient for actual upload.
+
+        Args:
+            prompt: Natural language query about the file
+            file: File to analyze (file path, bytes, or file-like)
+            thread_id: Thread ID to continue conversation
+            agent: AI agent to use
+            traces: Whether to include reasoning traces
+            share_mode: Visibility setting
+            name: Optional thread name
+            filename: Optional filename to use
+
+        Returns:
+            Response object containing AI analysis
+
+        Examples:
+            >>> response = client.upload_binary("Summarize", "report.pdf")
+            >>> print(response.text)
+        """
+        if not hasattr(self, "_upload_client"):
+            from ._upload import UploadClient
+
+            self._upload_client = UploadClient(self)
+
+        return self._upload_client.upload_binary(
+            prompt=prompt,
+            file=file,
+            thread_id=thread_id,
+            agent=agent,
+            traces=traces,
+            share_mode=share_mode,
+            name=name,
+            filename=filename,
+        )
 
     def __enter__(self):
         """Context manager support."""
