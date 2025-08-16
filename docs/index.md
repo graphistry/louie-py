@@ -73,6 +73,7 @@ older_df = lui[-2].df      # DataFrame from 2 queries ago
 ```
 
 **Need more options?** See our guides:
+
 - [Authentication Guide](guides/authentication.md) - All authentication methods including API keys, multi-tenant usage
 - [Getting Started](getting-started/quick-start.md) - Complete walkthrough with examples
 - [Agent Selection](guides/agent-selection.md) - Use specialized agents for databases and visualizations
@@ -88,18 +89,17 @@ older_df = lui[-2].df      # DataFrame from 2 queries ago
 - **Auto-refresh authentication**: Automatically handles JWT token expiration
 - **Multiple auth methods**: Works with existing Graphistry sessions or direct credentials
 
-### 🤖 Available Agents with Semantic Understanding
+### Available Agents with Semantic Understanding
 
 LouieAI provides specialized agents that learn and understand your data:
 
-- **General Purpose**: LouieAgent (default), TextAgent, CodeAgent
-- **Databases with Semantic Layer**: 
-  - DatabricksAgent, PostgresAgent, MySQLAgent, SnowflakeAgent, BigQueryAgent
+- General Purpose: LouieAgent (default), TextAgent, CodeAgent
+- Databases with Semantic Layer: DatabricksAgent, PostgresAgent, MySQLAgent, SnowflakeAgent, BigQueryAgent
   - Agents learn your schema, relationships, and business context
   - Generate complex queries from natural language using semantic understanding
-- **Search & Analytics**: SplunkAgent, OpenSearchAgent, KustoAgent
-- **Visualizations**: GraphAgent, PerspectiveAgent, KeplerAgent, MermaidAgent
-- **Direct Execution**: PassthroughAgent variants for each database (no AI interpretation)
+- Search & Analytics: SplunkAgent, OpenSearchAgent, KustoAgent
+- Visualizations: GraphAgent, PerspectiveAgent, KeplerAgent, MermaidAgent
+- Direct Execution: PassthroughAgent variants for each database (no AI interpretation)
 
 ```python
 # Use the default conversational agent
