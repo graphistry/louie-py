@@ -127,9 +127,11 @@ class TestImageUpload:
         upload_client = UploadClient(mock_client)
 
         # Test file not found
-        with patch("pathlib.Path.exists", return_value=False):
-            with pytest.raises(FileNotFoundError):
-                upload_client._serialize_image("nonexistent.png")
+        with (
+            patch("pathlib.Path.exists", return_value=False),
+            pytest.raises(FileNotFoundError),
+        ):
+            upload_client._serialize_image("nonexistent.png")
 
         # Test invalid type
         with pytest.raises(TypeError):
@@ -208,9 +210,11 @@ class TestBinaryUpload:
         upload_client = UploadClient(mock_client)
 
         # Test file not found
-        with patch("pathlib.Path.exists", return_value=False):
-            with pytest.raises(FileNotFoundError):
-                upload_client._serialize_binary("nonexistent.pdf")
+        with (
+            patch("pathlib.Path.exists", return_value=False),
+            pytest.raises(FileNotFoundError),
+        ):
+            upload_client._serialize_binary("nonexistent.pdf")
 
         # Test invalid type
         with pytest.raises(TypeError):
