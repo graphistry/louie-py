@@ -9,6 +9,7 @@ nav:
     - Quick Start: getting-started/quick-start.md
     - Example Notebooks:
       - Getting Started: getting-started/notebooks/01-getting-started.ipynb
+      - Data Upload Guide: getting-started/notebooks/02-data-upload.ipynb
       - Data Science Workflow: getting-started/notebooks/02-data-science-workflow.ipynb
       - Fraud Investigation: getting-started/notebooks/03-fraud-investigation.ipynb
       - Error Handling: getting-started/notebooks/04-error-handling.ipynb
