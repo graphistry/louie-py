@@ -437,16 +437,23 @@ class ResponseProxy:
 
 
 class Cursor:
-    """Cursor for natural language queries.
+    """Cursor for natural language queries and DataFrame analysis.
 
-    Provides implicit thread management and history tracking for
-    natural notebook workflows.
+    Provides implicit thread management, history tracking, and DataFrame upload
+    capabilities for natural notebook workflows with AI-powered data analysis.
 
     Quick Start:
         >>> import louieai as lui
         >>> lui("What's the weather today?")
         >>> lui.df  # Access any returned dataframe
         >>> lui.text  # Access the text response
+
+    DataFrame Analysis:
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+        >>> lui("Calculate correlation", df)  # Upload and analyze
+        >>> lui(df, "sum")  # Reversed syntax for simple operations
+        >>> print(lui.text)  # See AI's analysis
 
     Session Management:
         - Thread ID managed automatically
@@ -566,23 +573,166 @@ class Cursor:
 
     def __call__(
         self,
-        prompt: str,
+        prompt: str | pd.DataFrame,
+        df: pd.DataFrame | None = None,
         *,
         traces: bool | None = None,
         share_mode: str | None = None,
         **kwargs: Any,
     ) -> "Cursor":
-        """Execute a query with implicit thread management.
+        """Execute a query with implicit thread management and optional DataFrame.
+
+        Supports upload of pandas DataFrames for AI-powered analysis.
+
+        Supports flexible calling patterns for both text queries and DataFrame analysis.
+        Thread management is automatic - continues current thread or starts new.
 
         Args:
-            prompt: Natural language query
-            traces: Override session trace setting for this query
-            share_mode: Override default visibility mode for this query (optional)
-            **kwargs: Additional arguments passed to client.query()
+            prompt: Natural language query string, or DataFrame if using reversed syntax
+            df: Optional pandas DataFrame to upload and analyze with the query
+            traces: Override session trace setting for this query (shows AI reasoning)
+            share_mode: Override default visibility for this query:
+                - "Private": Only you can see it
+                - "Organization": Visible to your organization
+                - "Public": Publicly accessible
+            **kwargs: Additional arguments for upload_dataframe() when df is provided:
+                - format: "parquet" (default), "csv", "json", or "arrow"
+                - agent: "UploadPassthroughAgent" (default) or "UploadAgent"
+                - parsing_options: Dict of format-specific parsing configuration
 
         Returns:
-            Self for chaining and property access
+            Self (Cursor) for chaining and property access:
+                - .text: Primary text response
+                - .df: Latest DataFrame result
+                - .dfs: All DataFrames from response
+                - .g: Latest graph visualization
+                - .elements: All response elements
+
+        Examples:
+            Simple query:
+            >>> lui("What is the capital of France?")
+            >>> print(lui.text)
+
+            DataFrame analysis (both patterns work):
+            >>> import pandas as pd
+            >>> df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+            >>>
+            >>> # Pattern 1: prompt first
+            >>> lui("Calculate the correlation", df)
+            >>>
+            >>> # Pattern 2: DataFrame first (more natural for simple operations)
+            >>> lui(df, "Calculate the correlation")
+            >>>
+            >>> # Ultra-concise for simple operations
+            >>> lui("sum", df)  # Or lui(df, "sum")
+
+            Time series analysis:
+            >>> df = pd.DataFrame({
+            ...     "date": pd.date_range("2024-01-01", periods=100),
+            ...     "sales": np.random.randn(100).cumsum() + 100
+            ... })
+            >>> lui("Identify trends and forecast next 10 days", df)
+            >>> forecast_df = lui.df  # Access returned forecast
+
+            Multi-step analysis in same thread:
+            >>> # First upload and analyze
+            >>> lui("Summarize this dataset", sales_df)
+            >>>
+            >>> # Follow-up questions use same thread automatically
+            >>> lui("Which products are underperforming?")
+            >>>
+            >>> # Add more data to the analysis
+            >>> lui("Compare with this year's data", sales_2024_df)
+
+            With upload options:
+            >>> lui(
+            ...     "Analyze this CSV data",
+            ...     df,
+            ...     format="csv",
+            ...     parsing_options={"delimiter": ";", "decimal": ","}
+            ... )
+
+            Control visibility per query:
+            >>> lui("Analyze company metrics", df, share_mode="Organization")
         """
+        # Detect input type and handle accordingly
+        actual_image = None
+        actual_binary = None
+
+        # Handle flexible argument patterns
+        if isinstance(prompt, pd.DataFrame):
+            # Pattern: lui(df, "prompt") - swap arguments
+            if isinstance(df, str):
+                actual_prompt = df
+                actual_df = prompt
+            else:
+                raise ValueError(
+                    "When first argument is DataFrame, second must be a string prompt"
+                )
+        elif self._is_image_input(prompt):
+            # Image as first argument
+            if df is None:
+                # Pattern: lui(image) - image without prompt
+                actual_image = prompt
+                actual_prompt = "Analyze this image"
+                actual_df = None
+            elif isinstance(df, str):
+                # Pattern: lui(image, "prompt") - swap arguments
+                actual_image = prompt
+                actual_prompt = df
+                actual_df = None
+            else:
+                raise ValueError(
+                    "When first argument is image, second must be a string "
+                    "prompt or None"
+                )
+        elif self._is_binary_file_input(prompt):
+            # Binary file as first argument
+            if df is None:
+                # Pattern: lui(file) - file without prompt
+                actual_binary = prompt
+                actual_prompt = "Analyze this file"
+                actual_df = None
+            elif isinstance(df, str):
+                # Pattern: lui(file, "prompt") - swap arguments
+                actual_binary = prompt
+                actual_prompt = df
+                actual_df = None
+            else:
+                raise ValueError(
+                    "When first argument is binary file, second must be a "
+                    "string prompt or None"
+                )
+        elif isinstance(prompt, str):
+            # String prompt as first argument
+            if df is None:
+                # Pattern: lui("prompt") - no additional data
+                actual_prompt = prompt
+                actual_df = None
+            elif isinstance(df, pd.DataFrame):
+                # Pattern: lui("prompt", df)
+                actual_prompt = prompt
+                actual_df = df
+            elif self._is_image_input(df):
+                # Pattern: lui("prompt", image)
+                actual_prompt = prompt
+                actual_image = df
+                actual_df = None
+            elif self._is_binary_file_input(df):
+                # Pattern: lui("prompt", file)
+                actual_prompt = prompt
+                actual_binary = df
+                actual_df = None
+            else:
+                raise ValueError(
+                    f"Unsupported second argument type: {type(df)}. "
+                    "Expected DataFrame, image, binary file, or None"
+                )
+        else:
+            raise ValueError(
+                f"Unsupported first argument type: {type(prompt)}. "
+                "Expected string prompt, DataFrame, image, or binary file"
+            )
         # Get or create thread
         if self._current_thread is None:
             self._current_thread = self._get_or_create_thread()
@@ -591,7 +741,9 @@ class Cursor:
             # from prompt
             if self._name is None:
                 # Auto-generate name from first message (first 50 chars)
-                self._name = prompt[:50] + ("..." if len(prompt) > 50 else "")
+                self._name = actual_prompt[:50] + (
+                    "..." if len(actual_prompt) > 50 else ""
+                )
 
         # Determine trace setting
         use_traces = traces if traces is not None else self._traces
@@ -600,23 +752,64 @@ class Cursor:
         use_share_mode = share_mode if share_mode is not None else self._share_mode
 
         # Build parameters
-        params = {"prompt": prompt, "thread_id": self._current_thread, **kwargs}
+        params = {"prompt": actual_prompt, "thread_id": self._current_thread, **kwargs}
 
         # Extract add_cell specific params
         thread_id = params.pop("thread_id")
-        agent = params.pop("agent", "LouieAgent")
+        agent = params.pop(
+            "agent",
+            "LouieAgent"
+            if actual_df is None and actual_image is None and actual_binary is None
+            else "UploadPassthroughAgent",
+        )
 
         # Execute query
         try:
-            # Check if we're in Jupyter and should stream
-            if self._in_jupyter() and self._last_display_id is None:
-                # Use streaming display for better UX
+            # Check if we have a DataFrame to upload
+            if actual_df is not None:
+                # Use upload_dataframe for DataFrame queries
+                response = self._client.upload_dataframe(
+                    prompt=actual_prompt,
+                    df=actual_df,
+                    thread_id=thread_id,
+                    agent=agent,
+                    traces=use_traces,
+                    share_mode=use_share_mode,
+                    name=self._name,
+                    format=kwargs.get("format", "parquet"),
+                    parsing_options=kwargs.get("parsing_options"),
+                )
+            elif actual_image is not None:
+                # Use upload_image for image queries
+                response = self._client.upload_image(
+                    prompt=actual_prompt,
+                    image=actual_image,
+                    thread_id=thread_id,
+                    agent=agent,
+                    traces=use_traces,
+                    share_mode=use_share_mode,
+                    name=self._name,
+                )
+            elif actual_binary is not None:
+                # Use upload_binary for binary file queries
+                response = self._client.upload_binary(
+                    prompt=actual_prompt,
+                    file=actual_binary,
+                    thread_id=thread_id,
+                    agent=agent,
+                    traces=use_traces,
+                    share_mode=use_share_mode,
+                    name=self._name,
+                    filename=kwargs.get("filename"),
+                )
+            elif self._in_jupyter() and self._last_display_id is None:
+                # Use streaming display for better UX (non-DataFrame queries)
                 from .streaming import stream_response
 
                 result = stream_response(
                     self._client,
                     thread_id=thread_id,
-                    prompt=prompt,
+                    prompt=actual_prompt,
                     agent=agent,
                     traces=use_traces,
                     share_mode=use_share_mode,
@@ -632,7 +825,7 @@ class Cursor:
                 # Non-Jupyter or updating existing display
                 response = self._client.add_cell(
                     thread_id=thread_id,
-                    prompt=prompt,
+                    prompt=actual_prompt,
                     agent=agent,
                     traces=use_traces,
                     share_mode=use_share_mode,
@@ -817,6 +1010,142 @@ class Cursor:
     def has_errors(self) -> bool:
         """Check if latest response contains errors."""
         return len(self.errors) > 0
+
+    def _is_image_input(self, obj: Any) -> bool:
+        """Check if object is an image input.
+
+        Args:
+            obj: Object to check
+
+        Returns:
+            True if object is an image (file path, bytes, PIL Image, etc.)
+        """
+        if obj is None:
+            return False
+
+        # Check for file path with image extension
+        if isinstance(obj, str):
+            import os
+            from pathlib import Path
+
+            # Check if it's a file path
+            if os.path.exists(obj) or Path(obj).suffix.lower() in [
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".bmp",
+                ".webp",
+                ".svg",
+                ".tiff",
+                ".ico",
+            ]:
+                return True
+
+        # Check for bytes (could be image data)
+        if isinstance(obj, bytes) and (
+            obj.startswith(b"\x89PNG")
+            or obj.startswith(b"\xff\xd8\xff")
+            or obj.startswith(b"GIF8")
+            or obj.startswith(b"BM")
+            or (obj.startswith(b"RIFF") and b"WEBP" in obj[:20])
+        ):
+            return True
+
+        # Check for file-like objects with image names
+        if hasattr(obj, "read") and hasattr(obj, "name"):
+            name = str(obj.name).lower()
+            if any(
+                name.endswith(ext)
+                for ext in [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"]
+            ):
+                return True
+
+        # Check for PIL Image
+        try:
+            from PIL import Image  # type: ignore[import-not-found]
+
+            if isinstance(obj, Image.Image):
+                return True
+        except ImportError:
+            pass
+
+        return False
+
+    def _is_binary_file_input(self, obj: Any) -> bool:
+        """Check if object is a binary file input (non-image).
+
+        Args:
+            obj: Object to check
+
+        Returns:
+            True if object is a binary file (PDF, Office docs, etc.)
+        """
+        if obj is None:
+            return False
+
+        # Check for file path with non-image extensions
+        if isinstance(obj, str):
+            import os
+            from pathlib import Path
+
+            # Check if it's a file path with binary file extensions
+            if os.path.exists(obj) or Path(obj).suffix.lower() in [
+                ".pdf",
+                ".doc",
+                ".docx",
+                ".xls",
+                ".xlsx",
+                ".ppt",
+                ".pptx",
+                ".txt",
+                ".csv",
+                ".json",
+                ".xml",
+                ".zip",
+                ".rar",
+                ".7z",
+                ".mp3",
+                ".mp4",
+                ".avi",
+                ".mov",
+                ".wav",
+                ".flac",
+            ]:
+                return True
+
+        # Check for bytes that are not images
+        if isinstance(obj, bytes) and (
+            obj.startswith(b"%PDF")
+            or obj.startswith(b"PK\x03\x04")
+            or obj.startswith(b"{")
+            or obj.startswith(b"[")
+        ):
+            return True
+
+        # Check for file-like objects with non-image names
+        if hasattr(obj, "read") and hasattr(obj, "name"):
+            name = str(obj.name).lower()
+            if any(
+                name.endswith(ext)
+                for ext in [
+                    ".pdf",
+                    ".doc",
+                    ".docx",
+                    ".xls",
+                    ".xlsx",
+                    ".ppt",
+                    ".pptx",
+                    ".txt",
+                    ".csv",
+                    ".json",
+                    ".xml",
+                    ".zip",
+                ]
+            ):
+                return True
+
+        return False
 
     def __repr__(self) -> str:
         """String representation for interactive help."""

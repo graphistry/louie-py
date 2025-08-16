@@ -35,6 +35,8 @@ lui("Can you create a visualization of the top 10 products?")
 
 ## Working with Data
 
+### Getting Data from LouieAI
+
 ```python
 # Generate some data
 lui("Create a sample sales dataset with 100 rows")
@@ -46,6 +48,32 @@ if lui.df is not None:
     
     # Work with the data
     sales_by_region = lui.df.groupby('region')['sales'].sum()
+```
+
+### Analyzing Your Own DataFrames
+
+Upload and analyze your own pandas DataFrames with natural language:
+
+```python
+import pandas as pd
+
+# Load your data
+df = pd.read_csv("your_data.csv")
+
+# Upload and analyze with a prompt
+lui("What are the main trends in this data?", df)
+print(lui.text)  # AI's analysis
+
+# Simple operations with reversed syntax
+lui(df, "summarize")  # Quick summary
+lui(df, "find outliers")  # Anomaly detection
+
+# Ultra-concise for basic operations
+sales_df = pd.DataFrame({"Q1": [100, 200], "Q2": [150, 250]})
+lui("sum", sales_df)  # Calculate totals
+
+# Continue analysis in the same thread
+lui("Now show me year-over-year growth")
 ```
 
 ## Error Handling
