@@ -717,8 +717,8 @@ class UploadClient:
             if file_name:
                 mime_type, _ = mimetypes.guess_type(file_name)
 
-            # Try to detect from content if no MIME type
-            if not mime_type:
+            # Try to detect from content if no MIME type or generic MIME type
+            if not mime_type or mime_type == "application/octet-stream":
                 # Check for common file signatures
                 if file.startswith(b"%PDF"):
                     mime_type = "application/pdf"
