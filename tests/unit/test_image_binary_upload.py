@@ -11,12 +11,14 @@ from louieai._upload import UploadClient
 
 def mock_open_binary(data):
     """Helper to mock open() with binary data."""
+
     def mock_open(*args, **kwargs):
         m = Mock()
         m.read.return_value = data
         m.__enter__ = Mock(return_value=m)
         m.__exit__ = Mock(return_value=None)
         return m
+
     return mock_open
 
 
@@ -68,9 +70,9 @@ class TestImageUpload:
             patch("httpx.Client") as mock_httpx,
         ):
             # Setup mock streaming response
-            mock_httpx.return_value = mock_streaming_response([
-                '{"type": "TextElement", "content": "This is an image"}'
-            ])
+            mock_httpx.return_value = mock_streaming_response(
+                ['{"type": "TextElement", "content": "This is an image"}']
+            )
 
             result = upload_client.upload_image("What's in this image?", "test.png")
 
@@ -93,9 +95,9 @@ class TestImageUpload:
         upload_client = UploadClient(mock_client)
 
         with patch("httpx.Client") as mock_httpx:
-            mock_httpx.return_value = mock_streaming_response([
-                '{"type": "TextElement", "content": "JPEG image"}'
-            ])
+            mock_httpx.return_value = mock_streaming_response(
+                ['{"type": "TextElement", "content": "JPEG image"}']
+            )
 
             # Test with JPEG bytes
             jpeg_bytes = b"\xff\xd8\xff\xe0\x00\x10JFIF"
@@ -164,9 +166,9 @@ class TestBinaryUpload:
             patch("mimetypes.guess_type", return_value=("application/pdf", None)),
             patch("httpx.Client") as mock_httpx,
         ):
-            mock_httpx.return_value = mock_streaming_response([
-                '{"type": "TextElement", "content": "PDF processed"}'
-            ])
+            mock_httpx.return_value = mock_streaming_response(
+                ['{"type": "TextElement", "content": "PDF processed"}']
+            )
 
             result = upload_client.upload_binary("Summarize this document", "test.pdf")
 
