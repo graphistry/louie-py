@@ -683,7 +683,8 @@ class Cursor:
                 actual_df = None
             else:
                 raise ValueError(
-                    "When first argument is image, second must be a string prompt or None"
+                    "When first argument is image, second must be a string "
+                    "prompt or None"
                 )
         elif self._is_binary_file_input(prompt):
             # Binary file as first argument
@@ -699,7 +700,8 @@ class Cursor:
                 actual_df = None
             else:
                 raise ValueError(
-                    "When first argument is binary file, second must be a string prompt or None"
+                    "When first argument is binary file, second must be a "
+                    "string prompt or None"
                 )
         elif isinstance(prompt, str):
             # String prompt as first argument
@@ -1041,16 +1043,14 @@ class Cursor:
                 return True
 
         # Check for bytes (could be image data)
-        if isinstance(obj, bytes):
-            # Check magic bytes for common image formats
-            if (
-                obj.startswith(b"\x89PNG")
-                or obj.startswith(b"\xff\xd8\xff")
-                or obj.startswith(b"GIF8")
-                or obj.startswith(b"BM")
-                or (obj.startswith(b"RIFF") and b"WEBP" in obj[:20])
-            ):
-                return True
+        if isinstance(obj, bytes) and (
+            obj.startswith(b"\x89PNG")
+            or obj.startswith(b"\xff\xd8\xff")
+            or obj.startswith(b"GIF8")
+            or obj.startswith(b"BM")
+            or (obj.startswith(b"RIFF") and b"WEBP" in obj[:20])
+        ):
+            return True
 
         # Check for file-like objects with image names
         if hasattr(obj, "read") and hasattr(obj, "name"):
@@ -1115,15 +1115,13 @@ class Cursor:
                 return True
 
         # Check for bytes that are not images
-        if isinstance(obj, bytes):
-            # Check for non-image file signatures
-            if (
-                obj.startswith(b"%PDF")
-                or obj.startswith(b"PK\x03\x04")
-                or obj.startswith(b"{")
-                or obj.startswith(b"[")
-            ):
-                return True
+        if isinstance(obj, bytes) and (
+            obj.startswith(b"%PDF")
+            or obj.startswith(b"PK\x03\x04")
+            or obj.startswith(b"{")
+            or obj.startswith(b"[")
+        ):
+            return True
 
         # Check for file-like objects with non-image names
         if hasattr(obj, "read") and hasattr(obj, "name"):

@@ -7,7 +7,10 @@ import mimetypes
 import os
 import time
 from pathlib import Path
-from typing import Any, BinaryIO, Union
+from typing import TYPE_CHECKING, Any, BinaryIO
+
+if TYPE_CHECKING:
+    from ._client import Response
 
 import httpx
 import pandas as pd
@@ -37,7 +40,7 @@ class UploadClient:
         share_mode: str = "Private",
         name: str | None = None,
         parsing_options: dict[str, Any] | None = None,
-    ) -> Any:
+    ) -> "Response":
         """Upload a DataFrame with a natural language query for analysis.
 
         This method uploads a pandas DataFrame to Louie.ai along with a prompt,
@@ -133,43 +136,44 @@ class UploadClient:
             )
         )
 
-        with stream_client:
-            with stream_client.stream(
+        with (
+            stream_client,
+            stream_client.stream(
                 "POST",
                 f"{self._client.server_url}/api/chat_upload/",
                 headers=headers,
                 data=data,
                 files=files,
-            ) as response:
-                response.raise_for_status()
+            ) as response,
+        ):
+            response.raise_for_status()
 
-                # Collect streaming lines
-                last_activity = start_time
-                try:
-                    for line in response.iter_lines():
-                        if line:
-                            response_text += line + "\n"
-                            lines_received += 1
-                            last_activity = time.time()
+            # Collect streaming lines
+            last_activity = start_time
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        response_text += line + "\n"
+                        lines_received += 1
+                        last_activity = time.time()
 
-                        # Check for timeout
-                        time_since_activity = time.time() - last_activity
-                        if time_since_activity > self._client._streaming_timeout:
-                            logger.warning(
-                                f"Streaming timeout after {time_since_activity:.1f}s "
-                                f"of inactivity. Received {lines_received} lines."
-                            )
-                            break
-
-                except httpx.ReadTimeout:
-                    elapsed = time.time() - start_time
-                    if lines_received > 0:
-                        logger.info(
-                            f"Stream ended after {elapsed:.1f}s "
-                            f"with {lines_received} lines"
+                    # Check for timeout
+                    time_since_activity = time.time() - last_activity
+                    if time_since_activity > self._client._streaming_timeout:
+                        logger.warning(
+                            f"Streaming timeout after {time_since_activity:.1f}s "
+                            f"of inactivity. Received {lines_received} lines."
                         )
-                    else:
-                        raise
+                        break
+
+            except httpx.ReadTimeout:
+                elapsed = time.time() - start_time
+                if lines_received > 0:
+                    logger.info(
+                        f"Stream ended after {elapsed:.1f}s with {lines_received} lines"
+                    )
+                else:
+                    raise
 
         # Parse response and create Response object
         parsed = self._client._parse_jsonl_response(response_text)
@@ -244,57 +248,58 @@ class UploadClient:
         Returns:
             Default parsing options or None
         """
-        if format == "csv":
-            return {
+        options_map: dict[str, dict[str, Any]] = {
+            "csv": {
                 "type": "CSVParsingOptions",
                 "header": "infer",
                 "sep": ",",
-            }
-        elif format == "json":
-            return {
+            },
+            "json": {
                 "type": "JSONParsingOptions",
                 "lines": True,
                 "orient": "records",
-            }
-        elif format == "parquet":
-            return {
+            },
+            "parquet": {
                 "type": "ParquetParsingOptions",
                 "use_pandas_metadata": True,
-            }
-        elif format == "arrow":
-            return {
+            },
+            "arrow": {
                 "type": "ArrowParsingOptions",
                 "use_threads": True,
-            }
-        return None
+            },
+        }
+        return options_map.get(format)
 
     @auto_retry_auth
     def upload_image(
         self,
         prompt: str,
-        image: Union[str, bytes, BinaryIO, "PIL.Image.Image"],  # type: ignore
+        image: str | bytes | BinaryIO | Any,
         thread_id: str = "",
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
-    ) -> Any:
+    ) -> "Response":
         """Upload an image with a natural language query for analysis.
 
         This method uploads an image to Louie.ai for AI-powered visual analysis.
         Supports various image formats and input types.
 
         Args:
-            prompt: Natural language query about the image (e.g., "What's in this image?",
-                "Describe the chart", "Extract text from this screenshot")
+            prompt: Natural language query about the image (e.g.,
+                "What's in this image?", "Describe the chart",
+                "Extract text from this screenshot")
             image: Image to analyze. Can be:
                 - File path (str or Path)
                 - Raw bytes
                 - File-like object (BytesIO, opened file)
                 - PIL Image object
-            thread_id: Thread ID to continue conversation (empty string creates new thread)
-            agent: AI agent to use. "UploadPassthroughAgent" (default) for direct analysis
+            thread_id: Thread ID to continue conversation (empty string creates
+                new thread)
+            agent: AI agent to use. "UploadPassthroughAgent" (default) for
+                direct analysis
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
@@ -351,43 +356,44 @@ class UploadClient:
             )
         )
 
-        with stream_client:
-            with stream_client.stream(
+        with (
+            stream_client,
+            stream_client.stream(
                 "POST",
                 f"{self._client.server_url}/api/chat_upload/",
                 headers=headers,
                 data=data,
                 files=files,
-            ) as response:
-                response.raise_for_status()
+            ) as response,
+        ):
+            response.raise_for_status()
 
-                # Collect streaming lines
-                last_activity = start_time
-                try:
-                    for line in response.iter_lines():
-                        if line:
-                            response_text += line + "\n"
-                            lines_received += 1
-                            last_activity = time.time()
+            # Collect streaming lines
+            last_activity = start_time
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        response_text += line + "\n"
+                        lines_received += 1
+                        last_activity = time.time()
 
-                        # Check for timeout
-                        time_since_activity = time.time() - last_activity
-                        if time_since_activity > self._client._streaming_timeout:
-                            logger.warning(
-                                f"Streaming timeout after {time_since_activity:.1f}s "
-                                f"of inactivity. Received {lines_received} lines."
-                            )
-                            break
-
-                except httpx.ReadTimeout:
-                    elapsed = time.time() - start_time
-                    if lines_received > 0:
-                        logger.info(
-                            f"Stream ended after {elapsed:.1f}s "
-                            f"with {lines_received} lines"
+                    # Check for timeout
+                    time_since_activity = time.time() - last_activity
+                    if time_since_activity > self._client._streaming_timeout:
+                        logger.warning(
+                            f"Streaming timeout after {time_since_activity:.1f}s "
+                            f"of inactivity. Received {lines_received} lines."
                         )
-                    else:
-                        raise
+                        break
+
+            except httpx.ReadTimeout:
+                elapsed = time.time() - start_time
+                if lines_received > 0:
+                    logger.info(
+                        f"Stream ended after {elapsed:.1f}s with {lines_received} lines"
+                    )
+                else:
+                    raise
 
         # Parse response and create Response object
         parsed = self._client._parse_jsonl_response(response_text)
@@ -411,7 +417,7 @@ class UploadClient:
 
     def _serialize_image(
         self,
-        image: Union[str, bytes, BinaryIO, "PIL.Image.Image"],  # type: ignore
+        image: str | bytes | BinaryIO | Any,
     ) -> tuple[bytes, str, str]:
         """Serialize image to bytes for upload.
 
@@ -537,26 +543,28 @@ class UploadClient:
         share_mode: str = "Private",
         name: str | None = None,
         filename: str | None = None,
-    ) -> Any:
+    ) -> "Response":
         """Upload a binary file with a natural language query for analysis.
 
         This method uploads any type of file to Louie.ai for AI-powered analysis.
         Supports PDFs, Excel files, Word documents, and any other binary format.
 
         Args:
-            prompt: Natural language query about the file (e.g., 
-                "Summarize this document", "Extract data from this spreadsheet", 
+            prompt: Natural language query about the file (e.g.,
+                "Summarize this document", "Extract data from this spreadsheet",
                 "What's in this PDF?")
             file: File to analyze. Can be:
                 - File path (str or Path)
                 - Raw bytes
                 - File-like object (BytesIO, opened file)
-            thread_id: Thread ID to continue conversation (empty string creates new thread)
-            agent: AI agent to use. "UploadPassthroughAgent" (default) for direct analysis
+            thread_id: Thread ID to continue conversation (empty string creates
+                new thread)
+            agent: AI agent to use. "UploadPassthroughAgent" (default) for
+                direct analysis
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
-            filename: Optional filename to use (extracted from path/file 
+            filename: Optional filename to use (extracted from path/file
                 object if not provided)
 
         Returns:
@@ -609,43 +617,44 @@ class UploadClient:
             )
         )
 
-        with stream_client:
-            with stream_client.stream(
+        with (
+            stream_client,
+            stream_client.stream(
                 "POST",
                 f"{self._client.server_url}/api/chat_upload/",
                 headers=headers,
                 data=data,
                 files=files,
-            ) as response:
-                response.raise_for_status()
+            ) as response,
+        ):
+            response.raise_for_status()
 
-                # Collect streaming lines
-                last_activity = start_time
-                try:
-                    for line in response.iter_lines():
-                        if line:
-                            response_text += line + "\n"
-                            lines_received += 1
-                            last_activity = time.time()
+            # Collect streaming lines
+            last_activity = start_time
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        response_text += line + "\n"
+                        lines_received += 1
+                        last_activity = time.time()
 
-                        # Check for timeout
-                        time_since_activity = time.time() - last_activity
-                        if time_since_activity > self._client._streaming_timeout:
-                            logger.warning(
-                                f"Streaming timeout after {time_since_activity:.1f}s "
-                                f"of inactivity. Received {lines_received} lines."
-                            )
-                            break
-
-                except httpx.ReadTimeout:
-                    elapsed = time.time() - start_time
-                    if lines_received > 0:
-                        logger.info(
-                            f"Stream ended after {elapsed:.1f}s "
-                            f"with {lines_received} lines"
+                    # Check for timeout
+                    time_since_activity = time.time() - last_activity
+                    if time_since_activity > self._client._streaming_timeout:
+                        logger.warning(
+                            f"Streaming timeout after {time_since_activity:.1f}s "
+                            f"of inactivity. Received {lines_received} lines."
                         )
-                    else:
-                        raise
+                        break
+
+            except httpx.ReadTimeout:
+                elapsed = time.time() - start_time
+                if lines_received > 0:
+                    logger.info(
+                        f"Stream ended after {elapsed:.1f}s with {lines_received} lines"
+                    )
+                else:
+                    raise
 
         # Parse response and create Response object
         parsed = self._client._parse_jsonl_response(response_text)
