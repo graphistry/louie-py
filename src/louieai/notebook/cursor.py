@@ -1063,7 +1063,7 @@ class Cursor:
 
         # Check for PIL Image
         try:
-            from PIL import Image  # type: ignore[import-untyped]
+            from PIL import Image  # type: ignore[import-not-found]
 
             if isinstance(obj, Image.Image):
                 return True
