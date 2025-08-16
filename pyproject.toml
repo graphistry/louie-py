@@ -28,8 +28,9 @@ keywords = ["Louie.ai", "Graphistry", "AI", "client", "investigation"]
 dependencies = [
   "graphistry>=0.41.0",
   "httpx>=0.28.0",
+  "nbclient>=0.10.2",
   "pandas>=2.0.0",
-  "pyarrow>=14.0.0"
+  "pyarrow>=14.0.0",
 ]
 # Note: graphistry on PyPI is named 'graphistry'. We ensure a minimal version that likely includes Louie support.
 
