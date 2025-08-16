@@ -36,6 +36,13 @@ lui("Show me all suspicious transactions from the last week")
 # 4. Access the results
 print(lui.text)  # Natural language explanation
 df = lui.df      # Pandas DataFrame with the data
+
+# 5. Analyze your own data (NEW!)
+import pandas as pd
+my_data = pd.read_csv("sales_data.csv")
+lui("What are the trends and anomalies?", my_data)
+# Or use the reversed syntax for simple operations:
+lui(my_data, "summarize")
 ```
 
 ## Install & Authenticate

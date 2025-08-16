@@ -82,7 +82,7 @@ response2 = client.add_cell(thread.id,
 
 ## Working with DataFrames
 
-### Notebook API
+### Getting DataFrames from Queries
 
 ```python
 # Query that returns data - response displays automatically in Jupyter
@@ -101,6 +101,70 @@ for i, df in enumerate(lui.dfs):
 top_countries = lui("Show top 5 countries by failed logins").df
 if top_countries is not None:
     top_countries.plot(kind='bar')
+```
+
+### Uploading and Analyzing Your DataFrames
+
+```python
+import pandas as pd
+import numpy as np
+
+# Create or load your data
+df = pd.DataFrame({
+    'timestamp': pd.date_range('2024-01-01', periods=100, freq='D'),
+    'sales': np.random.randn(100).cumsum() + 100,
+    'category': np.random.choice(['A', 'B', 'C'], 100)
+})
+
+# Upload and analyze with natural language
+lui("Identify trends and seasonal patterns", df)
+print(lui.text)  # AI's analysis
+
+# Get statistical summary
+lui(df, "calculate key statistics by category")
+stats_df = lui.df  # Access returned statistics
+
+# Find anomalies
+lui("Find outliers and unusual patterns", df)
+
+# Complex analysis
+lui("""
+    Analyze this sales data:
+    1. Identify top performing categories
+    2. Find any anomalies or outliers
+    3. Predict next 30 days trend
+""", df)
+
+# Access multiple results
+for i, result_df in enumerate(lui.dfs):
+    print(f"Result {i+1}: {result_df.shape}")
+```
+
+### DataFrame Upload Patterns
+
+```python
+# Pattern 1: Prompt first (clear intent)
+lui("Calculate correlation matrix", df)
+
+# Pattern 2: DataFrame first (natural for simple ops)
+lui(df, "summarize")
+
+# Pattern 3: Ultra-concise
+lui("sum", df)
+
+# Pattern 4: With options
+lui("Analyze this CSV data", df, 
+    format="csv",  # Specify serialization format
+    share_mode="Organization")  # Share with team
+
+# Pattern 5: Multi-step analysis
+# First upload
+lui("Load and profile this dataset", df)
+
+# Follow-up questions on same data
+lui("Which features are most correlated?")
+lui("Are there any data quality issues?")
+lui("Suggest data transformations")
 ```
 
 ### Traditional Client API
