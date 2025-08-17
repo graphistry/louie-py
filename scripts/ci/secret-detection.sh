@@ -77,6 +77,30 @@ if [ "$CHECK_ONLY" == true ]; then
     TEMP_BASELINE=$(mktemp)
     echo "$STAGED_FILES" | xargs $DETECT_SECRETS scan --baseline .secrets.baseline > "$TEMP_BASELINE" 2>/dev/null || true
     
+    # Also check for custom patterns (test credentials, internal servers, etc)
+    for file in $STAGED_FILES; do
+        # Skip checking the secret detection script itself
+        if [[ "$file" == "scripts/ci/secret-detection.sh" ]]; then
+            continue
+        fi
+        # Check for test usernames (pattern: leo + test + digits)
+        if grep -qE "leo""test[0-9]*" "$file" 2>/dev/null; then
+            print_error "Found test credentials in $file - use generic placeholders instead!"
+        fi
+        # Check for known test passwords
+        if grep -qE "(accountaccount|testtest|password123)" "$file" 2>/dev/null; then
+            print_error "Found hardcoded test password in $file - use placeholders like '<your-password>'!"
+        fi
+        # Check for internal dev server URLs
+        if grep -qE "graphistry-(dev|test|staging)\.(grph\.xyz|graphistry\.com)" "$file" 2>/dev/null; then
+            print_error "Found internal dev server URL in $file - use hub.graphistry.com or localhost!"
+        fi
+        # Check for hardcoded credentials in env vars
+        if grep -qE "(GRAPHISTRY_|LOUIE_)(USERNAME|PASSWORD|TOKEN|KEY|SECRET)\s*=\s*[\"']?[A-Za-z0-9]+" "$file" 2>/dev/null; then
+            print_warning "Possible hardcoded credential in $file - use os.environ.get() with defaults"
+        fi
+    done
+    
     # Check if any new secrets were detected
     if [ -s "$TEMP_BASELINE" ]; then
         NEW_SECRETS=$(python3 -c "
