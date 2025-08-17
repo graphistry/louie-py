@@ -263,6 +263,43 @@ class ResponseProxy:
         return self._extract_dataframes(self._response)
 
     @property
+    def df_id(self) -> str | None:
+        """ID of the latest dataframe or None."""
+        if not self._response:
+            return None
+        if (
+            not hasattr(self._response, "dataframe_elements")
+            or not self._response.dataframe_elements
+        ):
+            return None
+        # Get the last DataFrame element's ID
+        for elem in reversed(self._response.dataframe_elements):
+            if isinstance(elem, dict):
+                # Try df_id, then block_id, then id
+                df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
+                if df_id:
+                    return str(df_id)
+        return None
+
+    @property
+    def df_ids(self) -> list[str]:
+        """All dataframe IDs from this response."""
+        if not self._response:
+            return []
+        if (
+            not hasattr(self._response, "dataframe_elements")
+            or not self._response.dataframe_elements
+        ):
+            return []
+        ids = []
+        for elem in self._response.dataframe_elements:
+            if isinstance(elem, dict):
+                df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
+                if df_id:
+                    ids.append(str(df_id))
+        return ids
+
+    @property
     def text(self) -> str | None:
         """Primary text or None."""
         texts = self.texts
@@ -939,6 +976,39 @@ class Cursor:
         if not self._history:
             return []
         return self._extract_dataframes(self._history[-1])
+
+    @property
+    def df_id(self) -> str | None:
+        """ID of the latest dataframe or None."""
+        if not self._history:
+            return None
+        latest = self._history[-1]
+        if not hasattr(latest, "dataframe_elements") or not latest.dataframe_elements:
+            return None
+        # Get the last DataFrame element's ID
+        for elem in reversed(latest.dataframe_elements):
+            if isinstance(elem, dict):
+                # Try df_id, then block_id, then id
+                df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
+                if df_id:
+                    return str(df_id)
+        return None
+
+    @property
+    def df_ids(self) -> list[str]:
+        """All dataframe IDs from latest response."""
+        if not self._history:
+            return []
+        latest = self._history[-1]
+        if not hasattr(latest, "dataframe_elements") or not latest.dataframe_elements:
+            return []
+        ids = []
+        for elem in latest.dataframe_elements:
+            if isinstance(elem, dict):
+                df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
+                if df_id:
+                    ids.append(str(df_id))
+        return ids
 
     @property
     def text(self) -> str | None:
