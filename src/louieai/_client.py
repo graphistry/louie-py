@@ -161,6 +161,9 @@ class LouieClient:
             server=server,
         )
 
+        # Alias for compatibility with binary URL construction
+        self.base_url = self.server_url
+
         # If credentials provided, authenticate immediately
         if any([username, password, api_key, personal_key_id, personal_key_secret]):
             # Build kwargs for register, excluding None values

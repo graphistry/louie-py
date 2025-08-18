@@ -507,7 +507,7 @@ class UploadClient:
         # Handle PIL Image
         else:
             try:
-                from PIL import Image  # type: ignore[import-not-found]
+                from PIL import Image
 
                 if isinstance(image, Image.Image):
                     buffer = io.BytesIO()
