@@ -58,6 +58,20 @@
 4. **UPDATE IMMEDIATELY**: Record results before anything else
 5. **MARK STATUS**: Update step status (✅, ❌, etc.)
 
+## Plan Type Selection
+
+### Standard Plan (This Template)
+Use for: Implementation tasks with clear specifications
+
+### PLAN.OBSERVE-FIX.md Variant
+Use when:
+- User reports: "doesn't work", "wrong output", "missing", "broken"
+- Multiple outputs must all work together (e.g., notebook cells, test suite)
+- Success requires execution to verify (can't just read code)
+- Need to iterate until convergence
+
+See: `ai/prompts/PLAN.OBSERVE-FIX.md` for the observe-fix loop methodology
+
 ## Context (READ-ONLY - Fill at Creation)
 
 ### Objective
