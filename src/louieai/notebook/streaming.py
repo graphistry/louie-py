@@ -186,6 +186,81 @@ class StreamingDisplay:
                     f"[{elem_type}] Graph visualization not available</div>"
                 )
 
+        elif elem_type == "Base64ImageElement":
+            # Handle inline base64 images
+            src = elem.get("src", "")
+            width = elem.get("width", "auto")
+            height = elem.get("height", "auto")
+
+            # Build style string
+            style_parts = ["max-width: 100%", "border-radius: 5px"]
+            if width != "auto":
+                style_parts.append(f"width: {width}px")
+            if height != "auto":
+                style_parts.append(f"height: {height}px")
+
+            return (
+                f'<div style="margin: 10px 0; text-align: center;">'
+                f'<img src="{src}" style="{";".join(style_parts)}" />'
+                f'</div>'
+            )
+
+        elif elem_type == "BinaryElement":
+            # Handle binary elements with URLs
+            url = elem.get("url", "")
+            content_type = elem.get("content_type", "")
+            filename = elem.get("filename", "download")
+            size = elem.get("size", 0)
+
+            # If URL is relative, prepend base URL from client
+            if url and not url.startswith(("http://", "https://")):
+                base_url = "https://api.louie.ai"  # default
+                if self.client and hasattr(self.client, "base_url"):
+                    base_url = self.client.base_url.rstrip("/")
+                url = f"{base_url}{url}"
+
+            # Check if it's an image
+            if content_type and content_type.startswith("image/"):
+                return (
+                    f'<div style="margin: 10px 0; text-align: center;">'
+                    f'<img src="{url}" style="max-width: 100%; border-radius: 5px;" />'
+                    f'<div style="text-align: center; margin-top: 5px;">'
+                    f'<a href="{url}" download="{filename}" '
+                    f'style="color: #0066cc; text-decoration: none; font-size: 0.9em;">'
+                    f"📥 Download {filename}</a>"
+                    f"</div>"
+                    f"</div>"
+                )
+            else:
+                # Non-image binary file - show download link
+                size_str = ""
+                if size > 0:
+                    if size < 1024:
+                        size_str = f"{size} B"
+                    elif size < 1024 * 1024:
+                        size_str = f"{size / 1024:.1f} KB"
+                    else:
+                        size_str = f"{size / (1024 * 1024):.1f} MB"
+
+                return (
+                    f'<div style="margin: 10px 0; padding: 10px; background: #f5f5f5; '
+                    f'border-radius: 5px; border: 1px solid #ddd;">'
+                    f'<div style="display: flex; align-items: center; justify-content: space-between;">'
+                    f"<div>"
+                    f'<span style="font-weight: bold;">📎 {filename}</span>'
+                    + (
+                        f' <span style="color: #666; font-size: 0.9em;">({size_str})</span>'
+                        if size_str
+                        else ""
+                    )
+                    + f"</div>"
+                    f'<a href="{url}" download="{filename}" '
+                    f'style="background: #0066cc; color: white; padding: 5px 15px; '
+                    f'border-radius: 3px; text-decoration: none;">Download</a>'
+                    f"</div>"
+                    f"</div>"
+                )
+
         else:
             # For unknown types, try to extract text or show raw content
             text = (
