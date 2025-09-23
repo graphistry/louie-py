@@ -79,7 +79,11 @@ class Response:
         if not text_elems:
             return None
         first_elem = text_elems[0]
-        content = first_elem.get("content") or first_elem.get("text") or first_elem.get("value", "")
+        content = (
+            first_elem.get("content")
+            or first_elem.get("text")
+            or first_elem.get("value", "")
+        )
         return str(content) if content else ""
 
     @property
