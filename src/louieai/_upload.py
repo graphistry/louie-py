@@ -136,16 +136,13 @@ class UploadClient:
             )
         )
 
-        with (
-            stream_client,
-            stream_client.stream(
-                "POST",
-                f"{self._client.server_url}/api/chat_upload/",
-                headers=headers,
-                data=data,
-                files=files,
-            ) as response,
-        ):
+        with stream_client, stream_client.stream(
+            "POST",
+            f"{self._client.server_url}/api/chat_upload/",
+            headers=headers,
+            data=data,
+            files=files,
+        ) as response:
             response.raise_for_status()
 
             # Collect streaming lines
@@ -356,16 +353,13 @@ class UploadClient:
             )
         )
 
-        with (
-            stream_client,
-            stream_client.stream(
-                "POST",
-                f"{self._client.server_url}/api/chat_upload/",
-                headers=headers,
-                data=data,
-                files=files,
-            ) as response,
-        ):
+        with stream_client, stream_client.stream(
+            "POST",
+            f"{self._client.server_url}/api/chat_upload/",
+            headers=headers,
+            data=data,
+            files=files,
+        ) as response:
             response.raise_for_status()
 
             # Collect streaming lines
@@ -617,16 +611,13 @@ class UploadClient:
             )
         )
 
-        with (
-            stream_client,
-            stream_client.stream(
-                "POST",
-                f"{self._client.server_url}/api/chat_upload/",
-                headers=headers,
-                data=data,
-                files=files,
-            ) as response,
-        ):
+        with stream_client, stream_client.stream(
+            "POST",
+            f"{self._client.server_url}/api/chat_upload/",
+            headers=headers,
+            data=data,
+            files=files,
+        ) as response:
             response.raise_for_status()
 
             # Collect streaming lines
