@@ -113,7 +113,7 @@ class TestImageUpload:
 
         # Test PNG detection
         png_bytes = b"\x89PNG\r\n\x1a\n"
-        file_data, filename, content_type = upload_client._serialize_image(png_bytes)
+        _file_data, filename, content_type = upload_client._serialize_image(png_bytes)
         assert filename == "image.png"
         assert content_type == "image/png"
 
@@ -182,7 +182,7 @@ class TestBinaryUpload:
 
         # Test PDF detection
         pdf_bytes = b"%PDF-1.4\nsome content"
-        file_data, filename, content_type = upload_client._serialize_binary(pdf_bytes)
+        _file_data, filename, content_type = upload_client._serialize_binary(pdf_bytes)
         assert filename == "document.pdf"
         assert content_type == "application/pdf"
 
