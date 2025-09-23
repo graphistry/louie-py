@@ -1,12 +1,11 @@
 """Simple timeout tests for upload module."""
 
 from unittest.mock import Mock, patch
+
 import httpx
 import pandas as pd
-import time
 
 from louieai._upload import UploadClient
-from pathlib import Path
 
 
 class TestUploadTimeout:
@@ -18,10 +17,9 @@ class TestUploadTimeout:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_123",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_123", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         df = pd.DataFrame({"col": [1, 2, 3]})
@@ -36,25 +34,29 @@ class TestUploadTimeout:
             mock_response.raise_for_status = Mock()
 
             lines = ['{"dthread_id": "D_123"}', '{"payload": {"type": "text"}}']
+
             def iter_lines():
-                for line in lines:
-                    yield line
+                yield from lines
                 raise httpx.ReadTimeout("Timeout")
 
             mock_response.iter_lines = iter_lines
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Should handle timeout gracefully since we got some data
-            with patch("louieai._upload.logger") as mock_logger:
-                with patch("time.time", return_value=100):
-                    response = upload_client.upload_dataframe("test", df)
+            with (
+                patch("louieai._upload.logger") as mock_logger,
+                patch("time.time", return_value=100),
+            ):
+                response = upload_client.upload_dataframe("test", df)
 
-                    # Should have logged info about partial response
-                    mock_logger.info.assert_called()
-                    assert "Stream ended" in str(mock_logger.info.call_args)
-                    assert response.thread_id == "D_123"
+                # Should have logged info about partial response
+                mock_logger.info.assert_called()
+                assert "Stream ended" in str(mock_logger.info.call_args)
+                assert response.thread_id == "D_123"
 
     def test_upload_dataframe_read_timeout_no_data(self):
         """Test handling of ReadTimeout with no data received."""
@@ -76,11 +78,14 @@ class TestUploadTimeout:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(side_effect=httpx.ReadTimeout("Timeout"))
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Should re-raise timeout when no data received
             import pytest
+
             with pytest.raises(httpx.ReadTimeout):
                 upload_client.upload_dataframe("test", df)
 
@@ -90,10 +95,9 @@ class TestUploadTimeout:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_img",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_img", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         image = b"\x89PNG\r\n\x1a\n" + b"data"
@@ -112,15 +116,19 @@ class TestUploadTimeout:
 
             mock_response.iter_lines = iter_lines
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
-            with patch("louieai._upload.logger") as mock_logger:
-                with patch("time.time", return_value=100):
-                    response = upload_client.upload_image("test", image)
+            with (
+                patch("louieai._upload.logger") as mock_logger,
+                patch("time.time", return_value=100),
+            ):
+                response = upload_client.upload_image("test", image)
 
-                    mock_logger.info.assert_called()
-                    assert response.thread_id == "D_img"
+                mock_logger.info.assert_called()
+                assert response.thread_id == "D_img"
 
     def test_upload_dataframe_with_dataframe_element(self):
         """Test handling of dataframe elements in response."""
@@ -128,13 +136,15 @@ class TestUploadTimeout:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_df",
-            "elements": [
-                {"type": "DfElement", "id": "df_001"}
-            ]
-        })
-        mock_client._fetch_dataframe_arrow = Mock(return_value=pd.DataFrame({"result": [1, 2]}))
+        mock_client._parse_jsonl_response = Mock(
+            return_value={
+                "dthread_id": "D_df",
+                "elements": [{"type": "DfElement", "id": "df_001"}],
+            }
+        )
+        mock_client._fetch_dataframe_arrow = Mock(
+            return_value=pd.DataFrame({"result": [1, 2]})
+        )
 
         upload_client = UploadClient(mock_client)
         df = pd.DataFrame({"col": [1, 2, 3]})
@@ -146,12 +156,16 @@ class TestUploadTimeout:
 
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
-            mock_response.iter_lines = Mock(return_value=[
-                '{"dthread_id": "D_df"}',
-                '{"elements": [{"type": "DfElement", "id": "df_001"}]}'
-            ])
+            mock_response.iter_lines = Mock(
+                return_value=[
+                    '{"dthread_id": "D_df"}',
+                    '{"elements": [{"type": "DfElement", "id": "df_001"}]}',
+                ]
+            )
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             with patch("time.time", return_value=100):
@@ -180,10 +194,13 @@ class TestUploadTimeout:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(side_effect=httpx.ReadTimeout("Timeout"))
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             import pytest
+
             with pytest.raises(httpx.ReadTimeout):
                 upload_client.upload_binary("test", pdf)
 
@@ -193,10 +210,9 @@ class TestUploadTimeout:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 0.5
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_img_warn",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_img_warn", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         image = b"\x89PNG\r\n\x1a\n" + b"data"
@@ -216,17 +232,21 @@ class TestUploadTimeout:
 
             mock_response.iter_lines = iter_lines
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Mock time to trigger timeout warning
-            with patch("time.time", side_effect=[0, 0.1, 2.0]):
-                with patch("louieai._upload.logger") as mock_logger:
-                    response = upload_client.upload_image("test", image)
+            with (
+                patch("time.time", side_effect=[0, 0.1, 2.0]),
+                patch("louieai._upload.logger") as mock_logger,
+            ):
+                response = upload_client.upload_image("test", image)
 
-                    mock_logger.warning.assert_called()
-                    assert "Streaming timeout" in str(mock_logger.warning.call_args)
-                    assert response.thread_id == "D_img_warn"
+                mock_logger.warning.assert_called()
+                assert "Streaming timeout" in str(mock_logger.warning.call_args)
+                assert response.thread_id == "D_img_warn"
 
     def test_upload_binary_timeout_triggers_warning(self):
         """Test binary upload timeout triggers streaming warning."""
@@ -234,10 +254,9 @@ class TestUploadTimeout:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 0.5
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_bin_warn",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_bin_warn", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         pdf = b"%PDF-1.4\n" + b"content"
@@ -256,15 +275,19 @@ class TestUploadTimeout:
 
             mock_response.iter_lines = iter_lines
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
-            with patch("time.time", side_effect=[0, 0.1, 2.0]):
-                with patch("louieai._upload.logger") as mock_logger:
-                    response = upload_client.upload_binary("test", pdf)
+            with (
+                patch("time.time", side_effect=[0, 0.1, 2.0]),
+                patch("louieai._upload.logger") as mock_logger,
+            ):
+                response = upload_client.upload_binary("test", pdf)
 
-                    mock_logger.warning.assert_called()
-                    assert response.thread_id == "D_bin_warn"
+                mock_logger.warning.assert_called()
+                assert response.thread_id == "D_bin_warn"
 
     def test_upload_image_with_dataframe_element(self):
         """Test image upload with dataframe element in response."""
@@ -272,11 +295,15 @@ class TestUploadTimeout:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_img_df",
-            "elements": [{"type": "df", "id": "df_002"}]
-        })
-        mock_client._fetch_dataframe_arrow = Mock(return_value=pd.DataFrame({"img_result": [1]}))
+        mock_client._parse_jsonl_response = Mock(
+            return_value={
+                "dthread_id": "D_img_df",
+                "elements": [{"type": "df", "id": "df_002"}],
+            }
+        )
+        mock_client._fetch_dataframe_arrow = Mock(
+            return_value=pd.DataFrame({"img_result": [1]})
+        )
 
         upload_client = UploadClient(mock_client)
         image = b"\x89PNG\r\n\x1a\n" + b"data"
@@ -290,13 +317,17 @@ class TestUploadTimeout:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(return_value=['{"dthread_id": "D_img_df"}'])
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             with patch("time.time", return_value=100):
                 response = upload_client.upload_image("test", image)
 
-                mock_client._fetch_dataframe_arrow.assert_called_with("D_img_df", "df_002")
+                mock_client._fetch_dataframe_arrow.assert_called_with(
+                    "D_img_df", "df_002"
+                )
                 assert response.thread_id == "D_img_df"
 
     def test_upload_binary_with_dataframe_element(self):
@@ -305,11 +336,15 @@ class TestUploadTimeout:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_bin_df",
-            "elements": [{"type": "DfElement", "id": "df_003"}]
-        })
-        mock_client._fetch_dataframe_arrow = Mock(return_value=pd.DataFrame({"bin_result": [1]}))
+        mock_client._parse_jsonl_response = Mock(
+            return_value={
+                "dthread_id": "D_bin_df",
+                "elements": [{"type": "DfElement", "id": "df_003"}],
+            }
+        )
+        mock_client._fetch_dataframe_arrow = Mock(
+            return_value=pd.DataFrame({"bin_result": [1]})
+        )
 
         upload_client = UploadClient(mock_client)
         pdf = b"%PDF-1.4\n" + b"content"
@@ -323,13 +358,17 @@ class TestUploadTimeout:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(return_value=['{"dthread_id": "D_bin_df"}'])
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             with patch("time.time", return_value=100):
                 response = upload_client.upload_binary("test", pdf)
 
-                mock_client._fetch_dataframe_arrow.assert_called_with("D_bin_df", "df_003")
+                mock_client._fetch_dataframe_arrow.assert_called_with(
+                    "D_bin_df", "df_003"
+                )
                 assert response.thread_id == "D_bin_df"
 
     def test_upload_streaming_timeout_detection(self):
@@ -338,10 +377,9 @@ class TestUploadTimeout:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 0.5  # Short timeout for testing
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_stream",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_stream", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         df = pd.DataFrame({"col": [1, 2, 3]})
@@ -356,6 +394,7 @@ class TestUploadTimeout:
 
             # Create an iterator that actually triggers timeout
             lines_yielded = []
+
             def slow_iter():
                 lines_yielded.append('{"dthread_id": "D_stream"}')
                 yield lines_yielded[-1]
@@ -364,17 +403,21 @@ class TestUploadTimeout:
 
             mock_response.iter_lines = slow_iter
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Mock time to simulate timeout: initial, after first line, way later
             time_values = [0, 0.1, 2.0]  # Last value exceeds streaming_timeout
-            with patch("time.time", side_effect=time_values):
-                with patch("louieai._upload.logger") as mock_logger:
-                    response = upload_client.upload_dataframe("test", df)
+            with (
+                patch("time.time", side_effect=time_values),
+                patch("louieai._upload.logger") as mock_logger,
+            ):
+                response = upload_client.upload_dataframe("test", df)
 
-                    # Should have logged warning about streaming timeout
-                    mock_logger.warning.assert_called()
-                    warning_msg = str(mock_logger.warning.call_args)
-                    assert "Streaming timeout" in warning_msg
-                    assert response.thread_id == "D_stream"
+                # Should have logged warning about streaming timeout
+                mock_logger.warning.assert_called()
+                warning_msg = str(mock_logger.warning.call_args)
+                assert "Streaming timeout" in warning_msg
+                assert response.thread_id == "D_stream"

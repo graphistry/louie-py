@@ -1,11 +1,9 @@
 """Tests for upload method optional parameters."""
 
-from unittest.mock import Mock, patch, MagicMock
 import json
+from unittest.mock import Mock, patch
 
 import pandas as pd
-import pytest
-import httpx
 
 from louieai._upload import UploadClient
 
@@ -19,10 +17,9 @@ class TestUploadOptionalParams:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_123",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_123", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         df = pd.DataFrame({"col": [1, 2, 3]})
@@ -36,7 +33,9 @@ class TestUploadOptionalParams:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(return_value=['{"dthread_id": "D_123"}'])
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Call with name parameter
@@ -55,10 +54,9 @@ class TestUploadOptionalParams:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_456",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_456", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         df = pd.DataFrame({"col": [1, 2, 3]})
@@ -72,12 +70,14 @@ class TestUploadOptionalParams:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(return_value=['{"dthread_id": "D_456"}'])
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Call with parsing options
             parsing_opts = {"delimiter": ";", "header": True}
-            response = upload_client.upload_dataframe(
+            upload_client.upload_dataframe(
                 "test", df, format="csv", parsing_options=parsing_opts
             )
 
@@ -93,10 +93,9 @@ class TestUploadOptionalParams:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_789",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_789", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         image_data = b"\x89PNG\r\n\x1a\n" + b"test_image"
@@ -110,14 +109,14 @@ class TestUploadOptionalParams:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(return_value=['{"dthread_id": "D_789"}'])
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Call with name and thread_id
-            response = upload_client.upload_image(
-                "What's this?", image_data,
-                thread_id="T_123",
-                name="Image Analysis"
+            upload_client.upload_image(
+                "What's this?", image_data, thread_id="T_123", name="Image Analysis"
             )
 
             # Verify both were included
@@ -131,10 +130,9 @@ class TestUploadOptionalParams:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_999",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_999", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         pdf_data = b"%PDF-1.4\n" + b"test_pdf"
@@ -148,14 +146,13 @@ class TestUploadOptionalParams:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(return_value=['{"dthread_id": "D_999"}'])
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Call with name
-            response = upload_client.upload_binary(
-                "Summarize", pdf_data,
-                name="Document Summary"
-            )
+            upload_client.upload_binary("Summarize", pdf_data, name="Document Summary")
 
             # Verify name was included
             call_args = mock_stream_client.stream.call_args
@@ -168,19 +165,26 @@ class TestUploadOptionalParams:
 
         # Create a mock Path with unknown extension
         from pathlib import Path
+
         test_file = Path("/tmp/test.unknown_ext")
 
         # Write some content
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.is_file", return_value=True):
-                with patch("builtins.open", create=True) as mock_open:
-                    mock_open.return_value.__enter__.return_value.read.return_value = b"unknown content"
-                    with patch("mimetypes.guess_type", return_value=(None, None)):
-                        file_data, filename, content_type = upload_client._serialize_binary(test_file)
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_file", return_value=True),
+            patch("builtins.open", create=True) as mock_open,
+            patch("mimetypes.guess_type", return_value=(None, None)),
+        ):
+            mock_open.return_value.__enter__.return_value.read.return_value = (
+                b"unknown content"
+            )
+            file_data, filename, content_type = upload_client._serialize_binary(
+                test_file
+            )
 
-                        # Should fallback to application/octet-stream
-                        assert filename == "test.unknown_ext"
-                        assert content_type == "application/octet-stream"
+            # Should fallback to application/octet-stream
+            assert filename == "test.unknown_ext"
+            assert content_type == "application/octet-stream"
 
     def test_serialize_binary_json_detection(self):
         """Test JSON detection in binary serialization."""
@@ -202,10 +206,9 @@ class TestUploadOptionalParams:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_share",
-            "elements": []
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={"dthread_id": "D_share", "elements": []}
+        )
 
         upload_client = UploadClient(mock_client)
         df = pd.DataFrame({"col": [1, 2, 3]})
@@ -219,14 +222,14 @@ class TestUploadOptionalParams:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(return_value=['{"dthread_id": "D_share"}'])
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             # Test different share modes
             for share_mode in ["Private", "Organization", "Public"]:
-                response = upload_client.upload_dataframe(
-                    "test", df, share_mode=share_mode
-                )
+                upload_client.upload_dataframe("test", df, share_mode=share_mode)
 
                 # Verify share_mode was included
                 call_args = mock_stream_client.stream.call_args

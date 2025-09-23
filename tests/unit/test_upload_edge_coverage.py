@@ -1,7 +1,8 @@
 """Tests for edge cases to improve upload module coverage."""
 
-from unittest.mock import Mock, patch, MagicMock
 import io
+from unittest.mock import Mock, patch
+
 import httpx
 import pandas as pd
 import pytest
@@ -103,12 +104,13 @@ class TestUploadEdgeCoverage:
             # Immediately raise ReadTimeout without yielding any lines
             mock_response.iter_lines = Mock(side_effect=httpx.ReadTimeout("Timeout"))
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
-            with patch("time.time", return_value=100):
-                with pytest.raises(httpx.ReadTimeout):
-                    upload_client.upload_dataframe("test", df)
+            with patch("time.time", return_value=100), pytest.raises(httpx.ReadTimeout):
+                upload_client.upload_dataframe("test", df)
 
     def test_upload_image_read_timeout_reraise(self):
         """Test that ReadTimeout is re-raised in image upload when no data."""
@@ -129,12 +131,13 @@ class TestUploadEdgeCoverage:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(side_effect=httpx.ReadTimeout("Timeout"))
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
-            with patch("time.time", return_value=100):
-                with pytest.raises(httpx.ReadTimeout):
-                    upload_client.upload_image("test", image)
+            with patch("time.time", return_value=100), pytest.raises(httpx.ReadTimeout):
+                upload_client.upload_image("test", image)
 
     def test_upload_binary_read_timeout_reraise(self):
         """Test that ReadTimeout is re-raised in binary upload when no data."""
@@ -155,12 +158,13 @@ class TestUploadEdgeCoverage:
             mock_response.raise_for_status = Mock()
             mock_response.iter_lines = Mock(side_effect=httpx.ReadTimeout("Timeout"))
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
-            with patch("time.time", return_value=100):
-                with pytest.raises(httpx.ReadTimeout):
-                    upload_client.upload_binary("test", pdf)
+            with patch("time.time", return_value=100), pytest.raises(httpx.ReadTimeout):
+                upload_client.upload_binary("test", pdf)
 
     def test_upload_image_no_pil_installed(self):
         """Test image handling when PIL is not available."""
@@ -181,12 +185,12 @@ class TestUploadEdgeCoverage:
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
         mock_client._streaming_timeout = 1
-        mock_client._parse_jsonl_response = Mock(return_value={
-            "dthread_id": "D_test",
-            "elements": [
-                {"type": "DfElement", "id": "df_001"}
-            ]
-        })
+        mock_client._parse_jsonl_response = Mock(
+            return_value={
+                "dthread_id": "D_test",
+                "elements": [{"type": "DfElement", "id": "df_001"}],
+            }
+        )
         # Fetch returns None (failure case)
         mock_client._fetch_dataframe_arrow = Mock(return_value=None)
 
@@ -200,14 +204,18 @@ class TestUploadEdgeCoverage:
 
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
-            mock_response.iter_lines = Mock(return_value=['{\"dthread_id\": \"D_test\"}'])
+            mock_response.iter_lines = Mock(return_value=['{"dthread_id": "D_test"}'])
 
-            mock_stream_client.stream.return_value.__enter__ = Mock(return_value=mock_response)
+            mock_stream_client.stream.return_value.__enter__ = Mock(
+                return_value=mock_response
+            )
             mock_stream_client.stream.return_value.__exit__ = Mock(return_value=None)
 
             with patch("time.time", return_value=100):
                 response = upload_client.upload_dataframe("test", df)
 
                 # Should have attempted fetch but continued when it returned None
-                mock_client._fetch_dataframe_arrow.assert_called_with("D_test", "df_001")
+                mock_client._fetch_dataframe_arrow.assert_called_with(
+                    "D_test", "df_001"
+                )
                 assert response.thread_id == "D_test"

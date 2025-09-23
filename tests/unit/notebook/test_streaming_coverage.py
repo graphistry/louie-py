@@ -1,7 +1,6 @@
 """Tests to improve coverage of streaming.py module."""
 
 from unittest.mock import Mock, patch
-import pytest
 
 from louieai.notebook.streaming import StreamingDisplay
 
@@ -13,10 +12,7 @@ class TestStreamingDisplayCoverage:
         """Test formatting of WarningLine elements."""
         display = StreamingDisplay()
 
-        elem = {
-            "type": "WarningLine",
-            "text": "This is a warning message"
-        }
+        elem = {"type": "WarningLine", "text": "This is a warning message"}
 
         result = display._format_element(elem)
         assert "⚠️" in result
@@ -27,10 +23,7 @@ class TestStreamingDisplayCoverage:
         """Test formatting of ErrorLine elements."""
         display = StreamingDisplay()
 
-        elem = {
-            "type": "ErrorLine",
-            "text": "This is an error message"
-        }
+        elem = {"type": "ErrorLine", "text": "This is an error message"}
 
         result = display._format_element(elem)
         assert "❌" in result
@@ -45,7 +38,7 @@ class TestStreamingDisplayCoverage:
         elem = {
             "type": "CodeElement",
             "code": "def hello():\n    return 'world'",
-            "language": "python"
+            "language": "python",
         }
 
         result = display._format_element(elem)
@@ -55,10 +48,7 @@ class TestStreamingDisplayCoverage:
         assert "return 'world'" in result
 
         # Test with 'text' field fallback
-        elem2 = {
-            "type": "CodeElement",
-            "text": "print('hello')"
-        }
+        elem2 = {"type": "CodeElement", "text": "print('hello')"}
 
         result2 = display._format_element(elem2)
         assert "print('hello')" in result2
@@ -66,9 +56,11 @@ class TestStreamingDisplayCoverage:
     def test_format_graph_element_with_graphistry(self):
         """Test formatting of GraphElement with Graphistry integration."""
         mock_client = Mock()
-        mock_client.plot = Mock(return_value=Mock(
-            _repr_html_=Mock(return_value="<iframe>Graph visualization</iframe>")
-        ))
+        mock_client.plot = Mock(
+            return_value=Mock(
+                _repr_html_=Mock(return_value="<iframe>Graph visualization</iframe>")
+            )
+        )
 
         display = StreamingDisplay(client=mock_client)
 
@@ -76,7 +68,7 @@ class TestStreamingDisplayCoverage:
             "type": "GraphElement",
             "value": {"dataset_id": "graph_123"},
             "nodes": [{"id": 1}],
-            "edges": [{"source": 0, "target": 1}]
+            "edges": [{"source": 0, "target": 1}],
         }
 
         result = display._format_element(elem)
@@ -90,7 +82,7 @@ class TestStreamingDisplayCoverage:
             "type": "graph",
             "dataset_id": "graph_456",
             "nodes": [{"id": 1}],
-            "edges": []
+            "edges": [],
         }
 
         result = display._format_element(elem)
@@ -104,7 +96,7 @@ class TestStreamingDisplayCoverage:
             "type": "Base64ImageElement",
             "src": "data:image/png;base64,iVBORw0KGgo=",
             "width": 300,
-            "height": 200
+            "height": 200,
         }
 
         result = display._format_element(elem)
@@ -122,7 +114,7 @@ class TestStreamingDisplayCoverage:
             "url": "/api/file/123",
             "content_type": "image/png",
             "filename": "screenshot.png",
-            "size": 1024
+            "size": 1024,
         }
 
         result = display._format_element(elem)
@@ -139,7 +131,7 @@ class TestStreamingDisplayCoverage:
             "url": "/api/file/456",
             "content_type": "application/pdf",
             "filename": "report.pdf",
-            "size": 1048576  # 1MB
+            "size": 1048576,  # 1MB
         }
 
         result = display._format_element(elem)
@@ -153,7 +145,7 @@ class TestStreamingDisplayCoverage:
 
         elem = {
             "type": "MarkdownElement",
-            "markdown": "# Hello\n\nThis is **bold** text."
+            "markdown": "# Hello\n\nThis is **bold** text.",
         }
 
         # MarkdownElement not explicitly handled - falls to default
@@ -164,10 +156,7 @@ class TestStreamingDisplayCoverage:
         """Test MarkdownElement when markdown library is not available."""
         display = StreamingDisplay()
 
-        elem = {
-            "type": "MarkdownElement",
-            "markdown": "# Hello World"
-        }
+        elem = {"type": "MarkdownElement", "markdown": "# Hello World"}
 
         # The MarkdownElement type is not explicitly handled, falls to default
         result = display._format_element(elem)
@@ -181,7 +170,7 @@ class TestStreamingDisplayCoverage:
         elem = {
             "type": "TableElement",
             "headers": ["Name", "Age"],
-            "rows": [["Alice", "30"]]
+            "rows": [["Alice", "30"]],
         }
 
         # TableElement is not explicitly handled, falls to default
@@ -192,10 +181,7 @@ class TestStreamingDisplayCoverage:
         """Test formatting of JSONElement."""
         display = StreamingDisplay()
 
-        elem = {
-            "type": "JSONElement",
-            "data": {"key": "value"}
-        }
+        elem = {"type": "JSONElement", "data": {"key": "value"}}
 
         # JSONElement is not explicitly handled, falls to default
         result = display._format_element(elem)
@@ -205,10 +191,7 @@ class TestStreamingDisplayCoverage:
         """Test formatting of unknown element types."""
         display = StreamingDisplay()
 
-        elem = {
-            "type": "UnknownType",
-            "text": "some text"
-        }
+        elem = {"type": "UnknownType", "text": "some text"}
 
         result = display._format_element(elem)
         assert "UnknownType" in result
@@ -236,7 +219,7 @@ class TestStreamingDisplayCoverage:
 
         display.elements_by_id = {
             "1": {"type": "text", "text": "Hello"},
-            "2": {"type": "ErrorLine", "text": "Error!"}
+            "2": {"type": "ErrorLine", "text": "Error!"},
         }
 
         html = display._render_html()
@@ -302,25 +285,16 @@ class TestStreamingDisplayCoverage:
         display = StreamingDisplay()
 
         # Test dataset_id in value
-        elem1 = {
-            "type": "graph",
-            "value": {"dataset_id": "id_in_value"}
-        }
+        elem1 = {"type": "graph", "value": {"dataset_id": "id_in_value"}}
         result1 = display._format_element(elem1)
         assert "id_in_value" in result1
 
         # Test dataset_id at root
-        elem2 = {
-            "type": "graph",
-            "dataset_id": "id_at_root"
-        }
+        elem2 = {"type": "graph", "dataset_id": "id_at_root"}
         result2 = display._format_element(elem2)
         assert "id_at_root" in result2
 
         # Test fallback to id
-        elem3 = {
-            "type": "graph",
-            "id": "fallback_id"
-        }
+        elem3 = {"type": "graph", "id": "fallback_id"}
         result3 = display._format_element(elem3)
         assert "fallback_id" in result3 or "Graph" in result3
