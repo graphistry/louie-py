@@ -119,7 +119,7 @@ class TestImageUpload:
 
         # Test JPEG detection
         jpeg_bytes = b"\xff\xd8\xff\xe0"
-        file_data, filename, content_type = upload_client._serialize_image(jpeg_bytes)
+        _file_data, filename, content_type = upload_client._serialize_image(jpeg_bytes)
         assert filename == "image.jpg"
         assert content_type == "image/jpeg"
 
@@ -189,7 +189,9 @@ class TestBinaryUpload:
         # Test Excel detection - need xl/ pattern in first 1000 bytes
         xl_pattern = b"xl/workbook.xml" + b"\x00" * 980
         excel_bytes = b"PK\x03\x04" + xl_pattern
-        file_data, filename, content_type = upload_client._serialize_binary(excel_bytes)
+        _file_data, filename, content_type = upload_client._serialize_binary(
+            excel_bytes
+        )
         assert filename == "spreadsheet.xlsx"
         assert "spreadsheet" in content_type
 
@@ -202,7 +204,7 @@ class TestBinaryUpload:
         pdf_data = io.BytesIO(b"%PDF-1.4\nfake content")
         pdf_data.name = "test.pdf"
 
-        file_data, filename, content_type = upload_client._serialize_binary(pdf_data)
+        _file_data, filename, content_type = upload_client._serialize_binary(pdf_data)
         assert filename == "test.pdf"
         assert content_type == "application/pdf"
 
