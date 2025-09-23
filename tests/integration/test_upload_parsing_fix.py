@@ -58,9 +58,9 @@ def test_upload_parsing_integration():
     # The fix should ensure we get a thread_id
     assert last_response.thread_id is not None, "Thread ID is None after fix"
     assert last_response.thread_id != "", "Thread ID is empty after fix"
-    assert last_response.thread_id.startswith(
-        "D_"
-    ), f"Invalid thread ID format: {last_response.thread_id}"
+    assert last_response.thread_id.startswith("D_"), (
+        f"Invalid thread ID format: {last_response.thread_id}"
+    )
 
     print("   ✅ Thread ID parsed correctly!")
 

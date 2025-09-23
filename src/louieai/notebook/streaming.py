@@ -202,7 +202,7 @@ class StreamingDisplay:
             return (
                 f'<div style="margin: 10px 0; text-align: center;">'
                 f'<img src="{src}" style="{";".join(style_parts)}" />'
-                f'</div>'
+                f"</div>"
             )
 
         elif elem_type == "BinaryElement":
@@ -251,7 +251,7 @@ class StreamingDisplay:
                     f'<span style="font-weight: bold;">📎 {filename}</span>'
                     + (
                         f' <span style="color: #666; font-size: 0.9em;">'
-                        f'({size_str})</span>'
+                        f"({size_str})</span>"
                         if size_str
                         else ""
                     )

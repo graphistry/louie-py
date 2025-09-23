@@ -30,9 +30,7 @@ class TestUploadErrorHandling:
         df = pd.DataFrame({"col": [1, 2, 3], "text": ["a", "b", "c"]})
 
         # Test parquet
-        data, filename, content_type = upload_client._serialize_dataframe(
-            df, "parquet"
-        )
+        data, filename, content_type = upload_client._serialize_dataframe(df, "parquet")
         assert filename == "data.parquet"
         assert content_type == "application/octet-stream"
         assert len(data) > 0
