@@ -79,7 +79,7 @@ class Response:
         if not text_elems:
             return None
         first_elem = text_elems[0]
-        content = first_elem.get("content") or first_elem.get("text", "")
+        content = first_elem.get("content") or first_elem.get("text") or first_elem.get("value", "")
         return str(content) if content else ""
 
     @property
@@ -327,6 +327,9 @@ class LouieClient:
     def _parse_jsonl_response(self, response_text: str) -> dict[str, Any]:
         """Parse JSONL response into structured data.
 
+        Handles both standard JSONL and cases where server concatenates
+        multiple JSON objects on the same line.
+
         Returns dict with:
         - dthread_id: The thread ID
         - elements: List of response elements
@@ -339,26 +342,58 @@ class LouieClient:
         for line in response_text.strip().split("\n"):
             if not line:
                 continue
-            try:
-                data = json.loads(line)
 
-                # First line contains thread ID
+            # Handle multiple JSON objects on same line
+            # The server sometimes sends: {"dthread_id":"..."}{"}payload":{...}}
+            json_objects = []
+            decoder = json.JSONDecoder()
+            idx = 0
+
+            while idx < len(line):
+                # Skip whitespace
+                while idx < len(line) and line[idx].isspace():
+                    idx += 1
+
+                if idx >= len(line):
+                    break
+
+                try:
+                    # Try to decode a JSON object starting at idx
+                    obj, end_idx = decoder.raw_decode(line, idx)
+                    json_objects.append(obj)
+                    idx += end_idx
+                except json.JSONDecodeError:
+                    # If we can't decode, try parsing as single object
+                    try:
+                        obj = json.loads(line[idx:])
+                        json_objects.append(obj)
+                        break
+                    except json.JSONDecodeError:
+                        # Move to next character if we can't decode
+                        idx += 1
+
+            # Process each JSON object found
+            for data in json_objects:
+                # Skip non-dict objects (could be position integers, etc)
+                if not isinstance(data, dict):
+                    continue
+
+                # Handle thread ID
                 if "dthread_id" in data:
                     result["dthread_id"] = data["dthread_id"]
 
-                # Subsequent lines contain element updates
-                elif "payload" in data:
+                # Handle element updates
+                if "payload" in data:
                     elem = data["payload"]
                     elem_id = elem.get("id")
                     if elem_id:
-                        # For text elements, merge content to handle incremental updates
+                        # For text elements, merge content
                         if elem_id in elements_by_id and elem.get("type") in [
                             "TextElement",
                             "text",
                         ]:
                             existing = elements_by_id[elem_id]
-                            # Merge text content fields, preferring new content
-                            # but preserving incremental updates
+                            # Merge text content fields
                             for field in ["content", "text", "value"]:
                                 if elem.get(field):
                                     existing[field] = elem[field]
@@ -373,9 +408,6 @@ class LouieClient:
                         else:
                             # Update or add element
                             elements_by_id[elem_id] = elem
-
-            except json.JSONDecodeError:
-                continue
 
         # Convert to list, preserving order
         result["elements"] = list(elements_by_id.values())
