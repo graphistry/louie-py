@@ -30,7 +30,9 @@ class TestUploadErrorHandling:
         df = pd.DataFrame({"col": [1, 2, 3], "text": ["a", "b", "c"]})
 
         # Test parquet
-        data, filename, content_type = upload_client._serialize_dataframe(df, "parquet")
+        data, filename, content_type = upload_client._serialize_dataframe(
+            df, "parquet"
+        )
         assert filename == "data.parquet"
         assert content_type == "application/octet-stream"
         assert len(data) > 0
@@ -107,7 +109,7 @@ class TestImageSerializationCoverage:
             patch("mimetypes.guess_type", return_value=("image/png", None)),
         ):
             path_obj = Path("test.png")
-            data, filename, content_type = upload_client._serialize_image(path_obj)
+            __data, filename, content_type = upload_client._serialize_image(path_obj)
             assert filename == "test.png"
             assert content_type == "image/png"
 
@@ -122,7 +124,7 @@ class TestImageSerializationCoverage:
             patch("builtins.open", lambda *args, **kwargs: io.BytesIO(svg_content)),
             patch("mimetypes.guess_type", return_value=("image/svg+xml", None)),
         ):
-            data, filename, content_type = upload_client._serialize_image("test.svg")
+            _data, filename, content_type = upload_client._serialize_image("test.svg")
             assert filename == "test.svg"
             assert content_type == "image/svg+xml"
 
@@ -153,7 +155,7 @@ class TestBinarySerializationCoverage:
             patch("mimetypes.guess_type", return_value=("application/pdf", None)),
         ):
             path_obj = Path("test.pdf")
-            data, filename, content_type = upload_client._serialize_binary(path_obj)
+            _data, filename, content_type = upload_client._serialize_binary(path_obj)
             assert filename == "test.pdf"
             assert content_type == "application/pdf"
 
@@ -164,13 +166,13 @@ class TestBinarySerializationCoverage:
 
         # Test Word document detection
         word_signature = b"PK\x03\x04" + b"word/document.xml" + b"\x00" * 980
-        data, filename, content_type = upload_client._serialize_binary(word_signature)
+        _data, filename, content_type = upload_client._serialize_binary(word_signature)
         assert "wordprocessingml" in content_type
         assert filename == "document.docx"
 
         # Test PowerPoint detection
         ppt_signature = b"PK\x03\x04" + b"ppt/slides/" + b"\x00" * 980
-        data, filename, content_type = upload_client._serialize_binary(ppt_signature)
+        _data, filename, content_type = upload_client._serialize_binary(ppt_signature)
         assert "presentationml" in content_type
         assert filename == "presentation.pptx"
 
@@ -180,7 +182,7 @@ class TestBinarySerializationCoverage:
         upload_client = UploadClient(mock_client)
 
         pdf_bytes = b"%PDF-1.4\\ncontent"
-        data, filename, content_type = upload_client._serialize_binary(
+        _data, filename, content_type = upload_client._serialize_binary(
             pdf_bytes, filename="custom_name.pdf"
         )
         assert filename == "custom_name.pdf"

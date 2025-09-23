@@ -286,7 +286,7 @@ class TestUploadClientCoverage:
         img_data = io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"fake_png_data")
         img_data.name = "/path/to/test.png"
 
-        _file_data, filename, content_type = upload_client._serialize_image(img_data)
+        file_data, filename, content_type = upload_client._serialize_image(img_data)
 
         assert filename == "test.png"
         assert content_type == "image/png"
@@ -303,7 +303,9 @@ class TestUploadClientCoverage:
         img_data.name = "unknown"
 
         with patch("mimetypes.guess_type", return_value=(None, None)):
-            _file_data, filename, content_type = upload_client._serialize_image(img_data)
+            _file_data, filename, content_type = upload_client._serialize_image(
+                img_data
+            )
 
         # Should detect JPEG from content and set appropriate filename
         assert filename == "image.jpg"
@@ -332,7 +334,9 @@ class TestUploadClientCoverage:
         # Create PowerPoint signature
         ppt_content = b"PK\x03\x04" + b"ppt/slides/" + b"\x00" * 980
 
-        _file_data, filename, content_type = upload_client._serialize_binary(ppt_content)
+        _file_data, filename, content_type = upload_client._serialize_binary(
+            ppt_content
+        )
 
         assert filename == "presentation.pptx"
         assert "presentationml" in content_type
@@ -345,7 +349,9 @@ class TestUploadClientCoverage:
         # Create generic ZIP signature
         zip_content = b"PK\x03\x04" + b"some/file.txt" + b"\x00" * 980
 
-        _file_data, filename, content_type = upload_client._serialize_binary(zip_content)
+        _file_data, filename, content_type = upload_client._serialize_binary(
+            zip_content
+        )
 
         assert filename == "archive.zip"
         assert content_type == "application/zip"
@@ -390,7 +396,7 @@ class TestUploadClientCoverage:
         pdf_data.name = "unknown"  # Set name that mimetypes can't guess
 
         with patch("mimetypes.guess_type", return_value=(None, None)):
-            _file_data, filename, content_type = upload_client._serialize_binary(
+            _file_data, _filename, content_type = upload_client._serialize_binary(
                 pdf_data
             )
 
@@ -406,7 +412,7 @@ class TestUploadClientCoverage:
         zip_data = io.BytesIO(b"PK\x03\x04some zip data")
         zip_data.name = "archive.unknown"
 
-        _file_data, filename, content_type = upload_client._serialize_binary(zip_data)
+        _file_data, _filename, content_type = upload_client._serialize_binary(zip_data)
 
         assert content_type == "application/zip"
 
@@ -549,7 +555,7 @@ class TestBinaryUploadCoverage:
         file_obj = io.BytesIO(b"some binary data")
         file_obj.name = "original.bin"
 
-        _file_data, filename, content_type = upload_client._serialize_binary(
+        _file_data, filename, _content_type = upload_client._serialize_binary(
             file_obj, filename="override.txt"
         )
 
