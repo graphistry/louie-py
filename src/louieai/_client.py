@@ -79,7 +79,8 @@ class Response:
         if not text_elems:
             return None
         first_elem = text_elems[0]
-        return first_elem.get("content") or first_elem.get("text", "")
+        content = first_elem.get("content") or first_elem.get("text", "")
+        return str(content) if content else ""
 
     @property
     def df(self) -> Any | None:
