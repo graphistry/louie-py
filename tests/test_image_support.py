@@ -8,7 +8,10 @@ def test_base64_image_element_rendering():
     from louieai.notebook.streaming import StreamingDisplay
 
     # Create a small test image (1x1 red pixel PNG)
-    red_pixel_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx8gAAAABJRU5ErkJggg=="
+    red_pixel_base64 = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAA"
+        "DUlEQVR42mP8z8DwHwAFBQIAX8jx8gAAAABJRU5ErkJggg=="
+    )
 
     display = StreamingDisplay()
 

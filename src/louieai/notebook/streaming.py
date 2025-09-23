@@ -245,11 +245,13 @@ class StreamingDisplay:
                 return (
                     f'<div style="margin: 10px 0; padding: 10px; background: #f5f5f5; '
                     f'border-radius: 5px; border: 1px solid #ddd;">'
-                    f'<div style="display: flex; align-items: center; justify-content: space-between;">'
+                    f'<div style="display: flex; align-items: center; '
+                    f'justify-content: space-between;">'
                     f"<div>"
                     f'<span style="font-weight: bold;">📎 {filename}</span>'
                     + (
-                        f' <span style="color: #666; font-size: 0.9em;">({size_str})</span>'
+                        f' <span style="color: #666; font-size: 0.9em;">'
+                        f'({size_str})</span>'
                         if size_str
                         else ""
                     )
