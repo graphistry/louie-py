@@ -94,7 +94,8 @@ ignore = []
 
 [tool.ruff.format]
 # Exclude generated files from formatting
-exclude = ["src/louieai/_version.py"]
+# Also exclude _upload.py due to ruff bug with with-statement formatting
+exclude = ["src/louieai/_version.py", "src/louieai/_upload.py"]
 
 [tool.mypy]
 python_version = "3.10"
