@@ -598,6 +598,33 @@ class TestImageFormats:
         assert filename == "image.webp"
         assert content_type == "image/webp"
 
+    def test_get_default_parsing_options(self):
+        """Test default parsing options."""
+        mock_client = Mock()
+        upload_client = UploadClient(mock_client)
+
+        # Test CSV options
+        options = upload_client._get_default_parsing_options("csv")
+        assert options["type"] == "CSVParsingOptions"
+        assert options["header"] == "infer"
+
+        # Test JSON options
+        options = upload_client._get_default_parsing_options("json")
+        assert options["type"] == "JSONParsingOptions"
+        assert options["lines"] is True
+
+        # Test parquet options
+        options = upload_client._get_default_parsing_options("parquet")
+        assert options["type"] == "ParquetParsingOptions"
+
+        # Test arrow options
+        options = upload_client._get_default_parsing_options("arrow")
+        assert options["type"] == "ArrowParsingOptions"
+
+        # Test unknown format returns None
+        options = upload_client._get_default_parsing_options("unknown")
+        assert options is None
+
     def test_unknown_image_format(self):
         """Test unknown image format fallback."""
         mock_client = Mock()
