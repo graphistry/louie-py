@@ -178,7 +178,7 @@ class TestUploadOptionalParams:
             mock_open.return_value.__enter__.return_value.read.return_value = (
                 b"unknown content"
             )
-            file_data, filename, content_type = upload_client._serialize_binary(
+            _, filename, content_type = upload_client._serialize_binary(
                 test_file
             )
 
@@ -194,7 +194,7 @@ class TestUploadOptionalParams:
         # JSON bytes without proper extension
         json_bytes = b'{"key": "value", "data": [1, 2, 3]}'
 
-        file_data, filename, content_type = upload_client._serialize_binary(json_bytes)
+        _, filename, content_type = upload_client._serialize_binary(json_bytes)
 
         # Should detect as JSON
         assert filename == "data.json"
