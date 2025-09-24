@@ -178,9 +178,7 @@ class TestUploadOptionalParams:
             mock_open.return_value.__enter__.return_value.read.return_value = (
                 b"unknown content"
             )
-            _, filename, content_type = upload_client._serialize_binary(
-                test_file
-            )
+            _, filename, content_type = upload_client._serialize_binary(test_file)
 
             # Should fallback to application/octet-stream
             assert filename == "test.unknown_ext"
