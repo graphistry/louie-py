@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-09-25
+
+### Added
+- **Upload support**: Complete DataFrame, image, and binary file upload functionality
+  - New methods: `upload_dataframe()`, `upload_image()`, `upload_binary()`
+  - Natural notebook interface via `lui(df, "analyze this")` or `lui("query", df)`
+  - Support for multiple formats: parquet, csv, json, jsonl, arrow
+  - Automatic format detection and serialization
+  - Configurable parsing options per format
+- **JSONL format**: Explicit support for JSONL (newline-delimited JSON) format
+- **Image analysis**: Upload and analyze images (PNG, JPEG, GIF, etc.)
+- **Binary file support**: Upload PDFs, Office docs, and other binary files
+- **Streaming display**: Enhanced streaming support for uploads in notebooks
+
+### Changed
+- Moved `nbclient` from main to dev/docs dependencies (not needed at runtime)
+- Removed unnecessary `_upload.py` exclusion from ruff formatter
+
+### Fixed
+- Fixed JSONL parsing for concatenated JSON responses from server
+- Fixed context manager syntax errors in upload implementation
+- Resolved all linting and formatting issues in upload code
+
 ## [0.5.7] - 2025-08-05
 
 ### Fixed
