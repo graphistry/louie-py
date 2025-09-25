@@ -633,7 +633,7 @@ class Cursor:
                 - "Organization": Visible to your organization
                 - "Public": Publicly accessible
             **kwargs: Additional arguments for upload_dataframe() when df is provided:
-                - format: "parquet" (default), "csv", "json", or "arrow"
+                - format: "parquet" (default), "csv", "json", "jsonl", or "arrow"
                 - agent: "UploadPassthroughAgent" (default) or "UploadAgent"
                 - parsing_options: Dict of format-specific parsing configuration
 
@@ -1171,6 +1171,7 @@ class Cursor:
                 ".txt",
                 ".csv",
                 ".json",
+                ".jsonl",
                 ".xml",
                 ".zip",
                 ".rar",
@@ -1209,6 +1210,7 @@ class Cursor:
                     ".txt",
                     ".csv",
                     ".json",
+                    ".jsonl",
                     ".xml",
                     ".zip",
                 ]

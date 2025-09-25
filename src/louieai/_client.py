@@ -716,7 +716,7 @@ class LouieClient:
             prompt: Natural language query about the data
             df: Pandas DataFrame to analyze
             thread_id: Thread ID to continue conversation
-            format: Serialization format (parquet, csv, json, arrow)
+            format: Serialization format (parquet, csv, json, jsonl, arrow)
             agent: AI agent to use
             traces: Include reasoning traces
             share_mode: Visibility setting

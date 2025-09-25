@@ -54,7 +54,7 @@ class UploadClient:
             thread_id: Thread ID to continue conversation (empty string creates
                 new thread)
             format: Serialization format - "parquet" (recommended), "csv", "json",
-                or "arrow". Parquet is fastest and preserves data types best.
+                "jsonl", or "arrow". Parquet is fastest and preserves data types best.
             agent: AI agent to use. "UploadPassthroughAgent" (default) automatically
                 parses data without LLM. "UploadAgent" uses LLM for parsing.
             traces: Whether to include reasoning traces in response (default: False)
@@ -136,13 +136,16 @@ class UploadClient:
             )
         )
 
-        with stream_client, stream_client.stream(
-            "POST",
-            f"{self._client.server_url}/api/chat_upload/",
-            headers=headers,
-            data=data,
-            files=files,
-        ) as response:
+        with (
+            stream_client,
+            stream_client.stream(
+                "POST",
+                f"{self._client.server_url}/api/chat_upload/",
+                headers=headers,
+                data=data,
+                files=files,
+            ) as response,
+        ):
             response.raise_for_status()
 
             # Collect streaming lines
@@ -214,7 +217,7 @@ class UploadClient:
             df.to_csv(buffer, index=False)
             filename = "data.csv"
             content_type = "text/csv"
-        elif format == "json":
+        elif format in ["json", "jsonl"]:
             df.to_json(buffer, orient="records", lines=True)
             filename = "data.jsonl"
             content_type = "application/x-ndjson"
@@ -230,7 +233,7 @@ class UploadClient:
         else:
             raise ValueError(
                 f"Unsupported format: {format}. "
-                f"Use 'parquet', 'csv', 'json', or 'arrow'"
+                f"Use 'parquet', 'csv', 'json', 'jsonl', or 'arrow'"
             )
 
         buffer.seek(0)
@@ -252,6 +255,11 @@ class UploadClient:
                 "sep": ",",
             },
             "json": {
+                "type": "JSONParsingOptions",
+                "lines": True,
+                "orient": "records",
+            },
+            "jsonl": {
                 "type": "JSONParsingOptions",
                 "lines": True,
                 "orient": "records",
@@ -353,13 +361,16 @@ class UploadClient:
             )
         )
 
-        with stream_client, stream_client.stream(
-            "POST",
-            f"{self._client.server_url}/api/chat_upload/",
-            headers=headers,
-            data=data,
-            files=files,
-        ) as response:
+        with (
+            stream_client,
+            stream_client.stream(
+                "POST",
+                f"{self._client.server_url}/api/chat_upload/",
+                headers=headers,
+                data=data,
+                files=files,
+            ) as response,
+        ):
             response.raise_for_status()
 
             # Collect streaming lines
@@ -611,13 +622,16 @@ class UploadClient:
             )
         )
 
-        with stream_client, stream_client.stream(
-            "POST",
-            f"{self._client.server_url}/api/chat_upload/",
-            headers=headers,
-            data=data,
-            files=files,
-        ) as response:
+        with (
+            stream_client,
+            stream_client.stream(
+                "POST",
+                f"{self._client.server_url}/api/chat_upload/",
+                headers=headers,
+                data=data,
+                files=files,
+            ) as response,
+        ):
             response.raise_for_status()
 
             # Collect streaming lines
