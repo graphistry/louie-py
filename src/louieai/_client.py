@@ -69,6 +69,41 @@ class Response:
             for e in self.elements
         )
 
+    @property
+    def text(self) -> str | None:
+        """Get the primary text response.
+
+        Returns the text from the first text element, or None if no text elements.
+        """
+        text_elems = self.text_elements
+        if not text_elems:
+            return None
+        first_elem = text_elems[0]
+        content = (
+            first_elem.get("content")
+            or first_elem.get("text")
+            or first_elem.get("value", "")
+        )
+        return str(content) if content else ""
+
+    @property
+    def df(self) -> Any | None:
+        """Get the first DataFrame from the response."""
+        df_elems = self.dataframe_elements
+        if not df_elems:
+            return None
+        first_df = df_elems[0]
+        return first_df.get("table")
+
+    @property
+    def dfs(self) -> list[Any]:
+        """Get all DataFrames from the response."""
+        dfs = []
+        for elem in self.dataframe_elements:
+            if "table" in elem:
+                dfs.append(elem["table"])
+        return dfs
+
 
 class LouieClient:
     """
@@ -296,6 +331,9 @@ class LouieClient:
     def _parse_jsonl_response(self, response_text: str) -> dict[str, Any]:
         """Parse JSONL response into structured data.
 
+        Handles both standard JSONL and cases where server concatenates
+        multiple JSON objects on the same line.
+
         Returns dict with:
         - dthread_id: The thread ID
         - elements: List of response elements
@@ -308,26 +346,58 @@ class LouieClient:
         for line in response_text.strip().split("\n"):
             if not line:
                 continue
-            try:
-                data = json.loads(line)
 
-                # First line contains thread ID
+            # Handle multiple JSON objects on same line
+            # The server sometimes sends: {"dthread_id":"..."}{"}payload":{...}}
+            json_objects = []
+            decoder = json.JSONDecoder()
+            idx = 0
+
+            while idx < len(line):
+                # Skip whitespace
+                while idx < len(line) and line[idx].isspace():
+                    idx += 1
+
+                if idx >= len(line):
+                    break
+
+                try:
+                    # Try to decode a JSON object starting at idx
+                    obj, end_idx = decoder.raw_decode(line, idx)
+                    json_objects.append(obj)
+                    idx += end_idx
+                except json.JSONDecodeError:
+                    # If we can't decode, try parsing as single object
+                    try:
+                        obj = json.loads(line[idx:])
+                        json_objects.append(obj)
+                        break
+                    except json.JSONDecodeError:
+                        # Move to next character if we can't decode
+                        idx += 1
+
+            # Process each JSON object found
+            for data in json_objects:
+                # Skip non-dict objects (could be position integers, etc)
+                if not isinstance(data, dict):
+                    continue
+
+                # Handle thread ID
                 if "dthread_id" in data:
                     result["dthread_id"] = data["dthread_id"]
 
-                # Subsequent lines contain element updates
-                elif "payload" in data:
+                # Handle element updates
+                if "payload" in data:
                     elem = data["payload"]
                     elem_id = elem.get("id")
                     if elem_id:
-                        # For text elements, merge content to handle incremental updates
+                        # For text elements, merge content
                         if elem_id in elements_by_id and elem.get("type") in [
                             "TextElement",
                             "text",
                         ]:
                             existing = elements_by_id[elem_id]
-                            # Merge text content fields, preferring new content
-                            # but preserving incremental updates
+                            # Merge text content fields
                             for field in ["content", "text", "value"]:
                                 if elem.get(field):
                                     existing[field] = elem[field]
@@ -342,9 +412,6 @@ class LouieClient:
                         else:
                             # Update or add element
                             elements_by_id[elem_id] = elem
-
-            except json.JSONDecodeError:
-                continue
 
         # Convert to list, preserving order
         result["elements"] = list(elements_by_id.values())
@@ -629,6 +696,136 @@ class LouieClient:
 
         data = response.json()
         return Thread(id=data.get("id", ""), name=data.get("name"))
+
+    def upload_dataframe(
+        self,
+        prompt: str,
+        df: pd.DataFrame,
+        thread_id: str = "",
+        *,
+        format: str = "parquet",
+        agent: str = "UploadPassthroughAgent",
+        traces: bool = False,
+        share_mode: str = "Private",
+        name: str | None = None,
+        parsing_options: dict[str, Any] | None = None,
+    ) -> Response:
+        """Upload a DataFrame with a natural language query for AI analysis.
+
+        Args:
+            prompt: Natural language query about the data
+            df: Pandas DataFrame to analyze
+            thread_id: Thread ID to continue conversation
+            format: Serialization format (parquet, csv, json, jsonl, arrow)
+            agent: AI agent to use
+            traces: Include reasoning traces
+            share_mode: Visibility setting
+            name: Optional thread name
+            parsing_options: Format-specific parsing options
+
+        Returns:
+            Response object with analysis results
+        """
+        # Lazy import to avoid circular dependency
+        from ._upload import UploadClient
+
+        if not hasattr(self, "_upload_client"):
+            self._upload_client = UploadClient(self)
+
+        return self._upload_client.upload_dataframe(
+            prompt=prompt,
+            df=df,
+            thread_id=thread_id,
+            format=format,
+            agent=agent,
+            traces=traces,
+            share_mode=share_mode,
+            name=name,
+            parsing_options=parsing_options,
+        )
+
+    def upload_image(
+        self,
+        prompt: str,
+        image: Any,
+        thread_id: str = "",
+        *,
+        agent: str = "UploadPassthroughAgent",
+        traces: bool = False,
+        share_mode: str = "Private",
+        name: str | None = None,
+    ) -> Response:
+        """Upload an image with a natural language query for analysis.
+
+        Args:
+            prompt: Natural language query about the image
+            image: Image to analyze (file path, bytes, file-like, or PIL Image)
+            thread_id: Thread ID to continue conversation
+            agent: AI agent to use
+            traces: Include reasoning traces
+            share_mode: Visibility setting
+            name: Optional thread name
+
+        Returns:
+            Response object with analysis results
+        """
+        from ._upload import UploadClient
+
+        if not hasattr(self, "_upload_client"):
+            self._upload_client = UploadClient(self)
+
+        return self._upload_client.upload_image(
+            prompt=prompt,
+            image=image,
+            thread_id=thread_id,
+            agent=agent,
+            traces=traces,
+            share_mode=share_mode,
+            name=name,
+        )
+
+    def upload_binary(
+        self,
+        prompt: str,
+        file: Any,
+        thread_id: str = "",
+        *,
+        agent: str = "UploadPassthroughAgent",
+        traces: bool = False,
+        share_mode: str = "Private",
+        name: str | None = None,
+        filename: str | None = None,
+    ) -> Response:
+        """Upload a binary file with a natural language query for analysis.
+
+        Args:
+            prompt: Natural language query about the file
+            file: File to analyze (file path, bytes, or file-like)
+            thread_id: Thread ID to continue conversation
+            agent: AI agent to use
+            traces: Include reasoning traces
+            share_mode: Visibility setting
+            name: Optional thread name
+            filename: Optional filename to use
+
+        Returns:
+            Response object with analysis results
+        """
+        from ._upload import UploadClient
+
+        if not hasattr(self, "_upload_client"):
+            self._upload_client = UploadClient(self)
+
+        return self._upload_client.upload_binary(
+            prompt=prompt,
+            file=file,
+            thread_id=thread_id,
+            agent=agent,
+            traces=traces,
+            share_mode=share_mode,
+            name=name,
+            filename=filename,
+        )
 
     def __enter__(self):
         """Context manager support."""

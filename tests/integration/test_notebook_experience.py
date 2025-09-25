@@ -262,10 +262,11 @@ class TestNotebookExperience:
         assert result is lui
         assert lui.text == expected_text
 
-        # HTML should preserve newlines as <br>
+        # HTML should preserve newlines as <br> in the response content
         if "\n" in expected_text:
-            html = lui._repr_html_()
-            assert "<br>" in html
+            # The response content is in the history, not the session display
+            response_html = lui[-1]._repr_html_()
+            assert "<br>" in response_html
 
     def test_chaining_queries(self):
         """Test that queries can be chained since cursor returns self."""
