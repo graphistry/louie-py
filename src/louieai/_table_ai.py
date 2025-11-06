@@ -9,6 +9,17 @@ from typing import Any
 
 JSONLike = dict[str, Any] | list[Any] | str | int | float | bool
 
+_TABLE_AI_KEY_TRANSLATIONS: dict[str, str] = {
+    "semantic_mode": "table_ai_semantic_mode",
+    "output_column": "table_ai_output_column",
+    "ask_model": "table_ai_ask_model",
+    "evidence_model": "table_ai_evidence_model",
+    "options": "table_ai_options",
+    "ask_options": "table_ai_ask_options",
+    "evidence_options": "table_ai_evidence_options",
+}
+_TABLE_AI_PARAM_KEYS = frozenset(_TABLE_AI_KEY_TRANSLATIONS.values())
+
 
 def _jsonify(value: JSONLike) -> JSONLike | str:
     if isinstance(value, str):
@@ -86,4 +97,35 @@ def normalize_table_ai_overrides(
     return model.to_params()
 
 
-__all__ = ["JSONLike", "TableAIOverrides", "normalize_table_ai_overrides"]
+def collect_table_ai_kwargs(source: dict[str, Any]) -> dict[str, Any]:
+    """Extract legacy Table AI kwargs into API parameters.
+
+    Mutates ``source`` by removing recognized keys. Raises TypeError if mixed keys are
+    incompatible (handled by caller once unrecognized keys remain).
+    """
+
+    if not source:
+        return {}
+
+    extracted: dict[str, Any] = {}
+
+    for key in list(source.keys()):
+        if key in _TABLE_AI_PARAM_KEYS:
+            extracted[key] = source.pop(key)
+
+    for short_key, param_key in _TABLE_AI_KEY_TRANSLATIONS.items():
+        if short_key in source:
+            extracted[param_key] = source.pop(short_key)
+
+    if not extracted:
+        return {}
+
+    return TableAIOverrides.from_mapping(extracted).to_params()
+
+
+__all__ = [
+    "JSONLike",
+    "TableAIOverrides",
+    "collect_table_ai_kwargs",
+    "normalize_table_ai_overrides",
+]

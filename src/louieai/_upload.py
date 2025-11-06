@@ -18,7 +18,11 @@ if TYPE_CHECKING:
 import httpx
 import pandas as pd
 
-from ._table_ai import JSONLike, TableAIOverrides, normalize_table_ai_overrides
+from ._table_ai import (
+    TableAIOverrides,
+    collect_table_ai_kwargs,
+    normalize_table_ai_overrides,
+)
 from .auth import auto_retry_auth
 
 logger = logging.getLogger(__name__)
@@ -44,16 +48,10 @@ class UploadClient:
         share_mode: str = "Private",
         name: str | None = None,
         parsing_options: dict[str, Any] | None = None,
-        table_ai_semantic_mode: str | None = None,
-        table_ai_output_column: str | None = None,
-        table_ai_ask_model: str | None = None,
-        table_ai_evidence_model: str | None = None,
-        table_ai_options: JSONLike | None = None,
-        table_ai_ask_options: JSONLike | None = None,
-        table_ai_evidence_options: JSONLike | None = None,
         table_ai_overrides: TableAIOverrides
         | Mapping[str, Any]
         | None = None,
+        **legacy_overrides: Any,
     ) -> Response:
         """Upload a DataFrame with a natural language query for analysis.
 
@@ -76,14 +74,9 @@ class UploadClient:
             name: Optional thread name (auto-generated from prompt if not provided)
             parsing_options: Dict of format-specific parsing options (e.g., for CSV:
                 {"delimiter": ",", "header": true}). If None, uses sensible defaults.
-            table_ai_semantic_mode: Optional Table AI semantic mode (map, reduce, etc.)
-            table_ai_output_column: Output column name for Table AI semantic results
-            table_ai_ask_model: Override ask model for Table AI map phase
-            table_ai_evidence_model: Override evidence model for Table AI reduce phase
-            table_ai_options: JSON-serializable options sent to Table AI
-            table_ai_ask_options: JSON-serializable ask model overrides
-            table_ai_evidence_options: JSON-serializable evidence model overrides
             table_ai_overrides: Structured overrides via dataclass or mapping.
+            **legacy_overrides: Backwards-compatible Table AI keyword arguments (e.g.,
+                ``table_ai_semantic_mode``). Prefer `table_ai_overrides`.
 
         Returns:
             Response object containing:
@@ -147,32 +140,13 @@ class UploadClient:
 
         # Table AI overrides (optional)
         data.update(normalize_table_ai_overrides(table_ai_overrides))
-        if table_ai_semantic_mode is not None:
-            data["table_ai_semantic_mode"] = table_ai_semantic_mode
-        if table_ai_output_column is not None:
-            data["table_ai_output_column"] = table_ai_output_column
-        if table_ai_ask_model is not None:
-            data["table_ai_ask_model"] = table_ai_ask_model
-        if table_ai_evidence_model is not None:
-            data["table_ai_evidence_model"] = table_ai_evidence_model
-        if table_ai_options is not None:
-            data["table_ai_options"] = (
-                table_ai_options
-                if isinstance(table_ai_options, str)
-                else json.dumps(table_ai_options)
+        legacy_params = collect_table_ai_kwargs(legacy_overrides)
+        if legacy_overrides:
+            unexpected = ", ".join(sorted(legacy_overrides))
+            raise TypeError(
+                f"upload_dataframe() got unexpected keyword argument(s): {unexpected}"
             )
-        if table_ai_ask_options is not None:
-            data["table_ai_ask_options"] = (
-                table_ai_ask_options
-                if isinstance(table_ai_ask_options, str)
-                else json.dumps(table_ai_ask_options)
-            )
-        if table_ai_evidence_options is not None:
-            data["table_ai_evidence_options"] = (
-                table_ai_evidence_options
-                if isinstance(table_ai_evidence_options, str)
-                else json.dumps(table_ai_evidence_options)
-            )
+        data.update(legacy_params)
 
         # Make upload request with streaming response
         response_text = ""

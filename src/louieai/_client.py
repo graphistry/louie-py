@@ -13,7 +13,11 @@ import httpx
 import pandas as pd
 import pyarrow as pa
 
-from ._table_ai import JSONLike, TableAIOverrides, normalize_table_ai_overrides
+from ._table_ai import (
+    TableAIOverrides,
+    collect_table_ai_kwargs,
+    normalize_table_ai_overrides,
+)
 from .auth import AuthManager, auto_retry_auth
 
 logger = logging.getLogger(__name__)
@@ -538,17 +542,11 @@ class LouieClient:
         *,
         traces: bool = False,
         share_mode: str = "Private",
-        table_ai_semantic_mode: str | None = None,
-        table_ai_output_column: str | None = None,
-        table_ai_ask_model: str | None = None,
-        table_ai_evidence_model: str | None = None,
-        table_ai_options: JSONLike | None = None,
-        table_ai_ask_options: JSONLike | None = None,
-        table_ai_evidence_options: JSONLike | None = None,
         table_ai_overrides: TableAIOverrides
         | Mapping[str, Any]
         | None = None,
         use_batch: bool | None = None,
+        **legacy_overrides: Any,
     ) -> Response:
         """Add a cell (query) to a thread and get response.
 
@@ -558,16 +556,11 @@ class LouieClient:
             agent: Agent to use (default: LouieAgent)
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
-            table_ai_semantic_mode: Optional Table AI semantic mode (e.g., "map")
-            table_ai_output_column: Name for the semantic output column
-            table_ai_ask_model: Override for the ask model used by Table AI
-            table_ai_evidence_model: Override for the evidence model
-            table_ai_options: JSON-serializable overrides applied to Table AI requests
-            table_ai_ask_options: JSON-serializable ask model overrides
-            table_ai_evidence_options: JSON-serializable evidence model overrides
             table_ai_overrides: Structured overrides via dataclass or mapping.
             use_batch: Force singleshot (`True`) or streaming (`False`); defaults to
                 singleshot when overrides are provided.
+            **legacy_overrides: Backwards-compatible Table AI keyword arguments like
+                ``table_ai_semantic_mode``. Prefer `table_ai_overrides`.
 
         Returns:
             Response object containing thread_id and all elements
@@ -588,33 +581,13 @@ class LouieClient:
             params["dthread_id"] = thread_id
 
         overrides: dict[str, Any] = normalize_table_ai_overrides(table_ai_overrides)
-        if table_ai_semantic_mode is not None:
-            overrides["table_ai_semantic_mode"] = table_ai_semantic_mode
-        if table_ai_output_column is not None:
-            overrides["table_ai_output_column"] = table_ai_output_column
-        if table_ai_ask_model is not None:
-            overrides["table_ai_ask_model"] = table_ai_ask_model
-        if table_ai_evidence_model is not None:
-            overrides["table_ai_evidence_model"] = table_ai_evidence_model
-        if table_ai_options is not None:
-            overrides["table_ai_options"] = (
-                table_ai_options
-                if isinstance(table_ai_options, str)
-                else json.dumps(table_ai_options)
+        legacy_params = collect_table_ai_kwargs(legacy_overrides)
+        if legacy_overrides:
+            unexpected = ", ".join(sorted(legacy_overrides))
+            raise TypeError(
+                f"add_cell() got unexpected keyword argument(s): {unexpected}"
             )
-        if table_ai_ask_options is not None:
-            overrides["table_ai_ask_options"] = (
-                table_ai_ask_options
-                if isinstance(table_ai_ask_options, str)
-                else json.dumps(table_ai_ask_options)
-            )
-        if table_ai_evidence_options is not None:
-            overrides["table_ai_evidence_options"] = (
-                table_ai_evidence_options
-                if isinstance(table_ai_evidence_options, str)
-                else json.dumps(table_ai_evidence_options)
-            )
-
+        overrides.update(legacy_params)
         params.update(overrides)
 
         if use_batch or (use_batch is None and bool(overrides)):
