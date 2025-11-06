@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## dev
+
+## [0.6.1] - 2025-11-06
 
 ### Added
 - **Table AI overrides**: `LouieClient.add_cell()` and `UploadClient.upload_dataframe()` accept structured Table AI overrides and automatically route to the singleshot endpoint when any override is supplied, including callable shorthand support and dataframe hydration for override responses.
