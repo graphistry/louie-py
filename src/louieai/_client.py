@@ -542,9 +542,7 @@ class LouieClient:
         *,
         traces: bool = False,
         share_mode: str = "Private",
-        table_ai_overrides: TableAIOverrides
-        | Mapping[str, Any]
-        | None = None,
+        table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         use_batch: bool | None = None,
         **legacy_overrides: Any,
     ) -> Response:

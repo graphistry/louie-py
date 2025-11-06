@@ -48,9 +48,7 @@ class UploadClient:
         share_mode: str = "Private",
         name: str | None = None,
         parsing_options: dict[str, Any] | None = None,
-        table_ai_overrides: TableAIOverrides
-        | Mapping[str, Any]
-        | None = None,
+        table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         **legacy_overrides: Any,
     ) -> Response:
         """Upload a DataFrame with a natural language query for analysis.
