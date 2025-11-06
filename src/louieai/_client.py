@@ -1,8 +1,11 @@
 """Enhanced Louie client that matches the documented API."""
 
+from __future__ import annotations
+
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -10,6 +13,11 @@ import httpx
 import pandas as pd
 import pyarrow as pa
 
+from ._table_ai import (
+    TableAIOverrides,
+    collect_table_ai_kwargs,
+    normalize_table_ai_overrides,
+)
 from .auth import AuthManager, auto_retry_auth
 
 logger = logging.getLogger(__name__)
@@ -228,7 +236,7 @@ class LouieClient:
         """Get the authentication manager."""
         return self._auth_manager
 
-    def register(self, **kwargs: Any) -> "LouieClient":
+    def register(self, **kwargs: Any) -> LouieClient:
         """Register authentication credentials (passthrough to graphistry).
 
         Args:
@@ -414,17 +422,92 @@ class LouieClient:
                             elements_by_id[elem_id] = elem
 
         # Convert to list, preserving order
-        result["elements"] = list(elements_by_id.values())
+        elements = list(elements_by_id.values())
+        result["elements"] = elements
         return result
 
+    def _attach_dataframes(
+        self, thread_id: str, elements: list[dict[str, Any]]
+    ) -> None:
+        """Fetch and attach dataframe contents for DataFrame elements."""
+
+        if not thread_id:
+            return
+
+        for elem in elements:
+            if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
+                df_id = (
+                    elem.get("df_id")
+                    or elem.get("block_id")
+                    or (elem.get("data") or {}).get("df_id")
+                    or (elem.get("data") or {}).get("block_id")
+                    or elem.get("id")
+                )
+                if not df_id:
+                    continue
+                fetched = self._fetch_dataframe_arrow(thread_id, df_id)
+                if fetched is not None:
+                    elem["table"] = fetched
+                else:
+                    logger.warning(
+                        f"Failed to fetch dataframe {df_id} from thread "
+                        f"{thread_id} for DfElement. Element: {elem}"
+                    )
+
+    def _chat_singleshot(self, params: dict[str, Any]) -> Response:
+        """Call the batch chat endpoint and return a Response."""
+
+        headers = self._get_headers()
+        response = self._client.post(
+            f"{self.server_url}/api/chat_singleshot/",
+            headers=headers,
+            params=params,
+            timeout=self._timeout,
+        )
+        response.raise_for_status()
+
+        payload = response.json()
+        dthread_id: str | None = None
+        elements: list[dict[str, Any]] = []
+
+        if isinstance(payload, list):
+            for item in payload:
+                if isinstance(item, dict):
+                    if dthread_id is None:
+                        dthread_id = item.get("dthread_id") or dthread_id
+                    payload_obj = item.get("payload")
+                    if isinstance(payload_obj, dict):
+                        elements.append(payload_obj)
+
+        if dthread_id is None:
+            dthread_id = ""
+
+        self._attach_dataframes(dthread_id, elements)
+        return Response(thread_id=dthread_id, elements=elements)
+
     def create_thread(
-        self, name: str | None = None, initial_prompt: str | None = None
+        self,
+        name: str | None = None,
+        initial_prompt: str | None = None,
+        *,
+        agent: str = "LouieAgent",
+        traces: bool = False,
+        share_mode: str = "Private",
+        table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
+        **override_kwargs: Any,
     ) -> Thread:
         """Create a new conversation thread.
 
         Args:
             name: Optional name for the thread
             initial_prompt: Optional first message to initialize thread
+            agent: Agent to use for initial prompt (default: LouieAgent)
+            traces: Whether to include reasoning traces (default: False)
+            share_mode: Visibility mode for initial message
+            table_ai_overrides: Structured Table AI overrides applied to initial prompt
+            **override_kwargs: Legacy Table AI override keyword arguments forwarded to
+                `add_cell` (e.g., `table_ai_semantic_mode`). Prefer
+                `table_ai_overrides`.
 
         Returns:
             Thread object with ID
@@ -433,7 +516,18 @@ class LouieClient:
         """
         if initial_prompt:
             # Create thread with initial message
-            response = self.add_cell("", initial_prompt)
+            add_kwargs = dict(override_kwargs)
+            if table_ai_overrides is not None:
+                add_kwargs["table_ai_overrides"] = table_ai_overrides
+
+            response = self.add_cell(
+                "",
+                initial_prompt,
+                agent=agent,
+                traces=traces,
+                share_mode=share_mode,
+                **add_kwargs,
+            )
             return Thread(id=response.thread_id, name=name)
         else:
             # Return placeholder - actual thread created on first add_cell
@@ -448,6 +542,9 @@ class LouieClient:
         *,
         traces: bool = False,
         share_mode: str = "Private",
+        table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
+        use_batch: bool | None = None,
+        **legacy_overrides: Any,
     ) -> Response:
         """Add a cell (query) to a thread and get response.
 
@@ -457,6 +554,11 @@ class LouieClient:
             agent: Agent to use (default: LouieAgent)
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
+            table_ai_overrides: Structured overrides via dataclass or mapping.
+            use_batch: Force singleshot (`True`) or streaming (`False`); defaults to
+                singleshot when overrides are provided.
+            **legacy_overrides: Backwards-compatible Table AI keyword arguments like
+                ``table_ai_semantic_mode``. Prefer `table_ai_overrides`.
 
         Returns:
             Response object containing thread_id and all elements
@@ -464,7 +566,7 @@ class LouieClient:
         headers = self._get_headers()
 
         # Build query parameters
-        params: dict[str, str] = {
+        params: dict[str, Any] = {
             "query": prompt,
             "agent": agent,
             # Convert bool to string for HTTP params
@@ -475,6 +577,19 @@ class LouieClient:
         # Add thread ID if continuing existing thread
         if thread_id:
             params["dthread_id"] = thread_id
+
+        overrides: dict[str, Any] = normalize_table_ai_overrides(table_ai_overrides)
+        legacy_params = collect_table_ai_kwargs(legacy_overrides)
+        if legacy_overrides:
+            unexpected = ", ".join(sorted(legacy_overrides))
+            raise TypeError(
+                f"add_cell() got unexpected keyword argument(s): {unexpected}"
+            )
+        overrides.update(legacy_params)
+        params.update(overrides)
+
+        if use_batch or (use_batch is None and bool(overrides)):
+            return self._chat_singleshot(params)
 
         # Make streaming request with custom timeout handling
         response_text = ""
@@ -559,36 +674,13 @@ class LouieClient:
         result = self._parse_jsonl_response(response_text)
 
         # Get the thread ID
-        actual_thread_id = result["dthread_id"]
+        actual_thread_id = result.get("dthread_id") or thread_id
 
-        # Fetch dataframes for any DfElements
-        for elem in result["elements"]:
-            if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
-                # Check for df_id, block_id, or id (including nested data)
-                df_id = elem.get("df_id") or elem.get("block_id")
-
-                # Check nested data field if exists
-                if not df_id and isinstance(elem.get("data"), dict):
-                    df_id = elem["data"].get("df_id") or elem["data"].get("block_id")
-
-                # Fall back to element ID if no specific df_id found
-                if not df_id:
-                    df_id = elem.get("id")
-                if df_id:
-                    # Fetch the actual dataframe via Arrow
-                    df = self._fetch_dataframe_arrow(actual_thread_id, df_id)
-                    if df is not None:
-                        elem["table"] = df
-                    else:
-                        logger.warning(
-                            f"Failed to fetch dataframe {df_id} from thread "
-                            f"{actual_thread_id} for DfElement. Element: {elem}"
-                        )
-                else:
-                    logger.warning(f"DfElement missing identifier: {elem}")
+        elements = result.get("elements", [])
+        self._attach_dataframes(actual_thread_id, elements)
 
         # Return Response with all elements
-        return Response(thread_id=actual_thread_id, elements=result["elements"])
+        return Response(thread_id=actual_thread_id, elements=elements)
 
     def __call__(
         self,
@@ -614,7 +706,7 @@ class LouieClient:
             traces: Whether to include reasoning traces
             agent: Agent to use (default: LouieAgent)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
-            **kwargs: Additional arguments (reserved for future use)
+            **kwargs: Additional keyword arguments forwarded to `add_cell`
 
         Returns:
             Response object containing thread_id and all elements
@@ -637,6 +729,7 @@ class LouieClient:
             agent=agent,
             traces=traces,
             share_mode=share_mode,
+            **kwargs,
         )
 
         # Store thread_id for next call

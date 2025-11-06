@@ -198,6 +198,45 @@ lui = louie(
 lui = louie()  # Will use env var settings
 ```
 
+### Table AI Overrides
+
+When you need to steer Table AI’s semantic map/reduce behaviour or pick specific models, pass a `TableAIOverrides` dataclass through the `louie()` cursor (it propagates to `LouieClient.add_cell()`):
+
+```python
+from louieai import louie, TableAIOverrides
+
+lui = louie()
+overrides = TableAIOverrides(
+    semantic_mode="map",
+    output_column="semantic_map",
+    ask_model="gpt-4o-mini",
+    evidence_model="gpt-4o",
+    options={"max_rows": 5},
+)
+
+response = lui(
+    "Summarize customer cohorts",
+    table_ai_overrides=overrides,
+)
+
+for element in response.elements:
+    print(element["type"], element.get("text"))
+```
+
+Uploads support the same overrides:
+
+```python
+df_response = lui._client.upload_dataframe(
+    prompt="Cluster transactions by geography",
+    df=df,
+    table_ai_overrides=TableAIOverrides(
+        semantic_mode="reduce",
+        output_column="semantic_reduce",
+        ask_options={"temperature": 0.2},
+    ),
+)
+```
+
 If you see timeout errors, the client will provide helpful guidance about increasing timeouts.
 
 ## Migration from Direct LouieClient
