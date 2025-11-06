@@ -1,18 +1,20 @@
-from __future__ import annotations
-
 """Enhanced Louie client that matches the documented API."""
+
+from __future__ import annotations
 
 import json
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 import httpx
 import pandas as pd
 import pyarrow as pa
 
 from .auth import AuthManager, auto_retry_auth
+
+JSONLike = dict[str, Any] | list[Any] | str | int | float | bool
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +232,7 @@ class LouieClient:
         """Get the authentication manager."""
         return self._auth_manager
 
-    def register(self, **kwargs: Any) -> "LouieClient":
+    def register(self, **kwargs: Any) -> LouieClient:
         """Register authentication credentials (passthrough to graphistry).
 
         Args:
@@ -420,7 +422,9 @@ class LouieClient:
         result["elements"] = elements
         return result
 
-    def _attach_dataframes(self, thread_id: str, elements: list[dict[str, Any]]) -> None:
+    def _attach_dataframes(
+        self, thread_id: str, elements: list[dict[str, Any]]
+    ) -> None:
         """Fetch and attach dataframe contents for DataFrame elements."""
 
         if not thread_id:
@@ -440,12 +444,17 @@ class LouieClient:
                 fetched = self._fetch_dataframe_arrow(thread_id, df_id)
                 if fetched is not None:
                     elem["table"] = fetched
+                else:
+                    logger.warning(
+                        f"Failed to fetch dataframe {df_id} from thread "
+                        f"{thread_id} for DfElement. Element: {elem}"
+                    )
 
-    def _chat_singleshot(self, params: Dict[str, Any]) -> Response:
+    def _chat_singleshot(self, params: dict[str, Any]) -> Response:
         """Call the batch chat endpoint and return a Response."""
 
         headers = self._get_headers()
-        response = self._client.post(  # type: ignore[attr-defined]
+        response = self._client.post(
             f"{self.server_url}/api/chat_singleshot/",
             headers=headers,
             params=params,
@@ -454,7 +463,7 @@ class LouieClient:
         response.raise_for_status()
 
         payload = response.json()
-        dthread_id: Optional[str] = None
+        dthread_id: str | None = None
         elements: list[dict[str, Any]] = []
 
         if isinstance(payload, list):
@@ -503,14 +512,14 @@ class LouieClient:
         *,
         traces: bool = False,
         share_mode: str = "Private",
-        table_ai_semantic_mode: Optional[str] = None,
-        table_ai_output_column: Optional[str] = None,
-        table_ai_ask_model: Optional[str] = None,
-        table_ai_evidence_model: Optional[str] = None,
-        table_ai_options: Optional[Dict[str, Any]] = None,
-        table_ai_ask_options: Optional[Dict[str, Any]] = None,
-        table_ai_evidence_options: Optional[Dict[str, Any]] = None,
-        use_batch: Optional[bool] = None,
+        table_ai_semantic_mode: str | None = None,
+        table_ai_output_column: str | None = None,
+        table_ai_ask_model: str | None = None,
+        table_ai_evidence_model: str | None = None,
+        table_ai_options: JSONLike | None = None,
+        table_ai_ask_options: JSONLike | None = None,
+        table_ai_evidence_options: JSONLike | None = None,
+        use_batch: bool | None = None,
     ) -> Response:
         """Add a cell (query) to a thread and get response.
 
@@ -520,6 +529,15 @@ class LouieClient:
             agent: Agent to use (default: LouieAgent)
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
+            table_ai_semantic_mode: Optional Table AI semantic mode (e.g., "map")
+            table_ai_output_column: Name for the semantic output column
+            table_ai_ask_model: Override for the ask model used by Table AI
+            table_ai_evidence_model: Override for the evidence model
+            table_ai_options: JSON-serializable overrides applied to Table AI requests
+            table_ai_ask_options: JSON-serializable ask model overrides
+            table_ai_evidence_options: JSON-serializable evidence model overrides
+            use_batch: Force singleshot (`True`) or streaming (`False`); defaults to
+                singleshot when overrides are provided.
 
         Returns:
             Response object containing thread_id and all elements
@@ -527,7 +545,7 @@ class LouieClient:
         headers = self._get_headers()
 
         # Build query parameters
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "query": prompt,
             "agent": agent,
             # Convert bool to string for HTTP params
@@ -539,7 +557,7 @@ class LouieClient:
         if thread_id:
             params["dthread_id"] = thread_id
 
-        overrides: Dict[str, Any] = {}
+        overrides: dict[str, Any] = {}
         if table_ai_semantic_mode is not None:
             overrides["table_ai_semantic_mode"] = table_ai_semantic_mode
         if table_ai_output_column is not None:
@@ -549,11 +567,23 @@ class LouieClient:
         if table_ai_evidence_model is not None:
             overrides["table_ai_evidence_model"] = table_ai_evidence_model
         if table_ai_options is not None:
-            overrides["table_ai_options"] = json.dumps(table_ai_options)
+            overrides["table_ai_options"] = (
+                table_ai_options
+                if isinstance(table_ai_options, str)
+                else json.dumps(table_ai_options)
+            )
         if table_ai_ask_options is not None:
-            overrides["table_ai_ask_options"] = json.dumps(table_ai_ask_options)
+            overrides["table_ai_ask_options"] = (
+                table_ai_ask_options
+                if isinstance(table_ai_ask_options, str)
+                else json.dumps(table_ai_ask_options)
+            )
         if table_ai_evidence_options is not None:
-            overrides["table_ai_evidence_options"] = json.dumps(table_ai_evidence_options)
+            overrides["table_ai_evidence_options"] = (
+                table_ai_evidence_options
+                if isinstance(table_ai_evidence_options, str)
+                else json.dumps(table_ai_evidence_options)
+            )
 
         params.update(overrides)
 
@@ -675,7 +705,7 @@ class LouieClient:
             traces: Whether to include reasoning traces
             agent: Agent to use (default: LouieAgent)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
-            **kwargs: Additional arguments (reserved for future use)
+            **kwargs: Additional keyword arguments forwarded to `add_cell`
 
         Returns:
             Response object containing thread_id and all elements
@@ -698,6 +728,7 @@ class LouieClient:
             agent=agent,
             traces=traces,
             share_mode=share_mode,
+            **kwargs,
         )
 
         # Store thread_id for next call

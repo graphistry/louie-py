@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
+from typing_extensions import Self
 
 from louieai._client import LouieClient
 from louieai._upload import UploadClient
@@ -28,15 +29,17 @@ def mock_client(monkeypatch: pytest.MonkeyPatch) -> LouieClient:
     client = LouieClient(server_url="http://test")
     httpx_mock = MagicMock()
     client._client = httpx_mock  # type: ignore[attr-defined]
+    monkeypatch.setattr(client, "_get_headers", lambda: {})  # avoid auth
     monkeypatch.setattr(client, "_fetch_dataframe_arrow", lambda *args, **kwargs: None)
     return client
 
 
 def test_add_cell_with_table_ai_overrides(mock_client: LouieClient) -> None:
-    mock_post = MagicMock(return_value=DummyResponse([
+    singleshot_payload = [
         {"dthread_id": "D123"},
         {"payload": {"id": "elem-1", "type": "TextElement", "text": "hi"}},
-    ]))
+    ]
+    mock_post = MagicMock(return_value=DummyResponse(singleshot_payload))
     mock_client._client.post = mock_post  # type: ignore[attr-defined]
 
     response = mock_client.add_cell(
@@ -61,9 +64,12 @@ def test_add_cell_with_table_ai_overrides(mock_client: LouieClient) -> None:
     assert response.elements[0]["text"] == "hi"
 
 
-def test_upload_dataframe_with_table_ai_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_upload_dataframe_with_table_ai_overrides(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = LouieClient(server_url="http://test")
     upload_client = UploadClient(client)
+    monkeypatch.setattr(client, "_get_headers", lambda: {})  # avoid auth
 
     class FakeStreamResponse:
         def __init__(self) -> None:
@@ -74,26 +80,36 @@ def test_upload_dataframe_with_table_ai_overrides(monkeypatch: pytest.MonkeyPatc
 
         def iter_lines(self):  # type: ignore[override]
             yield json.dumps({"dthread_id": "D456"})
-            yield json.dumps({"payload": {"id": "elem-1", "type": "TextElement", "text": "done"}})
+            yield json.dumps(
+                {"payload": {"id": "elem-1", "type": "TextElement", "text": "done"}}
+            )
 
     class FakeStreamContext:
         def __enter__(self) -> FakeStreamResponse:
             return FakeStreamResponse()
 
-        def __exit__(self, *args: Any) -> None:
+        def __exit__(self, *args: object) -> None:
             return None
 
     class FakeHttpxClient:
         def __init__(self, timeout: Any) -> None:
             self.last_request: dict[str, Any] | None = None
 
-        def __enter__(self) -> "FakeHttpxClient":
+        def __enter__(self) -> Self:
             return self
 
-        def __exit__(self, *args: Any) -> None:
+        def __exit__(self, *args: object) -> None:
             return None
 
-        def stream(self, method: str, url: str, *, headers: Any, data: Any, files: Any) -> FakeStreamContext:
+        def stream(
+            self,
+            method: str,
+            url: str,
+            *,
+            headers: Any,
+            data: Any,
+            files: Any,
+        ) -> FakeStreamContext:
             self.last_request = {
                 "method": method,
                 "url": url,

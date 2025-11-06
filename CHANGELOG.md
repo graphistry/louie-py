@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Table AI overrides**: `LouieClient.add_cell()` and `UploadClient.upload_dataframe()` now accept Table AI override kwargs and automatically use the singleshot endpoint when provided, including callable shorthand support and dataframe hydration for override responses.
+
+### Changed
+- `LouieClient.__call__()` forwards additional keyword arguments to ensure override kwargs work with the callable interface.
+
 ## [0.6.0] - 2025-09-25
 
 ### Added
