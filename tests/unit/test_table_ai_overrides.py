@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from typing_extensions import Self
 
-from louieai._client import LouieClient
+from louieai._client import LouieClient, Response
 from louieai._table_ai import TableAIOverrides
 from louieai._upload import UploadClient
 
@@ -172,3 +172,45 @@ def test_upload_dataframe_with_table_ai_overrides(
     data = fake_client.last_request["data"]
     assert data["table_ai_semantic_mode"] == "map"
     assert json.loads(data["table_ai_options"]) == {"max_rows": 5}
+
+
+def test_create_thread_forwards_table_ai_overrides(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = LouieClient(server_url="http://test")
+    overrides = TableAIOverrides(semantic_mode="map")
+    captured: dict[str, Any] = {}
+
+    def fake_add_cell(
+        thread_id: str,
+        prompt: str,
+        agent: str = "",
+        *,
+        table_ai_overrides: TableAIOverrides | None = None,
+        **kwargs: Any,
+    ) -> Response:
+        captured.update(
+            {
+                "thread_id": thread_id,
+                "prompt": prompt,
+                "agent": agent,
+                "table_ai_overrides": table_ai_overrides,
+                "kwargs": kwargs,
+            }
+        )
+        return Response(thread_id="D789", elements=[])
+
+    monkeypatch.setattr(client, "add_cell", fake_add_cell)
+
+    thread = client.create_thread(
+        name="Test",
+        initial_prompt="hello",
+        agent="TableAIAgent",
+        table_ai_overrides=overrides,
+        table_ai_semantic_mode="map",
+    )
+
+    assert thread.id == "D789"
+    assert thread.name == "Test"
+    assert captured["table_ai_overrides"] is overrides
+    assert captured["kwargs"]["table_ai_semantic_mode"] == "map"

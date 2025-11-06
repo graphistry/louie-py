@@ -482,13 +482,28 @@ class LouieClient:
         return Response(thread_id=dthread_id, elements=elements)
 
     def create_thread(
-        self, name: str | None = None, initial_prompt: str | None = None
+        self,
+        name: str | None = None,
+        initial_prompt: str | None = None,
+        *,
+        agent: str = "LouieAgent",
+        traces: bool = False,
+        share_mode: str = "Private",
+        table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
+        **override_kwargs: Any,
     ) -> Thread:
         """Create a new conversation thread.
 
         Args:
             name: Optional name for the thread
             initial_prompt: Optional first message to initialize thread
+            agent: Agent to use for initial prompt (default: LouieAgent)
+            traces: Whether to include reasoning traces (default: False)
+            share_mode: Visibility mode for initial message
+            table_ai_overrides: Structured Table AI overrides applied to initial prompt
+            **override_kwargs: Legacy Table AI override keyword arguments forwarded to
+                `add_cell` (e.g., `table_ai_semantic_mode`). Prefer
+                `table_ai_overrides`.
 
         Returns:
             Thread object with ID
@@ -497,7 +512,18 @@ class LouieClient:
         """
         if initial_prompt:
             # Create thread with initial message
-            response = self.add_cell("", initial_prompt)
+            add_kwargs = dict(override_kwargs)
+            if table_ai_overrides is not None:
+                add_kwargs["table_ai_overrides"] = table_ai_overrides
+
+            response = self.add_cell(
+                "",
+                initial_prompt,
+                agent=agent,
+                traces=traces,
+                share_mode=share_mode,
+                **add_kwargs,
+            )
             return Thread(id=response.thread_id, name=name)
         else:
             # Return placeholder - actual thread created on first add_cell
