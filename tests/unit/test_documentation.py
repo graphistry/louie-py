@@ -379,13 +379,15 @@ def _create_comprehensive_mock_lui(client=None):
         response.texts = ["Response text"]
         response.text_elements = [{"type": "TextElement", "content": "Response text"}]
         response.dataframe_elements = [{"type": "DfElement", "table": mock_df}]
+        response.elements = response.text_elements + response.dataframe_elements
         # Update lui's state
         mock_lui.text = response.text
         mock_lui.df = response.df
+        mock_lui.elements = response.elements
         return response
 
-    # Use __call__ instead of side_effect for better control
-    mock_lui.__call__ = mock_lui_call
+    # Ensure calling the mock executes our custom handler
+    mock_lui.side_effect = mock_lui_call
 
     # Make lui subscriptable for history
     # Create a mock history response that will be returned for any index
