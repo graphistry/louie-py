@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,9 +13,8 @@ import httpx
 import pandas as pd
 import pyarrow as pa
 
+from ._table_ai import JSONLike, TableAIOverrides, normalize_table_ai_overrides
 from .auth import AuthManager, auto_retry_auth
-
-JSONLike = dict[str, Any] | list[Any] | str | int | float | bool
 
 logger = logging.getLogger(__name__)
 
@@ -519,6 +519,9 @@ class LouieClient:
         table_ai_options: JSONLike | None = None,
         table_ai_ask_options: JSONLike | None = None,
         table_ai_evidence_options: JSONLike | None = None,
+        table_ai_overrides: TableAIOverrides
+        | Mapping[str, Any]
+        | None = None,
         use_batch: bool | None = None,
     ) -> Response:
         """Add a cell (query) to a thread and get response.
@@ -536,6 +539,7 @@ class LouieClient:
             table_ai_options: JSON-serializable overrides applied to Table AI requests
             table_ai_ask_options: JSON-serializable ask model overrides
             table_ai_evidence_options: JSON-serializable evidence model overrides
+            table_ai_overrides: Structured overrides via dataclass or mapping.
             use_batch: Force singleshot (`True`) or streaming (`False`); defaults to
                 singleshot when overrides are provided.
 
@@ -557,7 +561,7 @@ class LouieClient:
         if thread_id:
             params["dthread_id"] = thread_id
 
-        overrides: dict[str, Any] = {}
+        overrides: dict[str, Any] = normalize_table_ai_overrides(table_ai_overrides)
         if table_ai_semantic_mode is not None:
             overrides["table_ai_semantic_mode"] = table_ai_semantic_mode
         if table_ai_output_column is not None:

@@ -8,6 +8,7 @@ import logging
 import mimetypes
 import os
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO
 
@@ -17,11 +18,10 @@ if TYPE_CHECKING:
 import httpx
 import pandas as pd
 
+from ._table_ai import JSONLike, TableAIOverrides, normalize_table_ai_overrides
 from .auth import auto_retry_auth
 
 logger = logging.getLogger(__name__)
-
-JSONLike = dict[str, Any] | list[Any] | str | int | float | bool
 
 
 class UploadClient:
@@ -51,6 +51,9 @@ class UploadClient:
         table_ai_options: JSONLike | None = None,
         table_ai_ask_options: JSONLike | None = None,
         table_ai_evidence_options: JSONLike | None = None,
+        table_ai_overrides: TableAIOverrides
+        | Mapping[str, Any]
+        | None = None,
     ) -> Response:
         """Upload a DataFrame with a natural language query for analysis.
 
@@ -80,6 +83,7 @@ class UploadClient:
             table_ai_options: JSON-serializable options sent to Table AI
             table_ai_ask_options: JSON-serializable ask model overrides
             table_ai_evidence_options: JSON-serializable evidence model overrides
+            table_ai_overrides: Structured overrides via dataclass or mapping.
 
         Returns:
             Response object containing:
@@ -142,6 +146,7 @@ class UploadClient:
                 data["parsing_options"] = json.dumps([default_options])
 
         # Table AI overrides (optional)
+        data.update(normalize_table_ai_overrides(table_ai_overrides))
         if table_ai_semantic_mode is not None:
             data["table_ai_semantic_mode"] = table_ai_semantic_mode
         if table_ai_output_column is not None:

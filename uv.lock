@@ -781,7 +781,6 @@ source = { editable = "." }
 dependencies = [
     { name = "graphistry" },
     { name = "httpx" },
-    { name = "nbclient" },
     { name = "pandas" },
     { name = "pillow" },
     { name = "pyarrow" },
@@ -793,8 +792,10 @@ dev = [
     { name = "ipython", version = "8.37.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "ipython", version = "9.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "mkdocs" },
+    { name = "mkdocs-jupyter" },
     { name = "mkdocs-material" },
     { name = "mypy" },
+    { name = "nbclient" },
     { name = "pre-commit" },
     { name = "pyarrow-stubs" },
     { name = "pytest" },
@@ -809,6 +810,7 @@ docs = [
     { name = "mkdocs-jupyter" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
+    { name = "nbclient" },
 ]
 
 [package.metadata]
@@ -820,12 +822,14 @@ requires-dist = [
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.6.0" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6.0" },
+    { name = "mkdocs-jupyter", marker = "extra == 'dev'", specifier = ">=0.24.0" },
     { name = "mkdocs-jupyter", marker = "extra == 'docs'", specifier = ">=0.24.0" },
     { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.6.0" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.6.0" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=0.24.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.17.0" },
-    { name = "nbclient", specifier = ">=0.10.2" },
+    { name = "nbclient", marker = "extra == 'dev'", specifier = ">=0.10.2" },
+    { name = "nbclient", marker = "extra == 'docs'", specifier = ">=0.10.2" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "pillow", specifier = ">=11.3.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.2.0" },

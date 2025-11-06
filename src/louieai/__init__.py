@@ -9,6 +9,7 @@ except ImportError:
     __version__ = "0.0.0+unknown"
 
 from ._client import Response, Thread
+from ._table_ai import TableAIOverrides
 from .notebook import Cursor
 
 
@@ -195,6 +196,7 @@ def louie(
 __all__ = [
     "Cursor",
     "Response",
+    "TableAIOverrides",
     "Thread",
     "__version__",
     "louie",

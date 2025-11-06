@@ -200,19 +200,26 @@ lui = louie()  # Will use env var settings
 
 ### Table AI Overrides
 
-When you need to steer Table AI’s semantic map/reduce behaviour or pick specific models, pass override keywords directly through the `louie()` cursor (they propagate to `LouieClient.add_cell()`):
+When you need to steer Table AI’s semantic map/reduce behaviour or pick specific models, pass a `TableAIOverrides` dataclass through the `louie()` cursor (it propagates to `LouieClient.add_cell()`):
 
 ```python
-response = lui(
-    "Summarize customer cohorts",
-    table_ai_semantic_mode="map",
-    table_ai_output_column="semantic_map",
-    table_ai_ask_model="gpt-4o-mini",
-    table_ai_evidence_model="gpt-4o",
-    table_ai_options={"max_rows": 5},
+from louieai import louie, TableAIOverrides
+
+lui = louie()
+overrides = TableAIOverrides(
+    semantic_mode="map",
+    output_column="semantic_map",
+    ask_model="gpt-4o-mini",
+    evidence_model="gpt-4o",
+    options={"max_rows": 5},
 )
 
-for element in lui.elements:
+response = lui(
+    "Summarize customer cohorts",
+    table_ai_overrides=overrides,
+)
+
+for element in response.elements:
     print(element["type"], element.get("text"))
 ```
 
@@ -222,9 +229,11 @@ Uploads support the same overrides:
 df_response = lui._client.upload_dataframe(
     prompt="Cluster transactions by geography",
     df=df,
-    table_ai_semantic_mode="reduce",
-    table_ai_output_column="semantic_reduce",
-    table_ai_ask_options={"temperature": 0.2},
+    table_ai_overrides=TableAIOverrides(
+        semantic_mode="reduce",
+        output_column="semantic_reduce",
+        ask_options={"temperature": 0.2},
+    ),
 )
 ```
 

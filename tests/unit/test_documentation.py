@@ -13,6 +13,8 @@ from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
 
+from louieai._table_ai import TableAIOverrides
+
 # Import from same directory when running tests
 try:
     from .mocks import (
@@ -152,6 +154,7 @@ def create_test_namespace(client):
         "threads": [thread],
         "graphistry": mock_graphistry,
         "louieai": mock_louieai,  # Add louieai module
+        "TableAIOverrides": TableAIOverrides,
         "g": mock_registered_client,
         "pd": pd,  # Real pandas for type checks
         "json": json,
@@ -214,6 +217,10 @@ class TestDocumentation:
                 {
                     "graphistry": namespace["graphistry"],
                     "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
+                    "louieai": Mock(
+                        louie=mock_louie_factory,
+                        TableAIOverrides=TableAIOverrides,
+                    ),
                 },
             ),
         ):
@@ -303,6 +310,7 @@ def test_documentation_file(doc_file):
                 "louieai": Mock(
                     LouieClient=Mock(return_value=client),
                     louie=mock_louie_factory,
+                    TableAIOverrides=TableAIOverrides,
                     Cursor=Mock,
                 ),
                 "louieai.notebook": Mock(lui=mock_lui),

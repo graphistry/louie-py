@@ -9,6 +9,7 @@ import pytest
 from typing_extensions import Self
 
 from louieai._client import LouieClient
+from louieai._table_ai import TableAIOverrides
 from louieai._upload import UploadClient
 
 
@@ -35,6 +36,13 @@ def mock_client(monkeypatch: pytest.MonkeyPatch) -> LouieClient:
 
 
 def test_add_cell_with_table_ai_overrides(mock_client: LouieClient) -> None:
+    overrides_model = TableAIOverrides(
+        semantic_mode="map",
+        output_column="semantic_map",
+        ask_model="gpt-4o-mini",
+        evidence_model="gpt-4o",
+        options={"max_rows": 5},
+    )
     singleshot_payload = [
         {"dthread_id": "D123"},
         {"payload": {"id": "elem-1", "type": "TextElement", "text": "hi"}},
@@ -46,11 +54,7 @@ def test_add_cell_with_table_ai_overrides(mock_client: LouieClient) -> None:
         "",
         "Summarize rows",
         agent="TableAIAgent",
-        table_ai_semantic_mode="map",
-        table_ai_output_column="semantic_map",
-        table_ai_ask_model="gpt-4o-mini",
-        table_ai_evidence_model="gpt-4o",
-        table_ai_options={"max_rows": 5},
+        table_ai_overrides=overrides_model,
     )
 
     request_call = mock_post.call_args
@@ -62,6 +66,31 @@ def test_add_cell_with_table_ai_overrides(mock_client: LouieClient) -> None:
     assert json.loads(params["table_ai_options"]) == {"max_rows": 5}
     assert response.thread_id == "D123"
     assert response.elements[0]["text"] == "hi"
+
+
+def test_add_cell_with_mapping_overrides(mock_client: LouieClient) -> None:
+    mock_post = MagicMock(return_value=DummyResponse([]))
+    mock_client._client.post = mock_post  # type: ignore[attr-defined]
+
+    response = mock_client.add_cell(
+        "",
+        "Summarize rows",
+        table_ai_overrides={
+            "semantic_mode": "reduce",
+            "output_column": "semantic_reduce",
+            "ask_model": "gpt-4.1",
+            "options": {"foo": "bar"},
+        },
+    )
+
+    request_call = mock_post.call_args
+    assert request_call is not None
+    params = request_call[1]["params"]
+    assert params["table_ai_semantic_mode"] == "reduce"
+    assert params["table_ai_output_column"] == "semantic_reduce"
+    assert params["table_ai_ask_model"] == "gpt-4.1"
+    assert json.loads(params["table_ai_options"]) == {"foo": "bar"}
+    assert response.thread_id == ""
 
 
 def test_upload_dataframe_with_table_ai_overrides(
@@ -127,11 +156,13 @@ def test_upload_dataframe_with_table_ai_overrides(
     response = upload_client.upload_dataframe(
         prompt="Summarize",
         df=df,
-        table_ai_semantic_mode="map",
-        table_ai_output_column="semantic_map",
-        table_ai_ask_model="gpt-4o-mini",
-        table_ai_evidence_model="gpt-4o",
-        table_ai_options={"max_rows": 5},
+        table_ai_overrides=TableAIOverrides(
+            semantic_mode="map",
+            output_column="semantic_map",
+            ask_model="gpt-4o-mini",
+            evidence_model="gpt-4o",
+            options={"max_rows": 5},
+        ),
     )
 
     assert response.thread_id == "D456"
