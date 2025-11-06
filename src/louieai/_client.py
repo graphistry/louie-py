@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 """Enhanced Louie client that matches the documented API."""
 
 import json
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Dict, Optional
 
 import httpx
 import pandas as pd
@@ -414,8 +416,61 @@ class LouieClient:
                             elements_by_id[elem_id] = elem
 
         # Convert to list, preserving order
-        result["elements"] = list(elements_by_id.values())
+        elements = list(elements_by_id.values())
+        result["elements"] = elements
         return result
+
+    def _attach_dataframes(self, thread_id: str, elements: list[dict[str, Any]]) -> None:
+        """Fetch and attach dataframe contents for DataFrame elements."""
+
+        if not thread_id:
+            return
+
+        for elem in elements:
+            if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
+                df_id = (
+                    elem.get("df_id")
+                    or elem.get("block_id")
+                    or (elem.get("data") or {}).get("df_id")
+                    or (elem.get("data") or {}).get("block_id")
+                    or elem.get("id")
+                )
+                if not df_id:
+                    continue
+                fetched = self._fetch_dataframe_arrow(thread_id, df_id)
+                if fetched is not None:
+                    elem["table"] = fetched
+
+    def _chat_singleshot(self, params: Dict[str, Any]) -> Response:
+        """Call the batch chat endpoint and return a Response."""
+
+        headers = self._get_headers()
+        response = self._client.post(  # type: ignore[attr-defined]
+            f"{self.server_url}/api/chat_singleshot/",
+            headers=headers,
+            params=params,
+            timeout=self._timeout,
+        )
+        response.raise_for_status()
+
+        payload = response.json()
+        dthread_id: Optional[str] = None
+        elements: list[dict[str, Any]] = []
+
+        if isinstance(payload, list):
+            for item in payload:
+                if isinstance(item, dict):
+                    if dthread_id is None:
+                        dthread_id = item.get("dthread_id") or dthread_id
+                    payload_obj = item.get("payload")
+                    if isinstance(payload_obj, dict):
+                        elements.append(payload_obj)
+
+        if dthread_id is None:
+            dthread_id = ""
+
+        self._attach_dataframes(dthread_id, elements)
+        return Response(thread_id=dthread_id, elements=elements)
 
     def create_thread(
         self, name: str | None = None, initial_prompt: str | None = None
@@ -448,6 +503,14 @@ class LouieClient:
         *,
         traces: bool = False,
         share_mode: str = "Private",
+        table_ai_semantic_mode: Optional[str] = None,
+        table_ai_output_column: Optional[str] = None,
+        table_ai_ask_model: Optional[str] = None,
+        table_ai_evidence_model: Optional[str] = None,
+        table_ai_options: Optional[Dict[str, Any]] = None,
+        table_ai_ask_options: Optional[Dict[str, Any]] = None,
+        table_ai_evidence_options: Optional[Dict[str, Any]] = None,
+        use_batch: Optional[bool] = None,
     ) -> Response:
         """Add a cell (query) to a thread and get response.
 
@@ -464,7 +527,7 @@ class LouieClient:
         headers = self._get_headers()
 
         # Build query parameters
-        params: dict[str, str] = {
+        params: Dict[str, Any] = {
             "query": prompt,
             "agent": agent,
             # Convert bool to string for HTTP params
@@ -475,6 +538,27 @@ class LouieClient:
         # Add thread ID if continuing existing thread
         if thread_id:
             params["dthread_id"] = thread_id
+
+        overrides: Dict[str, Any] = {}
+        if table_ai_semantic_mode is not None:
+            overrides["table_ai_semantic_mode"] = table_ai_semantic_mode
+        if table_ai_output_column is not None:
+            overrides["table_ai_output_column"] = table_ai_output_column
+        if table_ai_ask_model is not None:
+            overrides["table_ai_ask_model"] = table_ai_ask_model
+        if table_ai_evidence_model is not None:
+            overrides["table_ai_evidence_model"] = table_ai_evidence_model
+        if table_ai_options is not None:
+            overrides["table_ai_options"] = json.dumps(table_ai_options)
+        if table_ai_ask_options is not None:
+            overrides["table_ai_ask_options"] = json.dumps(table_ai_ask_options)
+        if table_ai_evidence_options is not None:
+            overrides["table_ai_evidence_options"] = json.dumps(table_ai_evidence_options)
+
+        params.update(overrides)
+
+        if use_batch or (use_batch is None and bool(overrides)):
+            return self._chat_singleshot(params)
 
         # Make streaming request with custom timeout handling
         response_text = ""
@@ -559,36 +643,13 @@ class LouieClient:
         result = self._parse_jsonl_response(response_text)
 
         # Get the thread ID
-        actual_thread_id = result["dthread_id"]
+        actual_thread_id = result.get("dthread_id") or thread_id
 
-        # Fetch dataframes for any DfElements
-        for elem in result["elements"]:
-            if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
-                # Check for df_id, block_id, or id (including nested data)
-                df_id = elem.get("df_id") or elem.get("block_id")
-
-                # Check nested data field if exists
-                if not df_id and isinstance(elem.get("data"), dict):
-                    df_id = elem["data"].get("df_id") or elem["data"].get("block_id")
-
-                # Fall back to element ID if no specific df_id found
-                if not df_id:
-                    df_id = elem.get("id")
-                if df_id:
-                    # Fetch the actual dataframe via Arrow
-                    df = self._fetch_dataframe_arrow(actual_thread_id, df_id)
-                    if df is not None:
-                        elem["table"] = df
-                    else:
-                        logger.warning(
-                            f"Failed to fetch dataframe {df_id} from thread "
-                            f"{actual_thread_id} for DfElement. Element: {elem}"
-                        )
-                else:
-                    logger.warning(f"DfElement missing identifier: {elem}")
+        elements = result.get("elements", [])
+        self._attach_dataframes(actual_thread_id, elements)
 
         # Return Response with all elements
-        return Response(thread_id=actual_thread_id, elements=result["elements"])
+        return Response(thread_id=actual_thread_id, elements=elements)
 
     def __call__(
         self,

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """DataFrame upload functionality for Louie.ai."""
 
 import io
@@ -40,6 +42,13 @@ class UploadClient:
         share_mode: str = "Private",
         name: str | None = None,
         parsing_options: dict[str, Any] | None = None,
+        table_ai_semantic_mode: str | None = None,
+        table_ai_output_column: str | None = None,
+        table_ai_ask_model: str | None = None,
+        table_ai_evidence_model: str | None = None,
+        table_ai_options: dict[str, Any] | None = None,
+        table_ai_ask_options: dict[str, Any] | None = None,
+        table_ai_evidence_options: dict[str, Any] | None = None,
     ) -> "Response":
         """Upload a DataFrame with a natural language query for analysis.
 
@@ -123,6 +132,22 @@ class UploadClient:
             if default_options:
                 data["parsing_options"] = json.dumps([default_options])
 
+        # Table AI overrides (optional)
+        if table_ai_semantic_mode is not None:
+            data["table_ai_semantic_mode"] = table_ai_semantic_mode
+        if table_ai_output_column is not None:
+            data["table_ai_output_column"] = table_ai_output_column
+        if table_ai_ask_model is not None:
+            data["table_ai_ask_model"] = table_ai_ask_model
+        if table_ai_evidence_model is not None:
+            data["table_ai_evidence_model"] = table_ai_evidence_model
+        if table_ai_options is not None:
+            data["table_ai_options"] = json.dumps(table_ai_options)
+        if table_ai_ask_options is not None:
+            data["table_ai_ask_options"] = json.dumps(table_ai_ask_options)
+        if table_ai_evidence_options is not None:
+            data["table_ai_evidence_options"] = json.dumps(table_ai_evidence_options)
+
         # Make upload request with streaming response
         response_text = ""
         lines_received = 0
@@ -178,22 +203,14 @@ class UploadClient:
         # Parse response and create Response object
         parsed = self._client._parse_jsonl_response(response_text)
 
-        # Fetch any dataframes that were returned
-        if parsed.get("dthread_id"):
-            for elem in parsed.get("elements", []):
-                if elem.get("type") in ["DfElement", "df"] and elem.get("id"):
-                    # Fetch the actual dataframe
-                    fetched_df = self._client._fetch_dataframe_arrow(
-                        parsed["dthread_id"], elem["id"]
-                    )
-                    if fetched_df is not None:
-                        elem["table"] = fetched_df
-
         from ._client import Response
 
-        return Response(
-            thread_id=parsed.get("dthread_id", ""), elements=parsed.get("elements", [])
-        )
+        dthread_id = parsed.get("dthread_id") or ""
+        elements = parsed.get("elements", [])
+        if dthread_id:
+            self._client._attach_dataframes(dthread_id, elements)
+
+        return Response(thread_id=dthread_id, elements=elements)
 
     def _serialize_dataframe(
         self, df: pd.DataFrame, format: str
