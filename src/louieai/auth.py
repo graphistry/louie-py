@@ -121,9 +121,7 @@ class AuthManager:
                     "Anonymous auth cannot be combined with Graphistry credentials."
                 )
             if self._anonymous_token is None and not self._anonymous_server_url:
-                raise ValueError(
-                    "Anonymous auth requires a server URL or a token."
-                )
+                raise ValueError("Anonymous auth requires a server URL or a token.")
 
         # Create GraphistryClient instance if none provided
         self._graphistry_client = graphistry_client or GraphistryClient()

@@ -205,21 +205,20 @@ class LouieClient:
         self._client = httpx.Client(timeout=timeout)
 
         anonymous_enabled = anonymous or anonymous_token is not None
-        if anonymous_enabled:
-            if any(
-                [
-                    graphistry_client is not None,
-                    username,
-                    password,
-                    api_key,
-                    personal_key_id,
-                    personal_key_secret,
-                    server,
-                ]
-            ):
-                raise ValueError(
-                    "Anonymous auth cannot be combined with Graphistry credentials."
-                )
+        if anonymous_enabled and any(
+            [
+                graphistry_client is not None,
+                username,
+                password,
+                api_key,
+                personal_key_id,
+                personal_key_secret,
+                server,
+            ]
+        ):
+            raise ValueError(
+                "Anonymous auth cannot be combined with Graphistry credentials."
+            )
 
         # Set up authentication
         self._auth_manager = AuthManager(
