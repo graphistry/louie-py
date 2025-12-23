@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Thread listing**: `list_threads()` now parses both `data` and `items` response shapes and supports client-side folder filtering.
+- **Secret detection**: CI now uses a temp baseline to avoid rewriting `.secrets.baseline` timestamps when nothing changes.
 
 ## [0.6.1] - 2025-11-06
 
