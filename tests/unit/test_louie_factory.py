@@ -88,6 +88,19 @@ class TestLouieFactory:
         mock_client_class.assert_called_once_with(api_key="test_api_key_123")
 
     @patch("louieai._client.LouieClient")
+    def test_louie_with_anonymous_auth(self, mock_client_class):
+        """Test louie() with anonymous auth."""
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+
+        result = louie(anonymous=True, server_url="http://localhost:8513")
+
+        assert isinstance(result, Cursor)
+        mock_client_class.assert_called_once_with(
+            anonymous=True, server_url="http://localhost:8513"
+        )
+
+    @patch("louieai._client.LouieClient")
     def test_louie_with_custom_server(self, mock_client_class):
         """Test louie() with custom server URL."""
         # Mock LouieClient

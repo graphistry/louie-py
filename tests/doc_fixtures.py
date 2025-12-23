@@ -130,7 +130,7 @@ def create_mock_client():
     mock_client.create_thread.side_effect = mock_create_thread
 
     # Mock add_cell method
-    def mock_add_cell(thread_id, prompt):
+    def mock_add_cell(thread_id, prompt, **_kwargs):
         if "hello" in prompt.lower():
             return responses["hello"]
         elif "analysis" in prompt.lower() or "trends" in prompt.lower():
@@ -144,13 +144,16 @@ def create_mock_client():
 
     # Mock list_threads
     mock_client.list_threads.return_value = [
-        Thread(id="D_thread1", name="Analysis Session"),
-        Thread(id="D_thread2", name="Data Exploration"),
+        Thread(id="D_thread1", name="Analysis Session", folder="Investigations/Q4"),
+        Thread(id="D_thread2", name="Data Exploration", folder="Investigations/Q4"),
     ]
 
-    # Mock get_thread
+    # Mock get_thread / get_thread_by_name
     mock_client.get_thread.return_value = Thread(
-        id="D_thread1", name="Analysis Session"
+        id="D_thread1", name="Analysis Session", folder="Investigations/Q4"
+    )
+    mock_client.get_thread_by_name.return_value = Thread(
+        id="D_thread1", name="Analysis Session", folder="Investigations/Q4"
     )
 
     return mock_client

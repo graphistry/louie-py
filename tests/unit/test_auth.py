@@ -1,11 +1,16 @@
 """Unit tests for authentication functionality."""
 
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import httpx
 import pytest
 
-from louieai.auth import AuthManager, auto_retry_auth
+from louieai.auth import (
+    AnonymousGraphistryClient,
+    AuthManager,
+    auto_retry_auth,
+    get_anonymous_token,
+)
 
 
 @pytest.mark.unit
@@ -272,6 +277,42 @@ class TestAuthManager:
         # Should return False when refresh fails
         result = auth_manager.handle_auth_error(error)
         assert result is False
+
+    def test_get_anonymous_token_success(self):
+        """Test successful anonymous token fetch."""
+        response = Mock()
+        response.status_code = 200
+        response.json.return_value = {"success": True, "token": "anon-token-123"}
+
+        with patch("louieai.auth.httpx.post", return_value=response) as mock_post:
+            token = get_anonymous_token("http://localhost:8513")
+
+        assert token == "anon-token-123"
+        mock_post.assert_called_once_with(
+            "http://localhost:8513/auth/anonymous", timeout=20.0
+        )
+
+    def test_get_anonymous_token_disabled(self):
+        """Test anonymous auth disabled error handling."""
+        response = Mock()
+        response.status_code = 404
+        response.text = "Not Found"
+
+        with patch("louieai.auth.httpx.post", return_value=response):
+            with pytest.raises(RuntimeError, match="Anonymous auth may be disabled"):
+                get_anonymous_token("http://localhost:8513")
+
+    def test_anonymous_graphistry_client_refresh(self):
+        """Test anonymous graphistry client refresh flow."""
+        response = Mock()
+        response.status_code = 200
+        response.json.return_value = {"success": True, "token": "anon-token-456"}
+
+        with patch("louieai.auth.httpx.post", return_value=response):
+            client = AnonymousGraphistryClient("http://localhost:8513")
+            assert client.api_token() is None
+            client.refresh()
+            assert client.api_token() == "anon-token-456"
 
 
 @pytest.mark.unit

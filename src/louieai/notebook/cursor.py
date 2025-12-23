@@ -521,6 +521,7 @@ class Cursor:
         client: LouieClient | None = None,
         share_mode: str = "Private",
         name: str | None = None,
+        folder: str | None = None,
     ):
         """Initialize global cursor.
 
@@ -529,6 +530,7 @@ class Cursor:
             share_mode: Default visibility mode - "Private", "Organization", or "Public"
             name: Optional thread name (auto-generated from first message if not
                 provided)
+            folder: Optional folder path for new threads (server support required)
         """
         # Validate share_mode
         valid_modes = {"Private", "Organization", "Public"}
@@ -606,6 +608,7 @@ class Cursor:
         self._traces: bool = False
         self._share_mode: str = share_mode
         self._name: str | None = name
+        self._folder: str | None = folder
         self._last_display_id: str | None = None
 
     def __call__(
@@ -813,6 +816,7 @@ class Cursor:
                     traces=use_traces,
                     share_mode=use_share_mode,
                     name=self._name,
+                    folder=self._folder,
                     format=kwargs.get("format", "parquet"),
                     parsing_options=kwargs.get("parsing_options"),
                 )
@@ -826,6 +830,7 @@ class Cursor:
                     traces=use_traces,
                     share_mode=use_share_mode,
                     name=self._name,
+                    folder=self._folder,
                 )
             elif actual_binary is not None:
                 # Use upload_binary for binary file queries
@@ -837,6 +842,7 @@ class Cursor:
                     traces=use_traces,
                     share_mode=use_share_mode,
                     name=self._name,
+                    folder=self._folder,
                     filename=kwargs.get("filename"),
                 )
             elif self._in_jupyter() and self._last_display_id is None:
@@ -850,6 +856,8 @@ class Cursor:
                     agent=agent,
                     traces=use_traces,
                     share_mode=use_share_mode,
+                    name=self._name,
+                    folder=self._folder,
                 )
 
                 # Create Response object from streaming result
@@ -864,6 +872,8 @@ class Cursor:
                     thread_id=thread_id,
                     prompt=actual_prompt,
                     agent=agent,
+                    name=self._name,
+                    folder=self._folder,
                     traces=use_traces,
                     share_mode=use_share_mode,
                 )
@@ -1419,7 +1429,12 @@ class Cursor:
         except IndexError:
             return ResponseProxy(None)
 
-    def new(self, share_mode: str | None = None, name: str | None = None) -> "Cursor":
+    def new(
+        self,
+        share_mode: str | None = None,
+        name: str | None = None,
+        folder: str | None = None,
+    ) -> "Cursor":
         """Create a new Cursor instance with a fresh thread while preserving config.
 
         This method creates a new conversation thread but maintains all authentication
@@ -1434,6 +1449,7 @@ class Cursor:
                 from parent.
             name: Optional thread name for new cursor. Auto-generated from first
                 message if not provided.
+            folder: Optional folder path for new cursor. If None, inherits from parent.
 
         Returns:
             Cursor: A new Cursor instance with fresh thread but same configuration
@@ -1463,10 +1479,14 @@ class Cursor:
 
         # Create new Cursor with same client but fresh thread
         # The client instance contains all auth and configuration
+        if folder is None:
+            folder = self._folder
+
         return Cursor(
             client=self._client,  # Pass entire authenticated client instance
             share_mode=share_mode,
             name=name,
+            folder=folder,
         )
 
     def _extract_dataframes(self, response: Response) -> list[pd.DataFrame]:

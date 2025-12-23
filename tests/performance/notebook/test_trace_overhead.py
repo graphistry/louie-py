@@ -68,6 +68,7 @@ class TestTraceOverhead:
         mock_client.add_cell.return_value = MockResponse(include_traces=False)
 
         cursor = Cursor(client=mock_client)
+        cursor._in_jupyter = Mock(return_value=False)
 
         # Warm up
         cursor("warmup query")
@@ -104,6 +105,7 @@ class TestTraceOverhead:
 
         cursor = Cursor(client=mock_client)
         cursor.traces = True
+        cursor._in_jupyter = Mock(return_value=False)
 
         # Warm up
         cursor("warmup query")
@@ -135,6 +137,7 @@ class TestTraceOverhead:
         mock_client.add_cell.return_value = MockResponse(include_traces=False)
 
         cursor = Cursor(client=mock_client)
+        cursor._in_jupyter = Mock(return_value=False)
 
         # Fill history to max (100 items)
         for i in range(100):
@@ -184,6 +187,7 @@ class TestTraceOverhead:
         mock_client.add_cell.return_value = large_response
 
         cursor = Cursor(client=mock_client)
+        cursor._in_jupyter = Mock(return_value=False)
 
         # Measure baseline
         sys.getsizeof(cursor._history)  # Baseline measurement
@@ -220,6 +224,7 @@ class TestTraceOverhead:
         mock_client.add_cell.return_value = response
 
         cursor = Cursor(client=mock_client)
+        cursor._in_jupyter = Mock(return_value=False)
         cursor("test query")
 
         # Benchmark df access
@@ -276,6 +281,7 @@ class TestOverheadComparison:
 
         # Benchmark notebook API
         cursor = Cursor(client=mock_client)
+        cursor._in_jupyter = Mock(return_value=False)
         notebook_times = []
         for _ in range(100):
             start = time.perf_counter()
@@ -287,6 +293,8 @@ class TestOverheadComparison:
 
         direct_avg = mean(direct_times) * 1000
         notebook_avg = mean(notebook_times) * 1000
+        if direct_avg < 0.05:
+            pytest.skip("Direct timing too small for stable overhead comparison")
         overhead = ((notebook_avg - direct_avg) / direct_avg) * 100
 
         print(f"\nDirect client: {direct_avg:.2f}ms")

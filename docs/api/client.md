@@ -76,13 +76,16 @@ lui = louie()
 # Access the internal client
 client = lui._client
 
-# List threads
-threads = client.list_threads()
+# List threads (optionally filter by folder)
+threads = client.list_threads(folder="Investigations/Q4")
 for thread in threads:
     print(f"{thread.id}: {thread.name}")
 
 # Get specific thread
 thread = client.get_thread(thread_id)
+
+# Get by name (server resolves name -> thread)
+thread = client.get_thread_by_name("Sales Analysis")
 ```
 
 ## Response Handling
@@ -160,7 +163,13 @@ lui = louie(
 
 # API Key (Legacy)
 lui = louie(api_key="your_api_key")
+
+# Anonymous auth (desktop/local, if enabled)
+# Use the Tornado/UI port so /auth/anonymous is available
+lui = louie(server_url="http://localhost:8513", anonymous=True)
 ```
+
+Anonymous auth is optional on the server and cannot be combined with Graphistry credentials.
 
 ### Trace Control
 

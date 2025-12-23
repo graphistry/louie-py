@@ -53,7 +53,7 @@ def mock_streaming_client():
     """Create a client that returns streaming responses."""
     client = create_mock_client()
 
-    def mock_add_cell(thread_id, prompt, agent="LouieAgent"):
+    def mock_add_cell(thread_id, prompt, agent="LouieAgent", **_kwargs):
         # Create appropriate mock response based on prompt
         mock_response = create_mock_api_response(prompt, thread_id or "D_new001")
 

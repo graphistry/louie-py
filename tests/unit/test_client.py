@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from louieai._client import LouieClient, Response
+from louieai.auth import AnonymousGraphistryClient
 
 
 def mock_streaming_response(lines):
@@ -72,6 +73,27 @@ class TestLouieClient:
 
         assert client.auth_manager is not None
         assert client.auth_manager._graphistry_client is mock_client
+
+    def test_client_initialization_with_anonymous_auth(self):
+        """Test client supports anonymous auth."""
+        client = LouieClient(
+            server_url="http://localhost:8513",
+            anonymous=True,
+        )
+
+        assert isinstance(
+            client.auth_manager._graphistry_client, AnonymousGraphistryClient
+        )
+
+    def test_client_anonymous_auth_conflicts(self):
+        """Test anonymous auth cannot be combined with credentials."""
+        with pytest.raises(ValueError, match="Anonymous auth cannot be combined"):
+            LouieClient(
+                server_url="http://localhost:8513",
+                anonymous=True,
+                username="user",
+                password="pass",
+            )
 
     def test_multiple_clients_with_distinct_graphistry_clients(self):
         """Test multiple LouieClient instances with distinct GraphistryClients."""
@@ -219,18 +241,48 @@ class TestLouieClient:
 
         assert response.thread_id == "D_new001"
 
+    def test_add_cell_passes_name_and_folder(self, client):
+        """Test naming and folder are passed for new threads."""
+        mock_stream_cm = mock_streaming_response(
+            [
+                '{"dthread_id": "D_new002"}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Named thread"}}',
+            ]
+        )
+
+        with patch("louieai._client.httpx.Client") as mock_client_class:
+            mock_client_instance = Mock()
+            mock_client_instance.stream.return_value = mock_stream_cm
+            mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+            mock_client_instance.__exit__ = Mock(return_value=None)
+            mock_client_class.return_value = mock_client_instance
+
+            client.add_cell(
+                "",
+                "Create named thread",
+                name="Named Thread",
+                folder="BOTS/run_1",
+            )
+
+        call_kwargs = mock_client_instance.stream.call_args.kwargs
+        params = call_kwargs.get("params", {})
+        assert params.get("name") == "Named Thread"
+        assert params.get("folder") == "BOTS/run_1"
+
     def test_list_threads(self, client, mock_httpx_client):
         """Test listing threads."""
         # Mock response
         mock_response = Mock()
         mock_response.json = Mock(
             return_value={
-                "items": [
+                "data": [
                     {"id": "D_001", "name": "Thread 1"},
                     {"id": "D_002", "name": "Thread 2"},
                 ]
             }
         )
+        mock_response.status_code = 200
         mock_response.raise_for_status = Mock()
         mock_httpx_client.get.return_value = mock_response
 
@@ -246,6 +298,28 @@ class TestLouieClient:
         call_args = mock_httpx_client.get.call_args
         assert "api/dthreads" in call_args[0][0]
 
+    def test_list_threads_folder_filter(self, client, mock_httpx_client):
+        """Test listing threads with folder filter."""
+        mock_response = Mock()
+        mock_response.json = Mock(
+            return_value={
+                "data": [
+                    {"id": "D_001", "name": "Thread 1", "folder": "BOTS/run_1"},
+                    {"id": "D_002", "name": "Thread 2", "folder": "BOTS/run_2"},
+                ]
+            }
+        )
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        mock_httpx_client.get.return_value = mock_response
+
+        with patch.object(client, "_client", mock_httpx_client):
+            threads = client.list_threads(page=1, page_size=10, folder="BOTS/run_1")
+
+        assert len(threads) == 1
+        assert threads[0].id == "D_001"
+        assert threads[0].folder == "BOTS/run_1"
+
     def test_get_thread(self, client, mock_httpx_client):
         """Test getting a specific thread."""
         # Mock response
@@ -257,6 +331,7 @@ class TestLouieClient:
                 "created_at": "2024-01-01T00:00:00Z",
             }
         )
+        mock_response.status_code = 200
         mock_response.raise_for_status = Mock()
         mock_httpx_client.get.return_value = mock_response
 
@@ -265,6 +340,27 @@ class TestLouieClient:
 
         assert thread.id == "D_test001"
         assert thread.name == "Test Thread"
+
+    def test_get_thread_by_name(self, client, mock_httpx_client):
+        """Test getting a thread by name."""
+        mock_response = Mock()
+        mock_response.json = Mock(
+            return_value={
+                "id": "D_named001",
+                "name": "Named Thread",
+                "folder": "BOTS/run_1",
+            }
+        )
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        mock_httpx_client.get.return_value = mock_response
+
+        with patch.object(client, "_client", mock_httpx_client):
+            thread = client.get_thread_by_name("Named Thread")
+
+        assert thread.id == "D_named001"
+        assert thread.name == "Named Thread"
+        assert thread.folder == "BOTS/run_1"
 
     def test_response_parsing_multiple_elements(self, client):
         """Test parsing response with multiple elements."""

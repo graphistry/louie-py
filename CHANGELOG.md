@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## dev
 
+### Added
+- **Dthread naming + folders**: Thread name/folder are supported across create, add, list, and upload helpers, plus notebook cursor flows.
+- **Thread lookup by name**: `get_thread_by_name()` resolves threads by name via the unified identifier endpoint.
+- **Anonymous desktop auth (optional)**: Anonymous token flow for local desktop servers via `/auth/anonymous`, with `anonymous`/`anonymous_token` client options.
+
+### Changed
+- **Thread listing**: `list_threads()` now parses both `data` and `items` response shapes and supports client-side folder filtering.
+
 ## [0.6.1] - 2025-11-06
 
 ### Added

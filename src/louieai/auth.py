@@ -14,6 +14,74 @@ from graphistry.pygraphistry import GraphistryClient
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+def get_anonymous_token(server_url: str, timeout: float = 20.0) -> str:
+    """Request an anonymous token from a Louie desktop server.
+
+    Args:
+        server_url: Base URL for the Louie server (Tornado/Streamlit port)
+        timeout: Request timeout in seconds
+
+    Returns:
+        Anonymous bearer token
+
+    Raises:
+        RuntimeError: If the endpoint is unavailable or returns an error
+    """
+    url = f"{server_url.rstrip('/')}/auth/anonymous"
+    try:
+        response = httpx.post(url, timeout=timeout)
+    except httpx.HTTPError as exc:
+        raise RuntimeError(
+            f"Failed to request anonymous token from {url}: {exc}"
+        ) from exc
+
+    if response.status_code != 200:
+        hint = ""
+        if response.status_code in {401, 403, 404}:
+            hint = " Anonymous auth may be disabled on this server."
+        detail = response.text.strip()
+        msg = f"Anonymous auth request failed with status {response.status_code} at {url}.{hint}"
+        if detail:
+            msg += f" Response: {detail}"
+        raise RuntimeError(msg)
+
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise RuntimeError(
+            f"Anonymous auth response was not valid JSON from {url}."
+        ) from exc
+
+    if not data.get("success"):
+        raise RuntimeError(f"Anonymous auth failed: {data}")
+
+    token = data.get("token")
+    if not token:
+        raise RuntimeError(f"Anonymous auth response missing token: {data}")
+
+    return str(token)
+
+
+class AnonymousGraphistryClient:
+    """Minimal auth client for anonymous desktop sessions."""
+
+    def __init__(
+        self, server_url: str, token: str | None = None, timeout: float = 20.0
+    ):
+        self._server_url = server_url.rstrip("/")
+        self._token = token
+        self._timeout = timeout
+
+    def api_token(self) -> str | None:
+        return self._token
+
+    def refresh(self) -> None:
+        self._token = get_anonymous_token(self._server_url, timeout=self._timeout)
+
+    def register(self, **_kwargs: Any) -> None:
+        raise RuntimeError("Anonymous auth does not support register().")
+
+
 class AuthManager:
     """Manages authentication and token refresh for Louie client."""
 

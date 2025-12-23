@@ -131,6 +131,35 @@ import louieai as lui
 client = lui.LouieClient()  # Uses env vars automatically
 ```
 
+### Method 7: Anonymous Desktop Authentication (Optional)
+
+Some local/desktop servers expose `/auth/anonymous` for anonymous sessions.
+This endpoint may be disabled; if so, the client will raise a clear error.
+
+```python
+from louieai import louie
+
+# Use the desktop/Tornado port (it proxies /api and hosts /auth/anonymous)
+lui = louie(
+    server_url="http://localhost:8513",
+    anonymous=True
+)
+```
+
+Anonymous auth cannot be combined with Graphistry credentials.
+
+If you already fetched a token (for example, from a separate process), you can
+pass it directly:
+
+```python
+from louieai import louie
+
+lui = louie(
+    server_url="http://localhost:8513",
+    anonymous_token="<anon-token>"
+)
+```
+
 ## Multi-tenant Authentication
 
 ### Isolated Client Instances
@@ -176,6 +205,9 @@ print(f"Bob's thread: {bob_response.thread_id}")
 | `server` | str | Graphistry server URL | `"hub.graphistry.com"` |
 | `api` | int | API version (usually 3) | `3` |
 | `graphistry_client` | Any | Existing PyGraphistry client or plottable | `graphistry.client()` |
+| `anonymous` | bool | Use `/auth/anonymous` (desktop only, optional) | `True` |
+| `anonymous_token` | str | Pre-fetched anonymous token | `"<anon-token>"` |
+| `anonymous_timeout` | int | Timeout for `/auth/anonymous` request (seconds) | `20` |
 
 ## Security Best Practices
 

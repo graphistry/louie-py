@@ -18,7 +18,7 @@ from ._table_ai import (
     collect_table_ai_kwargs,
     normalize_table_ai_overrides,
 )
-from .auth import AuthManager, auto_retry_auth
+from .auth import AnonymousGraphistryClient, AuthManager, auto_retry_auth
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,7 @@ class Thread:
 
     id: str
     name: str | None = None
+    folder: str | None = None
 
 
 class Response:
@@ -137,6 +138,9 @@ class LouieClient:
         org_name: str | None = None,
         api: int = 3,
         server: str | None = None,
+        anonymous: bool = False,
+        anonymous_token: str | None = None,
+        anonymous_timeout: float = 20.0,
         timeout: float = 300.0,  # 5 minutes default for agentic flows
         streaming_timeout: float = 120.0,  # 2 minutes for streaming chunks
     ):
@@ -153,6 +157,9 @@ class LouieClient:
             org_name: Organization name - use username for personal orgs (optional)
             api: API version (default: 3)
             server: Graphistry server URL for direct authentication
+            anonymous: Use anonymous auth via /auth/anonymous (local desktop only)
+            anonymous_token: Optional pre-fetched anonymous token
+            anonymous_timeout: Timeout for /auth/anonymous in seconds
             timeout: Overall timeout in seconds for requests (default: 300s/5min)
             streaming_timeout: Timeout for streaming chunks (default: 120s/2min)
 
@@ -185,11 +192,39 @@ class LouieClient:
             # Use existing graphistry client
             g = graphistry.nodes(df)
             client = LouieClient(graphistry_client=g)
+
+            # Anonymous auth for local desktop (if enabled)
+            client = LouieClient(
+                server_url="http://localhost:8513",
+                anonymous=True
+            )
         """
         self.server_url = server_url.rstrip("/")
         self._timeout = timeout
         self._streaming_timeout = streaming_timeout
         self._client = httpx.Client(timeout=timeout)
+
+        anonymous_enabled = anonymous or anonymous_token is not None
+        if anonymous_enabled:
+            if any(
+                [
+                    graphistry_client is not None,
+                    username,
+                    password,
+                    api_key,
+                    personal_key_id,
+                    personal_key_secret,
+                    server,
+                ]
+            ):
+                raise ValueError(
+                    "Anonymous auth cannot be combined with Graphistry credentials."
+                )
+            graphistry_client = AnonymousGraphistryClient(
+                server_url=self.server_url,
+                token=anonymous_token,
+                timeout=anonymous_timeout,
+            )
 
         # Set up authentication
         self._auth_manager = AuthManager(
@@ -488,6 +523,7 @@ class LouieClient:
     def create_thread(
         self,
         name: str | None = None,
+        folder: str | None = None,
         initial_prompt: str | None = None,
         *,
         agent: str = "LouieAgent",
@@ -500,6 +536,7 @@ class LouieClient:
 
         Args:
             name: Optional name for the thread
+            folder: Optional folder path for the thread (server support required)
             initial_prompt: Optional first message to initialize thread
             agent: Agent to use for initial prompt (default: LouieAgent)
             traces: Whether to include reasoning traces (default: False)
@@ -524,14 +561,16 @@ class LouieClient:
                 "",
                 initial_prompt,
                 agent=agent,
+                name=name,
+                folder=folder,
                 traces=traces,
                 share_mode=share_mode,
                 **add_kwargs,
             )
-            return Thread(id=response.thread_id, name=name)
+            return Thread(id=response.thread_id, name=name, folder=folder)
         else:
             # Return placeholder - actual thread created on first add_cell
-            return Thread(id="", name=name)
+            return Thread(id="", name=name, folder=folder)
 
     @auto_retry_auth
     def add_cell(
@@ -540,6 +579,8 @@ class LouieClient:
         prompt: str,
         agent: str = "LouieAgent",
         *,
+        name: str | None = None,
+        folder: str | None = None,
         traces: bool = False,
         share_mode: str = "Private",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
@@ -552,6 +593,8 @@ class LouieClient:
             thread_id: Thread ID to add to (empty string creates new thread)
             prompt: Natural language query
             agent: Agent to use (default: LouieAgent)
+            name: Optional thread name (applied only when creating a new thread)
+            folder: Optional folder path (applied only when creating a new thread)
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
             table_ai_overrides: Structured overrides via dataclass or mapping.
@@ -577,6 +620,11 @@ class LouieClient:
         # Add thread ID if continuing existing thread
         if thread_id:
             params["dthread_id"] = thread_id
+        else:
+            if name:
+                params["name"] = name
+            if folder:
+                params["folder"] = folder
 
         overrides: dict[str, Any] = normalize_table_ai_overrides(table_ai_overrides)
         legacy_params = collect_table_ai_kwargs(legacy_overrides)
@@ -739,34 +787,60 @@ class LouieClient:
         return response
 
     @auto_retry_auth
-    def list_threads(self, page: int = 1, page_size: int = 20) -> list[Thread]:
+    def list_threads(
+        self, page: int = 1, page_size: int = 20, *, folder: str | None = None
+    ) -> list[Thread]:
         """List available threads.
 
         Args:
             page: Page number (1-based)
             page_size: Number of items per page
+            folder: Optional folder path to filter results (client-side)
 
         Returns:
             List of Thread objects
         """
         headers = self._get_headers()
 
+        params: dict[str, Any] = {
+            "page": page,
+            "page_size": page_size,
+            "sort_by": "last_modified",
+            "sort_order": "desc",
+        }
+        if folder:
+            params["folder"] = folder
+
         response = self._client.get(
             f"{self.server_url}/api/dthreads",
             headers=headers,
-            params={
-                "page": page,
-                "page_size": page_size,
-                "sort_by": "last_modified",
-                "sort_order": "desc",
-            },
+            params=params,
         )
         response.raise_for_status()
 
         data = response.json()
+        items = data.get("data") or data.get("items") or []
+        if not isinstance(items, list):
+            items = []
+
+        if folder is not None:
+            items = [
+                item
+                for item in items
+                if isinstance(item, dict) and item.get("folder") == folder
+            ]
+
         threads = []
-        for item in data.get("items", []):
-            threads.append(Thread(id=item.get("id", ""), name=item.get("name")))
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            threads.append(
+                Thread(
+                    id=item.get("id", ""),
+                    name=item.get("name"),
+                    folder=item.get("folder"),
+                )
+            )
 
         return threads
 
@@ -780,15 +854,41 @@ class LouieClient:
         Returns:
             Thread object
         """
-        headers = self._get_headers()
-
-        response = self._client.get(
-            f"{self.server_url}/api/dthreads/{thread_id}", headers=headers
+        data = self._fetch_thread_manifest(thread_id)
+        return Thread(
+            id=data.get("id", ""),
+            name=data.get("name"),
+            folder=data.get("folder"),
         )
-        response.raise_for_status()
 
-        data = response.json()
-        return Thread(id=data.get("id", ""), name=data.get("name"))
+    @auto_retry_auth
+    def get_thread_by_name(self, name: str) -> Thread:
+        """Get a thread by name (server resolves exact/fuzzy matches).
+
+        Args:
+            name: Thread name to retrieve
+
+        Returns:
+            Thread object
+        """
+        data = self._fetch_thread_manifest(name)
+        return Thread(
+            id=data.get("id", ""),
+            name=data.get("name"),
+            folder=data.get("folder"),
+        )
+
+    def _fetch_thread_manifest(self, identifier: str) -> dict[str, Any]:
+        headers = self._get_headers()
+        response = self._client.get(
+            f"{self.server_url}/api/dthread/{identifier}", headers=headers
+        )
+        if response.status_code == 404:
+            response = self._client.get(
+                f"{self.server_url}/api/dthreads/{identifier}", headers=headers
+            )
+        response.raise_for_status()
+        return response.json()
 
     def upload_dataframe(
         self,
@@ -801,6 +901,7 @@ class LouieClient:
         traces: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
+        folder: str | None = None,
         parsing_options: dict[str, Any] | None = None,
     ) -> Response:
         """Upload a DataFrame with a natural language query for AI analysis.
@@ -814,6 +915,7 @@ class LouieClient:
             traces: Include reasoning traces
             share_mode: Visibility setting
             name: Optional thread name
+            folder: Optional folder path for the thread (server support required)
             parsing_options: Format-specific parsing options
 
         Returns:
@@ -834,6 +936,7 @@ class LouieClient:
             traces=traces,
             share_mode=share_mode,
             name=name,
+            folder=folder,
             parsing_options=parsing_options,
         )
 
@@ -847,6 +950,7 @@ class LouieClient:
         traces: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
+        folder: str | None = None,
     ) -> Response:
         """Upload an image with a natural language query for analysis.
 
@@ -858,6 +962,7 @@ class LouieClient:
             traces: Include reasoning traces
             share_mode: Visibility setting
             name: Optional thread name
+            folder: Optional folder path for the thread (server support required)
 
         Returns:
             Response object with analysis results
@@ -875,6 +980,7 @@ class LouieClient:
             traces=traces,
             share_mode=share_mode,
             name=name,
+            folder=folder,
         )
 
     def upload_binary(
@@ -887,6 +993,7 @@ class LouieClient:
         traces: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
+        folder: str | None = None,
         filename: str | None = None,
     ) -> Response:
         """Upload a binary file with a natural language query for analysis.
@@ -899,6 +1006,7 @@ class LouieClient:
             traces: Include reasoning traces
             share_mode: Visibility setting
             name: Optional thread name
+            folder: Optional folder path for the thread (server support required)
             filename: Optional filename to use
 
         Returns:
@@ -917,6 +1025,7 @@ class LouieClient:
             traces=traces,
             share_mode=share_mode,
             name=name,
+            folder=folder,
             filename=filename,
         )
 
