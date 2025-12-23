@@ -40,7 +40,8 @@ def get_anonymous_token(server_url: str, timeout: float = 20.0) -> str:
         if response.status_code in {401, 403, 404}:
             hint = " Anonymous auth may be disabled on this server."
         detail = response.text.strip()
-        msg = f"Anonymous auth request failed with status {response.status_code} at {url}.{hint}"
+        status = response.status_code
+        msg = f"Anonymous auth request failed with status {status} at {url}.{hint}"
         if detail:
             msg += f" Response: {detail}"
         raise RuntimeError(msg)

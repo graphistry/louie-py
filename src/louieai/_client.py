@@ -7,7 +7,7 @@ import logging
 import time
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import pandas as pd
@@ -888,7 +888,10 @@ class LouieClient:
                 f"{self.server_url}/api/dthreads/{identifier}", headers=headers
             )
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        if not isinstance(data, dict):
+            raise RuntimeError("Thread manifest response was not an object.")
+        return cast(dict[str, Any], data)
 
     def upload_dataframe(
         self,

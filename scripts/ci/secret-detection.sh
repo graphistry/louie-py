@@ -100,18 +100,26 @@ with open('$TEMP_BASELINE') as f:
 else
     # CI mode: full scan
     echo "🔍 Running full secret detection scan..."
-    
+
+    # Use a temp baseline to avoid detect-secrets rewriting generated_at.
+    TEMP_BASELINE=$(mktemp)
+    cp .secrets.baseline "$TEMP_BASELINE"
+    cleanup_baseline() {
+        rm -f "$TEMP_BASELINE"
+    }
+    trap cleanup_baseline EXIT
+
     # Check for new secrets not in baseline
     echo "Checking for new secrets not in baseline..."
-    $DETECT_SECRETS scan --baseline .secrets.baseline --exclude-files '^(plans/|tmp/)' || {
+    $DETECT_SECRETS scan --baseline "$TEMP_BASELINE" --exclude-files '^(plans/|tmp/)' || {
         print_error "New secrets detected! Either remove them or update baseline with: detect-secrets scan --baseline .secrets.baseline"
     }
-    
+
     # Verify no high-confidence secrets
     echo "Verifying no high-confidence secrets..."
-    $DETECT_SECRETS scan --baseline .secrets.baseline --only-verified --exclude-files '^(plans/|tmp/)' || {
+    $DETECT_SECRETS scan --baseline "$TEMP_BASELINE" --only-verified --exclude-files '^(plans/|tmp/)' || {
         print_error "High-confidence secrets detected! These must be removed."
     }
-    
+
     print_success "Secret detection passed - no new secrets found"
 fi

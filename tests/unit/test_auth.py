@@ -298,9 +298,11 @@ class TestAuthManager:
         response.status_code = 404
         response.text = "Not Found"
 
-        with patch("louieai.auth.httpx.post", return_value=response):
-            with pytest.raises(RuntimeError, match="Anonymous auth may be disabled"):
-                get_anonymous_token("http://localhost:8513")
+        with (
+            patch("louieai.auth.httpx.post", return_value=response),
+            pytest.raises(RuntimeError, match="Anonymous auth may be disabled"),
+        ):
+            get_anonymous_token("http://localhost:8513")
 
     def test_anonymous_graphistry_client_refresh(self):
         """Test anonymous graphistry client refresh flow."""
