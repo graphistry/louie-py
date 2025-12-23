@@ -6,7 +6,6 @@ import httpx
 import pytest
 
 from louieai._client import LouieClient, Response
-from louieai.auth import AnonymousGraphistryClient
 
 
 def mock_streaming_response(lines):
@@ -81,9 +80,7 @@ class TestLouieClient:
             anonymous=True,
         )
 
-        assert isinstance(
-            client.auth_manager._graphistry_client, AnonymousGraphistryClient
-        )
+        assert client.auth_manager.is_anonymous is True
 
     def test_client_anonymous_auth_conflicts(self):
         """Test anonymous auth cannot be combined with credentials."""

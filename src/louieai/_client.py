@@ -18,7 +18,7 @@ from ._table_ai import (
     collect_table_ai_kwargs,
     normalize_table_ai_overrides,
 )
-from .auth import AnonymousGraphistryClient, AuthManager, auto_retry_auth
+from .auth import AuthManager, auto_retry_auth
 
 logger = logging.getLogger(__name__)
 
@@ -220,11 +220,6 @@ class LouieClient:
                 raise ValueError(
                     "Anonymous auth cannot be combined with Graphistry credentials."
                 )
-            graphistry_client = AnonymousGraphistryClient(
-                server_url=self.server_url,
-                token=anonymous_token,
-                timeout=anonymous_timeout,
-            )
 
         # Set up authentication
         self._auth_manager = AuthManager(
@@ -237,6 +232,10 @@ class LouieClient:
             org_name=org_name,
             api=api,
             server=server,
+            anonymous=anonymous,
+            anonymous_token=anonymous_token,
+            anonymous_timeout=anonymous_timeout,
+            anonymous_server_url=self.server_url,
         )
 
         # If credentials provided, authenticate immediately
@@ -284,7 +283,7 @@ class LouieClient:
             client.register(username="user", password="pass")
             client.register(api_key="key-123")
         """
-        self._auth_manager._graphistry_client.register(**kwargs)
+        self._auth_manager.register(**kwargs)
         return self
 
     @auto_retry_auth

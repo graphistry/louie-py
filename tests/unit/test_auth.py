@@ -5,12 +5,7 @@ from unittest.mock import Mock, patch
 import httpx
 import pytest
 
-from louieai.auth import (
-    AnonymousGraphistryClient,
-    AuthManager,
-    auto_retry_auth,
-    get_anonymous_token,
-)
+from louieai.auth import AuthManager, auto_retry_auth, get_anonymous_token
 
 
 @pytest.mark.unit
@@ -304,17 +299,20 @@ class TestAuthManager:
         ):
             get_anonymous_token("http://localhost:8513")
 
-    def test_anonymous_graphistry_client_refresh(self):
-        """Test anonymous graphistry client refresh flow."""
-        response = Mock()
-        response.status_code = 200
-        response.json.return_value = {"success": True, "token": "anon-token-456"}
-
-        with patch("louieai.auth.httpx.post", return_value=response):
-            client = AnonymousGraphistryClient("http://localhost:8513")
-            assert client.api_token() is None
-            client.refresh()
-            assert client.api_token() == "anon-token-456"
+    def test_auth_manager_anonymous_refresh(self):
+        """Test anonymous auth refresh flow."""
+        with patch(
+            "louieai.auth.get_anonymous_token",
+            side_effect=["anon-token-456", "anon-token-789"],
+        ) as mock_get:
+            auth_manager = AuthManager(
+                anonymous=True,
+                anonymous_server_url="http://localhost:8513",
+            )
+            assert auth_manager.get_token() == "anon-token-456"
+            auth_manager.refresh_token()
+            assert auth_manager.get_token() == "anon-token-789"
+            assert mock_get.call_count == 2
 
 
 @pytest.mark.unit
