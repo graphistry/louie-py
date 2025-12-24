@@ -13,7 +13,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -96,9 +96,28 @@ def create_test_environment() -> dict[str, Any]:
     mock_df = Mock()
     mock_df.describe = Mock(return_value="DataFrame description")
 
+    # Pre-set some variables that might be referenced
+    thread = mock_client.create_thread(name="Test Thread")
+    response = mock_client.add_cell("", "Test")
+
     # Mock louieai module
     mock_louieai = Mock()
     mock_louieai.LouieClient = Mock(return_value=mock_client)
+
+    # Create mock lui callable
+    mock_lui = Mock()
+    mock_lui.text = "Mocked text response"
+    mock_lui.df = mock_df
+    mock_lui.elements = response.elements
+
+    def _mock_lui_call(*_args, **_kwargs):
+        return response
+
+    mock_lui.side_effect = _mock_lui_call
+    mock_louieai.louie = Mock(return_value=mock_lui)
+    mock_louieai.TableAIOverrides = Mock()
+    mock_louieai.Cursor = Mock()
+    mock_louieai.__call__ = Mock(return_value=mock_lui)
 
     # Create namespace
     namespace = {
@@ -109,15 +128,32 @@ def create_test_environment() -> dict[str, Any]:
         "df2": mock_df,
         "client": mock_client,
         "g": mock_graphistry,  # For graphistry client examples
+        "lui": mock_lui,
         "print": print,  # Allow print statements
         "__builtins__": __builtins__,
     }
 
     # Pre-set some variables that might be referenced
-    namespace["thread"] = mock_client.create_thread(name="Test Thread")
-    namespace["response"] = mock_client.add_cell("", "Test")
+    namespace["thread"] = thread
+    namespace["response"] = response
 
     return namespace
+
+
+def _module_patches(mock_env: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "graphistry": mock_env["graphistry"],
+        "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
+        "louieai": mock_env["louieai"],
+        "louieai._client": Mock(LouieClient=Mock(return_value=mock_env["client"])),
+        "louieai.notebook": Mock(lui=mock_env["lui"]),
+        "louieai.globals": Mock(lui=mock_env["lui"]),
+    }
+
+
+def _exec_with_patches(code: str, mock_env: dict[str, Any]) -> None:
+    with patch.dict("sys.modules", _module_patches(mock_env)):
+        exec(code, mock_env)
 
 
 class TestDocumentationExamples:
@@ -145,7 +181,7 @@ class TestDocumentationExamples:
             print(f"\n  Line {line_num}: {context[:50]}...")
             try:
                 # Execute in controlled environment
-                exec(code, mock_env)
+                _exec_with_patches(code, mock_env)
                 print("    ✓ Success")
             except Exception as e:
                 pytest.fail(f"Example at line {line_num} failed: {e}\nCode:\n{code}")
@@ -166,7 +202,7 @@ class TestDocumentationExamples:
         for code, line_num, context in executable_blocks:
             print(f"\n  Line {line_num}: {context[:50]}...")
             try:
-                exec(code, mock_env)
+                _exec_with_patches(code, mock_env)
                 print("    ✓ Success")
             except Exception as e:
                 pytest.fail(f"Example at line {line_num} failed: {e}\nCode:\n{code}")
@@ -190,7 +226,7 @@ class TestDocumentationExamples:
 
             try:
                 # Try to execute
-                exec(code, mock_env)
+                _exec_with_patches(code, mock_env)
                 print("    ✓ Success")
             except NameError as e:
                 # Expected for snippets that reference undefined variables

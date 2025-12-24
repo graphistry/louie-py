@@ -47,6 +47,7 @@ class UploadClient:
         traces: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
+        folder: str | None = None,
         parsing_options: dict[str, Any] | None = None,
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         **legacy_overrides: Any,
@@ -70,6 +71,7 @@ class UploadClient:
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
+            folder: Optional folder path for the thread (server support required)
             parsing_options: Dict of format-specific parsing options (e.g., for CSV:
                 {"delimiter": ",", "header": true}). If None, uses sensible defaults.
             table_ai_overrides: Structured overrides via dataclass or mapping.
@@ -123,8 +125,11 @@ class UploadClient:
         # Add optional fields
         if thread_id:
             data["dthread_id"] = thread_id
-        if name:
-            data["name"] = name
+        else:
+            if name:
+                data["name"] = name
+            if folder:
+                data["folder"] = folder
 
         # Add parsing options if provided
         if parsing_options:
@@ -328,6 +333,7 @@ class UploadClient:
         traces: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
+        folder: str | None = None,
     ) -> Response:
         """Upload an image with a natural language query for analysis.
 
@@ -350,6 +356,7 @@ class UploadClient:
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
+            folder: Optional folder path for the thread (server support required)
 
         Returns:
             Response object containing AI analysis of the image
@@ -387,8 +394,11 @@ class UploadClient:
         # Add optional fields
         if thread_id:
             data["dthread_id"] = thread_id
-        if name:
-            data["name"] = name
+        else:
+            if name:
+                data["name"] = name
+            if folder:
+                data["folder"] = folder
 
         # Make upload request with streaming response
         response_text = ""
@@ -589,6 +599,7 @@ class UploadClient:
         traces: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
+        folder: str | None = None,
         filename: str | None = None,
     ) -> Response:
         """Upload a binary file with a natural language query for analysis.
@@ -611,6 +622,7 @@ class UploadClient:
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
+            folder: Optional folder path for the thread (server support required)
             filename: Optional filename to use (extracted from path/file
                 object if not provided)
 
@@ -648,8 +660,11 @@ class UploadClient:
         # Add optional fields
         if thread_id:
             data["dthread_id"] = thread_id
-        if name:
-            data["name"] = name
+        else:
+            if name:
+                data["name"] = name
+            if folder:
+                data["folder"] = folder
 
         # Make upload request with streaming response
         response_text = ""

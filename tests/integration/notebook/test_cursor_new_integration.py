@@ -135,6 +135,8 @@ class TestCursorNewIntegration:
                 agent="LouieAgent",
                 traces=False,
                 share_mode="Private",
+                name="Run analysis",
+                folder=None,
             )
 
         # Create new cursor with different share_mode
@@ -160,6 +162,8 @@ class TestCursorNewIntegration:
                 agent="LouieAgent",
                 traces=False,
                 share_mode="Organization",  # Inherited from new()
+                name="New analysis",
+                folder=None,
             )
 
     def test_error_handling_preserved_in_new(self):

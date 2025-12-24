@@ -73,6 +73,72 @@ class TestLouieClient:
         assert client.auth_manager is not None
         assert client.auth_manager._graphistry_client is mock_client
 
+    def test_client_initialization_with_anonymous_auth(self):
+        """Test client supports anonymous auth."""
+        client = LouieClient(
+            server_url="http://localhost:8513",
+            anonymous=True,
+        )
+
+        assert client.auth_manager.is_anonymous is True
+
+    def test_client_initialization_with_token(self):
+        """Test client supports direct token auth."""
+        client = LouieClient(
+            server_url="https://test.louie.ai",
+            token="direct-token-123",
+        )
+
+        assert client.auth_manager.get_token() == "direct-token-123"
+
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            (
+                {
+                    "server_url": "http://localhost:8513",
+                    "anonymous": True,
+                    "username": "user",
+                    "password": "pass",
+                },
+                "Anonymous auth cannot be combined",
+            ),
+            (
+                {
+                    "server_url": "https://test.louie.ai",
+                    "token": "direct-token-123",
+                    "username": "user",
+                    "password": "pass",
+                },
+                "Token auth cannot be combined",
+            ),
+        ],
+        ids=["anonymous_conflict", "token_conflict"],
+    )
+    def test_client_auth_conflicts(self, kwargs, match):
+        """Test auth modes reject conflicting credentials."""
+        with pytest.raises(ValueError, match=match):
+            LouieClient(**kwargs)
+
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            ({"server": "hub.graphistry.com"}, "server is no longer supported"),
+            (
+                {
+                    "server_url": "http://localhost:8513",
+                    "anonymous_token": "anon-token-123",
+                },
+                "anonymous_token is no longer supported",
+            ),
+        ],
+        ids=["legacy_server", "legacy_anonymous_token"],
+    )
+    def test_client_rejects_legacy_aliases(self, kwargs, match):
+        """Test legacy aliases raise clear errors."""
+        with pytest.raises(ValueError, match=match):
+            LouieClient(**kwargs)
+
     def test_multiple_clients_with_distinct_graphistry_clients(self):
         """Test multiple LouieClient instances with distinct GraphistryClients."""
         # Create two distinct GraphistryClient mocks
@@ -219,15 +285,43 @@ class TestLouieClient:
 
         assert response.thread_id == "D_new001"
 
+    def test_add_cell_passes_name_and_folder(self, client):
+        """Test naming and folder are passed for new threads."""
+        mock_stream_cm = mock_streaming_response(
+            [
+                '{"dthread_id": "D_new002"}',
+                '{"payload": {"id": "B_001", "type": "TextElement", '
+                '"text": "Named thread"}}',
+            ]
+        )
+
+        with patch("louieai._client.httpx.Client") as mock_client_class:
+            mock_client_instance = Mock()
+            mock_client_instance.stream.return_value = mock_stream_cm
+            mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+            mock_client_instance.__exit__ = Mock(return_value=None)
+            mock_client_class.return_value = mock_client_instance
+
+            client.add_cell(
+                "",
+                "Create named thread",
+                name="Named Thread",
+                folder="BOTS/run_1",
+            )
+
+        call_kwargs = mock_client_instance.stream.call_args.kwargs
+        params = call_kwargs.get("params", {})
+        assert params.get("name") == "Named Thread"
+        assert params.get("folder") == "BOTS/run_1"
+
     def test_list_threads(self, client, mock_httpx_client):
-        """Test listing threads."""
-        # Mock response
+        """Test listing threads with and without folder filtering."""
         mock_response = Mock()
         mock_response.json = Mock(
             return_value={
-                "items": [
-                    {"id": "D_001", "name": "Thread 1"},
-                    {"id": "D_002", "name": "Thread 2"},
+                "data": [
+                    {"id": "D_001", "name": "Thread 1", "folder": "BOTS/run_1"},
+                    {"id": "D_002", "name": "Thread 2", "folder": "BOTS/run_2"},
                 ]
             }
         )
@@ -236,15 +330,19 @@ class TestLouieClient:
 
         with patch.object(client, "_client", mock_httpx_client):
             threads = client.list_threads(page=1, page_size=10)
+            filtered = client.list_threads(page=1, page_size=10, folder="BOTS/run_1")
 
         assert len(threads) == 2
         assert threads[0].id == "D_001"
         assert threads[1].name == "Thread 2"
+        assert len(filtered) == 1
+        assert filtered[0].id == "D_001"
+        assert filtered[0].folder == "BOTS/run_1"
 
-        # Verify API call
-        mock_httpx_client.get.assert_called_once()
         call_args = mock_httpx_client.get.call_args
         assert "api/dthreads" in call_args[0][0]
+        params = call_args.kwargs.get("params", {})
+        assert params.get("folder") == "BOTS/run_1"
 
     def test_get_thread(self, client, mock_httpx_client):
         """Test getting a specific thread."""
@@ -257,6 +355,7 @@ class TestLouieClient:
                 "created_at": "2024-01-01T00:00:00Z",
             }
         )
+        mock_response.status_code = 200
         mock_response.raise_for_status = Mock()
         mock_httpx_client.get.return_value = mock_response
 
@@ -265,6 +364,27 @@ class TestLouieClient:
 
         assert thread.id == "D_test001"
         assert thread.name == "Test Thread"
+
+    def test_get_thread_by_name(self, client, mock_httpx_client):
+        """Test getting a thread by name."""
+        mock_response = Mock()
+        mock_response.json = Mock(
+            return_value={
+                "id": "D_named001",
+                "name": "Named Thread",
+                "folder": "BOTS/run_1",
+            }
+        )
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        mock_httpx_client.get.return_value = mock_response
+
+        with patch.object(client, "_client", mock_httpx_client):
+            thread = client.get_thread_by_name("Named Thread")
+
+        assert thread.id == "D_named001"
+        assert thread.name == "Named Thread"
+        assert thread.folder == "BOTS/run_1"
 
     def test_response_parsing_multiple_elements(self, client):
         """Test parsing response with multiple elements."""
@@ -406,7 +526,7 @@ class TestLouieClient:
             password="test_pass",
             api_key="test-key",
             api=3,
-            server="test.server.com",
+            graphistry_server="test.server.com",
         )
 
         # Should call register with API key (since no personal key provided)

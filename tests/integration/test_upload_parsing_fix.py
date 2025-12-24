@@ -4,29 +4,32 @@ import os
 
 import graphistry
 import pandas as pd
+import pytest
 
 from louieai import louie
+from tests.utils import load_test_credentials
 
 
 def test_upload_parsing_integration():
     """Test that upload responses are parsed correctly after fix."""
+    creds = load_test_credentials()
+    if not creds:
+        pytest.skip("Test credentials not available")
 
-    # Set up credentials
-    os.environ["GRAPHISTRY_USERNAME"] = "testuser"
-    os.environ["GRAPHISTRY_PASSWORD"] = "testpass"
-    os.environ["GRAPHISTRY_SERVER"] = "test.server.com"
-    os.environ["LOUIE_SERVER"] = "http://localhost:8000"
+    louie_server = os.getenv("LOUIE_SERVER")
+    if not louie_server:
+        pytest.skip("LOUIE_SERVER not configured for upload parsing integration test")
 
     # Authenticate
     g = graphistry.register(
-        api=3,
-        server=os.environ["GRAPHISTRY_SERVER"],
-        username=os.environ["GRAPHISTRY_USERNAME"],
-        password=os.environ["GRAPHISTRY_PASSWORD"],
+        api=creds["api_version"],
+        server=creds["server"],
+        username=creds["username"],
+        password=creds["password"],
     )
 
     # Create louie interface
-    lui = louie(g, server_url="http://localhost:8000")
+    lui = louie(g, server_url=louie_server)
 
     # Create test DataFrame
     df = pd.DataFrame(

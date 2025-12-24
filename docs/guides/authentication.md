@@ -12,6 +12,7 @@ LouieAI uses PyGraphistry authentication - no separate credentials needed. Serve
 | `your-company.graphistry.com` | `https://louie.your-company.com` | Enterprise deployment |
 
 LouieAI automatically extracts JWT tokens from PyGraphistry and refreshes them as needed.
+Use `server_url` for the Louie API base and `graphistry_server` for Graphistry auth.
 
 **Resources:**
 - [PyGraphistry Authentication](https://pygraphistry.readthedocs.io/en/latest/server/register.html) - All authentication methods
@@ -57,7 +58,7 @@ lui = louieai(
 lui = louieai(
     username="your_user",
     password="your_pass",
-    server="your-company.graphistry.com",
+    graphistry_server="your-company.graphistry.com",
     server_url="https://louie.your-company.com"
 )
 ```
@@ -91,7 +92,7 @@ client = lui.LouieClient(graphistry_client=g)
 # Using legacy API key
 client = lui.LouieClient(
     api_key="<your-api-key>",
-    server="hub.graphistry.com"
+    graphistry_server="hub.graphistry.com"
 )
 
 # Using personal key (service accounts)
@@ -99,7 +100,7 @@ client = lui.LouieClient(
     personal_key_id="pk_123...",
     personal_key_secret="sk_123...",
     org_name="my-org",  # Optional
-    server="hub.graphistry.com"
+    graphistry_server="hub.graphistry.com"
 )
 ```
 
@@ -129,6 +130,36 @@ lui("Your query here")
 # Or with traditional client
 import louieai as lui
 client = lui.LouieClient()  # Uses env vars automatically
+```
+
+### Method 7: Anonymous Desktop Authentication (Optional)
+
+Some local/desktop servers expose `/auth/anonymous` for anonymous sessions.
+This endpoint may be disabled; if so, the client will raise a clear error.
+
+```python
+from louieai import louie
+
+# Use the desktop/Tornado port (it proxies /api and hosts /auth/anonymous)
+lui = louie(
+    server_url="http://localhost:8513",
+    anonymous=True
+)
+```
+
+Anonymous auth cannot be combined with Graphistry credentials.
+
+If you already fetched a bearer token (Graphistry or anonymous), you can pass it
+directly:
+
+```python
+from louieai import louie
+
+lui = louie(
+    server_url="http://localhost:8513",
+    anonymous=True,
+    token="<anon-token>"
+)
 ```
 
 ## Multi-tenant Authentication
@@ -173,9 +204,12 @@ print(f"Bob's thread: {bob_response.thread_id}")
 | `personal_key_id` | str | Personal key ID for service accounts | `"pk_123..."` |
 | `personal_key_secret` | str | Personal key secret for service accounts | `"sk_123..."` |
 | `org_name` | str | Organization name (optional) | `"my-org"` |
-| `server` | str | Graphistry server URL | `"hub.graphistry.com"` |
+| `graphistry_server` | str | Graphistry server URL | `"hub.graphistry.com"` |
 | `api` | int | API version (usually 3) | `3` |
 | `graphistry_client` | Any | Existing PyGraphistry client or plottable | `graphistry.client()` |
+| `anonymous` | bool | Use `/auth/anonymous` (desktop only, optional) | `True` |
+| `token` | str | Pre-fetched bearer token (anonymous or Graphistry) | `"<token>"` |
+| `anonymous_timeout` | int | Timeout for `/auth/anonymous` request (seconds) | `20` |
 
 ## Security Best Practices
 

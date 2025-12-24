@@ -272,7 +272,7 @@ def create_mock_client():
 
         return thread
 
-    def add_cell(thread_id, prompt, agent="LouieAgent", traces=False):
+    def add_cell(thread_id, prompt, agent="LouieAgent", traces=False, **_kwargs):
         if not thread_id:
             thread = create_thread()
             thread_id = thread.id
@@ -281,8 +281,11 @@ def create_mock_client():
         response_type = determine_response_type(prompt)
         return create_mock_response(response_type, thread_id)
 
-    def list_threads(page=1, page_size=20):
-        return list(threads.values())[:page_size]
+    def list_threads(page=1, page_size=20, folder=None):
+        results = list(threads.values())
+        if folder is not None:
+            results = [t for t in results if getattr(t, "folder", None) == folder]
+        return results[:page_size]
 
     def get_thread(thread_id):
         # If the thread doesn't exist, create a mock one for testing
@@ -291,11 +294,18 @@ def create_mock_client():
             threads[thread_id] = thread
         return threads.get(thread_id)
 
+    def get_thread_by_name(name):
+        for thread in threads.values():
+            if thread.name == name:
+                return thread
+        return MockThread(f"D_mock_{name}", name)
+
     # Set up client methods
     client.create_thread = Mock(side_effect=create_thread)
     client.add_cell = Mock(side_effect=add_cell)
     client.list_threads = Mock(side_effect=list_threads)
     client.get_thread = Mock(side_effect=get_thread)
+    client.get_thread_by_name = Mock(side_effect=get_thread_by_name)
     client.register = Mock(return_value=client)
 
     # Make client callable (for v0.2.0+ interface)
@@ -303,7 +313,11 @@ def create_mock_client():
         thread_id = kwargs.get("thread_id", "")
         agent = kwargs.get("agent", "LouieAgent")
         traces = kwargs.get("traces", False)
-        return add_cell(thread_id, prompt, agent, traces)
+        call_kwargs = dict(kwargs)
+        call_kwargs.pop("thread_id", None)
+        call_kwargs.pop("agent", None)
+        call_kwargs.pop("traces", None)
+        return add_cell(thread_id, prompt, agent, traces, **call_kwargs)
 
     # Set the callable function
     client._call_func = client_call

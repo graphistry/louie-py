@@ -14,6 +14,55 @@ from graphistry.pygraphistry import GraphistryClient
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+def get_anonymous_token(server_url: str, timeout: float = 20.0) -> str:
+    """Request an anonymous token from a Louie desktop server.
+
+    Args:
+        server_url: Base URL for the Louie server (Tornado/Streamlit port)
+        timeout: Request timeout in seconds
+
+    Returns:
+        Anonymous bearer token
+
+    Raises:
+        RuntimeError: If the endpoint is unavailable or returns an error
+    """
+    url = f"{server_url.rstrip('/')}/auth/anonymous"
+    try:
+        response = httpx.post(url, timeout=timeout)
+    except httpx.HTTPError as exc:
+        raise RuntimeError(
+            f"Failed to request anonymous token from {url}: {exc}"
+        ) from exc
+
+    if response.status_code != 200:
+        hint = ""
+        if response.status_code in {401, 403, 404}:
+            hint = " Anonymous auth may be disabled on this server."
+        detail = response.text.strip()
+        status = response.status_code
+        msg = f"Anonymous auth request failed with status {status} at {url}.{hint}"
+        if detail:
+            msg += f" Response: {detail}"
+        raise RuntimeError(msg)
+
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise RuntimeError(
+            f"Anonymous auth response was not valid JSON from {url}."
+        ) from exc
+
+    if not data.get("success"):
+        raise RuntimeError(f"Anonymous auth failed: {data}")
+
+    token = data.get("token")
+    if not token:
+        raise RuntimeError(f"Anonymous auth response missing token: {data}")
+
+    return str(token)
+
+
 class AuthManager:
     """Manages authentication and token refresh for Louie client."""
 
@@ -28,6 +77,11 @@ class AuthManager:
         org_name: str | None = None,
         api: int = 3,
         server: str | None = None,
+        graphistry_server: str | None = None,
+        token: str | None = None,
+        anonymous: bool = False,
+        anonymous_timeout: float = 20.0,
+        anonymous_server_url: str | None = None,
     ):
         """Initialize auth manager.
 
@@ -40,8 +94,54 @@ class AuthManager:
             personal_key_secret: Personal key secret for service account authentication
             org_name: Organization name (optional for all auth methods)
             api: API version (default: 3)
-            server: Server URL for direct authentication
+            graphistry_server: Graphistry server URL for direct authentication
+            token: Optional pre-fetched bearer token (anonymous or Graphistry)
+            anonymous: Use anonymous auth via /auth/anonymous (local desktop only)
+            anonymous_timeout: Timeout for /auth/anonymous in seconds
+            anonymous_server_url: Server URL for anonymous auth (Tornado/Streamlit)
         """
+        if server is not None:
+            raise ValueError(
+                "server is no longer supported; use graphistry_server instead."
+            )
+        self._anonymous_enabled = anonymous
+        self._token = token
+        self._anonymous_timeout = anonymous_timeout
+        self._anonymous_server_url = (
+            anonymous_server_url.rstrip("/") if anonymous_server_url else None
+        )
+        if self._anonymous_enabled:
+            if any(
+                [
+                    graphistry_client is not None,
+                    username,
+                    password,
+                    api_key,
+                    personal_key_id,
+                    personal_key_secret,
+                    graphistry_server,
+                ]
+            ):
+                raise ValueError(
+                    "Anonymous auth cannot be combined with Graphistry credentials."
+                )
+            if self._token is None and not self._anonymous_server_url:
+                raise ValueError("Anonymous auth requires a server URL or a token.")
+        elif self._token is not None and any(
+            [
+                graphistry_client is not None,
+                username,
+                password,
+                api_key,
+                personal_key_id,
+                personal_key_secret,
+                graphistry_server,
+            ]
+        ):
+            raise ValueError(
+                "Token auth cannot be combined with Graphistry credentials."
+            )
+
         # Create GraphistryClient instance if none provided
         self._graphistry_client = graphistry_client or GraphistryClient()
         self._credentials = {
@@ -52,10 +152,24 @@ class AuthManager:
             "personal_key_secret": personal_key_secret,
             "org_name": org_name,
             "api": api,
-            "server": server,
+            "graphistry_server": graphistry_server,
         }
         self._last_auth_time: float = 0.0
         self._token_lifetime = 3600  # Default 1 hour, will be updated from response
+
+    @property
+    def is_anonymous(self) -> bool:
+        """Return True if auth manager is in anonymous mode."""
+        return self._anonymous_enabled
+
+    def register(self, **kwargs: Any) -> None:
+        """Register authentication credentials (passthrough to graphistry)."""
+        if self._anonymous_enabled:
+            raise RuntimeError("Anonymous auth does not support register().")
+        if self._token is not None:
+            raise RuntimeError("Token auth does not support register().")
+        self._graphistry_client.register(**kwargs)
+        self._last_auth_time = time.time()
 
     def get_token(self) -> str:
         """Get current auth token, refreshing if needed.
@@ -66,6 +180,19 @@ class AuthManager:
         Raises:
             RuntimeError: If authentication fails
         """
+        if self._anonymous_enabled:
+            if not self._token:
+                if not self._anonymous_server_url:
+                    raise RuntimeError(
+                        "Anonymous auth requires a server URL to refresh tokens."
+                    )
+                self._token = get_anonymous_token(
+                    self._anonymous_server_url, timeout=self._anonymous_timeout
+                )
+            return str(self._token)
+        if self._token is not None:
+            return str(self._token)
+
         # Get token from our graphistry client instance
         token = self._graphistry_client.api_token()
         if not token and hasattr(self._graphistry_client, "refresh"):
@@ -89,6 +216,17 @@ class AuthManager:
 
     def refresh_token(self) -> None:
         """Force refresh the authentication token."""
+        if self._anonymous_enabled:
+            if not self._anonymous_server_url:
+                raise RuntimeError(
+                    "Anonymous auth requires a server URL to refresh tokens."
+                )
+            self._token = get_anonymous_token(
+                self._anonymous_server_url, timeout=self._anonymous_timeout
+            )
+            return
+        if self._token is not None:
+            raise RuntimeError("Token auth does not support refresh().")
         # Try the client's refresh method if available
         if hasattr(self._graphistry_client, "refresh"):
             self._graphistry_client.refresh()
@@ -107,6 +245,8 @@ class AuthManager:
 
     def _refresh_auth(self) -> None:
         """Refresh authentication using stored credentials."""
+        if self._anonymous_enabled:
+            return
         if not any(self._credentials.values()):
             return  # No credentials stored
 
@@ -133,8 +273,8 @@ class AuthManager:
             register_kwargs["org_name"] = self._credentials["org_name"]
         if self._credentials["api"]:
             register_kwargs["api"] = self._credentials["api"]
-        if self._credentials["server"]:
-            register_kwargs["server"] = self._credentials["server"]
+        if self._credentials["graphistry_server"]:
+            register_kwargs["server"] = self._credentials["graphistry_server"]
 
         if register_kwargs:
             self._graphistry_client.register(**register_kwargs)

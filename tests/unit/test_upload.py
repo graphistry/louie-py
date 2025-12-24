@@ -198,6 +198,7 @@ class TestLouieClientUpload:
             traces=False,
             share_mode="Private",
             name=None,
+            folder=None,
             parsing_options=None,
         )
         assert response == mock_response

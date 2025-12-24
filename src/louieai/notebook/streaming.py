@@ -275,6 +275,10 @@ class StreamingDisplay:
             else:
                 return f"<div style='color: gray;'>[{elem_type}]</div>"
 
+    def _render_element(self, elem: dict[str, Any]) -> str:
+        """Backwards-compatible alias for element rendering."""
+        return self._format_element(elem)
+
     def _render_html(self) -> str:
         """Render current state as HTML."""
         parts = [
@@ -366,6 +370,8 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     agent = kwargs.get("agent", "LouieAgent")
     traces = kwargs.get("traces", False)
     share_mode = kwargs.get("share_mode", "Private")
+    name = kwargs.get("name")
+    folder = kwargs.get("folder")
 
     # Get headers
     headers = client._get_headers()
@@ -380,6 +386,11 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
 
     if thread_id:
         params["dthread_id"] = thread_id
+    else:
+        if name:
+            params["name"] = name
+        if folder:
+            params["folder"] = folder
 
     # Create display handler with client for Graphistry URL
     display_handler = StreamingDisplay(client=client)

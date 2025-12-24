@@ -146,7 +146,7 @@ class TestClientAPIKeyAuth:
             personal_key_id="MY_KEY_ID",
             personal_key_secret="MY_SECRET",
             org_name="my-org",
-            server="hub.graphistry.com",
+            graphistry_server="hub.graphistry.com",
         )
 
         # Verify AuthManager received the params
@@ -173,7 +173,7 @@ class TestClientAPIKeyAuth:
                 personal_key_secret="MY_SECRET",
                 org_name="my-org",
                 api=3,
-                server="hub.graphistry.com",
+                graphistry_server="hub.graphistry.com",
             )
 
             # Verify register was called with correct params

@@ -88,7 +88,7 @@ class TestUploadOptionalParams:
             assert parsed_opts[0] == parsing_opts
 
     def test_upload_image_with_name_and_thread(self):
-        """Test image upload with name parameter."""
+        """Test image upload ignores name when thread_id is provided."""
         mock_client = Mock()
         mock_client.server_url = "https://test.louie.ai"
         mock_client._timeout = 10
@@ -119,10 +119,10 @@ class TestUploadOptionalParams:
                 "What's this?", image_data, thread_id="T_123", name="Image Analysis"
             )
 
-            # Verify both were included
+            # Verify thread_id was included and name omitted
             call_args = mock_stream_client.stream.call_args
-            assert call_args[1]["data"]["name"] == "Image Analysis"
             assert call_args[1]["data"]["dthread_id"] == "T_123"
+            assert "name" not in call_args[1]["data"]
 
     def test_upload_binary_with_name(self):
         """Test binary upload with name parameter."""

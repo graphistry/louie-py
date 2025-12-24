@@ -25,6 +25,7 @@ client = lui.LouieClient(server_url="https://den.louie.ai")
 # Create a new thread with an initial query
 thread = client.create_thread(
     name="Sales Analysis", 
+    folder="Investigations/Q4",  # optional folder (server support required)
     initial_prompt="Load the Q4 sales data and show me the top 10 products"
 )
 
@@ -70,8 +71,8 @@ followup = client.add_cell(response.thread_id, "Which incidents were critical?")
 ### Listing Your Threads
 
 ```python
-# Get recent threads
-threads = client.list_threads(page=1, page_size=10)
+# Get recent threads (optionally filter by folder)
+threads = client.list_threads(page=1, page_size=10, folder="Investigations/Q4")
 
 for thread in threads:
     print(f"Thread {thread.id}: {thread.name}")
@@ -101,6 +102,9 @@ client.add_cell(sales_thread.id, "Break down revenue by product category")
 thread = client.get_thread("D_thread001")
 print(f"Thread: {thread.name}")
 print(f"ID: {thread.id}")
+
+# Or look up by name (server resolves name -> thread)
+thread = client.get_thread_by_name("Sales Analysis")
 ```
 
 ## Working with Artifacts

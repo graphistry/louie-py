@@ -313,8 +313,12 @@ cursor = louie(
 # Create cursor with API key
 cursor = louie(api_key="your_api_key")
 
-# Create cursor with thread name and share mode
-cursor = louie(name="Security Analysis", share_mode="Organization")
+# Create cursor with thread name, folder, and share mode
+cursor = louie(
+    name="Security Analysis",
+    folder="Investigations/Q4",
+    share_mode="Organization"
+)
 
 # Use any cursor
 cursor("Your query here")
@@ -331,7 +335,7 @@ lui = louie()
 lui("Analyze security incidents from last week")
 
 # Create a new thread for a different topic
-perf_analysis = lui.new(name="Performance Analysis")
+perf_analysis = lui.new(name="Performance Analysis", folder="Investigations/Q4")
 perf_analysis("Show me API response times")
 
 # Create another thread with different visibility
@@ -348,7 +352,7 @@ lui("Continue with security analysis...")  # Still in original thread
 **Key features of `new()`:**
 - **Preserves all configuration**: Authentication, server URLs, timeouts
 - **Fresh context**: Each new thread starts without previous conversation history
-- **Optional naming**: Provide meaningful names to organize your analyses
+- **Optional naming/folders**: Provide meaningful names and folders to organize analyses
 - **Share mode control**: Override visibility per thread (Private, Organization, Public)
 
 **Common use cases:**
@@ -371,7 +375,7 @@ client = LouieClient(
     personal_key_id="your_key_id",
     personal_key_secret="your_key_secret",
     org_name="your_org",
-    server="hub.graphistry.com"
+    graphistry_server="hub.graphistry.com"
 )
 
 # Or with username/password
@@ -438,8 +442,9 @@ print(lui.text)
   - `username`, `password`: Basic authentication
   - `personal_key_id`, `personal_key_secret`: Service account auth
   - `api_key`: API key authentication
+  - `token`: Direct bearer token (anonymous or Graphistry)
   - `org_name`: Organization name (optional)
-  - `server`: PyGraphistry server URL
+  - `graphistry_server`: PyGraphistry server URL
   - `server_url`: Custom Louie server URL
 
 ## Configuration
