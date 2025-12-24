@@ -104,8 +104,6 @@ class AuthManager:
             raise ValueError(
                 "server is no longer supported; use graphistry_server instead."
             )
-        graphistry_server = graphistry_server
-
         self._anonymous_enabled = anonymous
         self._token = token
         self._anonymous_timeout = anonymous_timeout

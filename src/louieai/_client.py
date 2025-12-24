@@ -223,8 +223,7 @@ class LouieClient:
                 "use token (with anonymous=True) instead."
             )
 
-        anonymous_enabled = anonymous
-        if anonymous_enabled and any(
+        if anonymous and any(
             [
                 graphistry_client is not None,
                 username,
@@ -238,20 +237,16 @@ class LouieClient:
             raise ValueError(
                 "Anonymous auth cannot be combined with Graphistry credentials."
             )
-        if (
-            token is not None
-            and not anonymous_enabled
-            and any(
-                [
-                    graphistry_client is not None,
-                    username,
-                    password,
-                    api_key,
-                    personal_key_id,
-                    personal_key_secret,
-                    graphistry_server,
-                ]
-            )
+        if token is not None and not anonymous and any(
+            [
+                graphistry_client is not None,
+                username,
+                password,
+                api_key,
+                personal_key_id,
+                personal_key_secret,
+                graphistry_server,
+            ]
         ):
             raise ValueError(
                 "Token auth cannot be combined with Graphistry credentials."
@@ -269,7 +264,7 @@ class LouieClient:
             api=api,
             graphistry_server=graphistry_server,
             token=token,
-            anonymous=anonymous_enabled,
+            anonymous=anonymous,
             anonymous_timeout=anonymous_timeout,
             anonymous_server_url=self.server_url,
         )

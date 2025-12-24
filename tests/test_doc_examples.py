@@ -140,6 +140,22 @@ def create_test_environment() -> dict[str, Any]:
     return namespace
 
 
+def _module_patches(mock_env: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "graphistry": mock_env["graphistry"],
+        "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
+        "louieai": mock_env["louieai"],
+        "louieai._client": Mock(LouieClient=Mock(return_value=mock_env["client"])),
+        "louieai.notebook": Mock(lui=mock_env["lui"]),
+        "louieai.globals": Mock(lui=mock_env["lui"]),
+    }
+
+
+def _exec_with_patches(code: str, mock_env: dict[str, Any]) -> None:
+    with patch.dict("sys.modules", _module_patches(mock_env)):
+        exec(code, mock_env)
+
+
 class TestDocumentationExamples:
     """Test all documentation code examples."""
 
@@ -165,20 +181,7 @@ class TestDocumentationExamples:
             print(f"\n  Line {line_num}: {context[:50]}...")
             try:
                 # Execute in controlled environment
-                with patch.dict(
-                    "sys.modules",
-                    {
-                        "graphistry": mock_env["graphistry"],
-                        "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
-                        "louieai": mock_env["louieai"],
-                        "louieai._client": Mock(
-                            LouieClient=Mock(return_value=mock_env["client"])
-                        ),
-                        "louieai.notebook": Mock(lui=mock_env["lui"]),
-                        "louieai.globals": Mock(lui=mock_env["lui"]),
-                    },
-                ):
-                    exec(code, mock_env)
+                _exec_with_patches(code, mock_env)
                 print("    ✓ Success")
             except Exception as e:
                 pytest.fail(f"Example at line {line_num} failed: {e}\nCode:\n{code}")
@@ -199,20 +202,7 @@ class TestDocumentationExamples:
         for code, line_num, context in executable_blocks:
             print(f"\n  Line {line_num}: {context[:50]}...")
             try:
-                with patch.dict(
-                    "sys.modules",
-                    {
-                        "graphistry": mock_env["graphistry"],
-                        "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
-                        "louieai": mock_env["louieai"],
-                        "louieai._client": Mock(
-                            LouieClient=Mock(return_value=mock_env["client"])
-                        ),
-                        "louieai.notebook": Mock(lui=mock_env["lui"]),
-                        "louieai.globals": Mock(lui=mock_env["lui"]),
-                    },
-                ):
-                    exec(code, mock_env)
+                _exec_with_patches(code, mock_env)
                 print("    ✓ Success")
             except Exception as e:
                 pytest.fail(f"Example at line {line_num} failed: {e}\nCode:\n{code}")
@@ -236,20 +226,7 @@ class TestDocumentationExamples:
 
             try:
                 # Try to execute
-                with patch.dict(
-                    "sys.modules",
-                    {
-                        "graphistry": mock_env["graphistry"],
-                        "graphistry.pygraphistry": Mock(GraphistryClient=Mock),
-                        "louieai": mock_env["louieai"],
-                        "louieai._client": Mock(
-                            LouieClient=Mock(return_value=mock_env["client"])
-                        ),
-                        "louieai.notebook": Mock(lui=mock_env["lui"]),
-                        "louieai.globals": Mock(lui=mock_env["lui"]),
-                    },
-                ):
-                    exec(code, mock_env)
+                _exec_with_patches(code, mock_env)
                 print("    ✓ Success")
             except NameError as e:
                 # Expected for snippets that reference undefined variables

@@ -91,38 +91,53 @@ class TestLouieClient:
 
         assert client.auth_manager.get_token() == "direct-token-123"
 
-    def test_client_anonymous_auth_conflicts(self):
-        """Test anonymous auth cannot be combined with credentials."""
-        with pytest.raises(ValueError, match="Anonymous auth cannot be combined"):
-            LouieClient(
-                server_url="http://localhost:8513",
-                anonymous=True,
-                username="user",
-                password="pass",
-            )
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            (
+                {
+                    "server_url": "http://localhost:8513",
+                    "anonymous": True,
+                    "username": "user",
+                    "password": "pass",
+                },
+                "Anonymous auth cannot be combined",
+            ),
+            (
+                {
+                    "server_url": "https://test.louie.ai",
+                    "token": "direct-token-123",
+                    "username": "user",
+                    "password": "pass",
+                },
+                "Token auth cannot be combined",
+            ),
+        ],
+        ids=["anonymous_conflict", "token_conflict"],
+    )
+    def test_client_auth_conflicts(self, kwargs, match):
+        """Test auth modes reject conflicting credentials."""
+        with pytest.raises(ValueError, match=match):
+            LouieClient(**kwargs)
 
-    def test_client_token_auth_conflicts(self):
-        """Test token auth cannot be combined with credentials."""
-        with pytest.raises(ValueError, match="Token auth cannot be combined"):
-            LouieClient(
-                server_url="https://test.louie.ai",
-                token="direct-token-123",
-                username="user",
-                password="pass",
-            )
-
-    def test_client_rejects_legacy_server_alias(self):
-        """Test legacy server alias raises a clear error."""
-        with pytest.raises(ValueError, match="server is no longer supported"):
-            LouieClient(server="hub.graphistry.com")
-
-    def test_client_rejects_legacy_anonymous_token(self):
-        """Test legacy anonymous_token alias raises a clear error."""
-        with pytest.raises(ValueError, match="anonymous_token is no longer supported"):
-            LouieClient(
-                server_url="http://localhost:8513",
-                anonymous_token="anon-token-123",
-            )
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            ({"server": "hub.graphistry.com"}, "server is no longer supported"),
+            (
+                {
+                    "server_url": "http://localhost:8513",
+                    "anonymous_token": "anon-token-123",
+                },
+                "anonymous_token is no longer supported",
+            ),
+        ],
+        ids=["legacy_server", "legacy_anonymous_token"],
+    )
+    def test_client_rejects_legacy_aliases(self, kwargs, match):
+        """Test legacy aliases raise clear errors."""
+        with pytest.raises(ValueError, match=match):
+            LouieClient(**kwargs)
 
     def test_multiple_clients_with_distinct_graphistry_clients(self):
         """Test multiple LouieClient instances with distinct GraphistryClients."""
@@ -300,35 +315,7 @@ class TestLouieClient:
         assert params.get("folder") == "BOTS/run_1"
 
     def test_list_threads(self, client, mock_httpx_client):
-        """Test listing threads."""
-        # Mock response
-        mock_response = Mock()
-        mock_response.json = Mock(
-            return_value={
-                "data": [
-                    {"id": "D_001", "name": "Thread 1"},
-                    {"id": "D_002", "name": "Thread 2"},
-                ]
-            }
-        )
-        mock_response.status_code = 200
-        mock_response.raise_for_status = Mock()
-        mock_httpx_client.get.return_value = mock_response
-
-        with patch.object(client, "_client", mock_httpx_client):
-            threads = client.list_threads(page=1, page_size=10)
-
-        assert len(threads) == 2
-        assert threads[0].id == "D_001"
-        assert threads[1].name == "Thread 2"
-
-        # Verify API call
-        mock_httpx_client.get.assert_called_once()
-        call_args = mock_httpx_client.get.call_args
-        assert "api/dthreads" in call_args[0][0]
-
-    def test_list_threads_folder_filter(self, client, mock_httpx_client):
-        """Test listing threads with folder filter."""
+        """Test listing threads with and without folder filtering."""
         mock_response = Mock()
         mock_response.json = Mock(
             return_value={
@@ -338,16 +325,26 @@ class TestLouieClient:
                 ]
             }
         )
-        mock_response.status_code = 200
         mock_response.raise_for_status = Mock()
         mock_httpx_client.get.return_value = mock_response
 
         with patch.object(client, "_client", mock_httpx_client):
-            threads = client.list_threads(page=1, page_size=10, folder="BOTS/run_1")
+            threads = client.list_threads(page=1, page_size=10)
+            filtered = client.list_threads(
+                page=1, page_size=10, folder="BOTS/run_1"
+            )
 
-        assert len(threads) == 1
+        assert len(threads) == 2
         assert threads[0].id == "D_001"
-        assert threads[0].folder == "BOTS/run_1"
+        assert threads[1].name == "Thread 2"
+        assert len(filtered) == 1
+        assert filtered[0].id == "D_001"
+        assert filtered[0].folder == "BOTS/run_1"
+
+        call_args = mock_httpx_client.get.call_args
+        assert "api/dthreads" in call_args[0][0]
+        params = call_args.kwargs.get("params", {})
+        assert params.get("folder") == "BOTS/run_1"
 
     def test_get_thread(self, client, mock_httpx_client):
         """Test getting a specific thread."""
