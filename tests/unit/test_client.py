@@ -330,9 +330,7 @@ class TestLouieClient:
 
         with patch.object(client, "_client", mock_httpx_client):
             threads = client.list_threads(page=1, page_size=10)
-            filtered = client.list_threads(
-                page=1, page_size=10, folder="BOTS/run_1"
-            )
+            filtered = client.list_threads(page=1, page_size=10, folder="BOTS/run_1")
 
         assert len(threads) == 2
         assert threads[0].id == "D_001"
