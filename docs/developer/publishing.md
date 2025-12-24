@@ -5,7 +5,7 @@ How to publish new releases of the LouieAI Python client to PyPI.
 ## Quick Release Process
 
 1. **Prepare**: Ensure all changes are merged to `main` and CI passes locally (`./scripts/ci-local.sh`)
-2. **Update CHANGELOG.md**: Move items from "Unreleased" to new version section
+2. **Update CHANGELOG.md (before merge)**: Add the new `## [X.Y.Z] - YYYY-MM-DD` section in the PR that will be merged, moving items out of "Unreleased"
 3. **Commit**: `git commit -m "docs: update changelog for vX.Y.Z"`
 4. **Tag & Release**: Create GitHub release with tag `vX.Y.Z`
 5. **Automated**: GitHub Actions publishes to PyPI automatically
