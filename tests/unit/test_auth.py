@@ -33,6 +33,29 @@ class TestAuthManager:
         assert header == {"Authorization": "Bearer fresh-token-456"}
         mock_graphistry_client.api_token.assert_called_once()
 
+    def test_get_token_with_direct_token(self):
+        """Test direct token auth returns provided token."""
+        auth_manager = AuthManager(token="direct-token-123")
+
+        assert auth_manager.get_token() == "direct-token-123"
+
+    def test_direct_token_refresh_unsupported(self):
+        """Test direct token auth does not support refresh."""
+        auth_manager = AuthManager(token="direct-token-123")
+
+        with pytest.raises(RuntimeError, match="Token auth does not support refresh"):
+            auth_manager.refresh_token()
+
+    def test_direct_token_conflicts_with_credentials(self):
+        """Test direct token cannot be combined with Graphistry credentials."""
+        with pytest.raises(ValueError, match="Token auth cannot be combined"):
+            AuthManager(token="direct-token-123", username="test_user")
+
+    def test_legacy_server_alias_rejected(self):
+        """Test server alias is rejected in AuthManager."""
+        with pytest.raises(ValueError, match="server is no longer supported"):
+            AuthManager(server="hub.graphistry.com")
+
     def test_handle_auth_error_jwt_expired(self, auth_manager, mock_graphistry_client):
         """Test handling JWT expiration error."""
         # Mock JWT expiration error
@@ -216,7 +239,7 @@ class TestAuthManager:
             graphistry_client=mock_graphistry_client,
             username="test_user",
             password="test_pass",
-            server="test.server.com",
+            graphistry_server="test.server.com",
         )
         auth_manager._refresh_auth()
         mock_graphistry_client.register.assert_called_with(

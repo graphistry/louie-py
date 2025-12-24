@@ -144,6 +144,12 @@ from louieai import louie
 
 # Use a custom Louie server
 lui = louie(server_url="https://custom.louie.ai")
+
+# Use a custom Graphistry auth server alongside Louie
+lui = louie(
+    server_url="https://louie.your-company.com",
+    graphistry_server="your-company.graphistry.com",
+)
 ```
 
 ### Authentication Methods
@@ -163,6 +169,9 @@ lui = louie(
 
 # API Key (Legacy)
 lui = louie(api_key="your_api_key")
+
+# Direct bearer token (Graphistry or anonymous)
+lui = louie(token="<token>")
 
 # Anonymous auth (desktop/local, if enabled)
 # Use the Tornado/UI port so /auth/anonymous is available

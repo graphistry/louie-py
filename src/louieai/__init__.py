@@ -126,9 +126,9 @@ def louie(
             - personal_key_secret: Personal key secret
             - org_name: Organization name (optional)
             - server_url: Louie server URL (default: "https://den.louie.ai")
-            - server: PyGraphistry server (default: from env or "hub.graphistry.com")
+            - graphistry_server: PyGraphistry server (default: "hub.graphistry.com")
             - anonymous: Use anonymous auth via /auth/anonymous (local desktop only)
-            - anonymous_token: Optional pre-fetched anonymous token
+            - token: Optional pre-fetched bearer token (anonymous or Graphistry)
             - anonymous_timeout: Timeout for /auth/anonymous in seconds
             - timeout: Overall timeout in seconds (default: 300s/5min)
             - streaming_timeout: Timeout for streaming chunks (default: 120s/2min)

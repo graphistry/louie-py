@@ -124,6 +124,7 @@ class LouieClient:
     1. Pass an existing Graphistry client
     2. Pass credentials directly
     3. Use existing graphistry.register() authentication
+    4. Provide a bearer token (Graphistry or anonymous)
     """
 
     def __init__(
@@ -143,11 +144,13 @@ class LouieClient:
         anonymous_timeout: float = 20.0,
         timeout: float = 300.0,  # 5 minutes default for agentic flows
         streaming_timeout: float = 120.0,  # 2 minutes for streaming chunks
+        token: str | None = None,
+        graphistry_server: str | None = None,
     ):
         """Initialize the Louie client.
 
         Args:
-            server_url: Base URL for the Louie.ai service
+            server_url: Base URL for the Louie.ai service (default: den)
             graphistry_client: Existing Graphistry client to use for auth
             username: Username for direct authentication
             password: Password for direct authentication
@@ -156,12 +159,12 @@ class LouieClient:
             personal_key_secret: Personal key secret for service account authentication
             org_name: Organization name - use username for personal orgs (optional)
             api: API version (default: 3)
-            server: Graphistry server URL for direct authentication
             anonymous: Use anonymous auth via /auth/anonymous (local desktop only)
-            anonymous_token: Optional pre-fetched anonymous token
             anonymous_timeout: Timeout for /auth/anonymous in seconds
             timeout: Overall timeout in seconds for requests (default: 300s/5min)
             streaming_timeout: Timeout for streaming chunks (default: 120s/2min)
+            token: Optional pre-fetched bearer token (anonymous or Graphistry)
+            graphistry_server: Graphistry server URL for direct authentication
 
         Examples:
             # Use existing graphistry authentication
@@ -171,14 +174,14 @@ class LouieClient:
             client = LouieClient(
                 username="user",
                 password="pass",
-                server="hub.graphistry.com"
+                graphistry_server="hub.graphistry.com"
             )
 
             # Use personal key authentication (recommended for service accounts)
             client = LouieClient(
                 personal_key_id="ZD5872XKNF",
                 personal_key_secret="SA0JJ2DTVT6LLO2S",
-                server="hub.graphistry.com"
+                graphistry_server="hub.graphistry.com"
             )
 
             # Specify organization
@@ -186,7 +189,7 @@ class LouieClient:
                 username="user",
                 password="pass",
                 org_name="my-org",
-                server="hub.graphistry.com"
+                graphistry_server="hub.graphistry.com"
             )
 
             # Use existing graphistry client
@@ -198,13 +201,29 @@ class LouieClient:
                 server_url="http://localhost:8513",
                 anonymous=True
             )
+
+            # Direct bearer token (no refresh)
+            client = LouieClient(
+                server_url="https://den.louie.ai",
+                token="<token>"
+            )
         """
         self.server_url = server_url.rstrip("/")
         self._timeout = timeout
         self._streaming_timeout = streaming_timeout
         self._client = httpx.Client(timeout=timeout)
 
-        anonymous_enabled = anonymous or anonymous_token is not None
+        if server is not None:
+            raise ValueError(
+                "server is no longer supported; use graphistry_server instead."
+            )
+        if anonymous_token is not None:
+            raise ValueError(
+                "anonymous_token is no longer supported; "
+                "use token (with anonymous=True) instead."
+            )
+
+        anonymous_enabled = anonymous
         if anonymous_enabled and any(
             [
                 graphistry_client is not None,
@@ -213,11 +232,29 @@ class LouieClient:
                 api_key,
                 personal_key_id,
                 personal_key_secret,
-                server,
+                graphistry_server,
             ]
         ):
             raise ValueError(
                 "Anonymous auth cannot be combined with Graphistry credentials."
+            )
+        if (
+            token is not None
+            and not anonymous_enabled
+            and any(
+                [
+                    graphistry_client is not None,
+                    username,
+                    password,
+                    api_key,
+                    personal_key_id,
+                    personal_key_secret,
+                    graphistry_server,
+                ]
+            )
+        ):
+            raise ValueError(
+                "Token auth cannot be combined with Graphistry credentials."
             )
 
         # Set up authentication
@@ -230,9 +267,9 @@ class LouieClient:
             personal_key_secret=personal_key_secret,
             org_name=org_name,
             api=api,
-            server=server,
-            anonymous=anonymous,
-            anonymous_token=anonymous_token,
+            graphistry_server=graphistry_server,
+            token=token,
+            anonymous=anonymous_enabled,
             anonymous_timeout=anonymous_timeout,
             anonymous_server_url=self.server_url,
         )
@@ -258,8 +295,8 @@ class LouieClient:
                 register_kwargs["org_name"] = org_name
             if api is not None:
                 register_kwargs["api"] = api
-            if server is not None:
-                register_kwargs["server"] = server
+            if graphistry_server is not None:
+                register_kwargs["server"] = graphistry_server
 
             if register_kwargs:
                 self.register(**register_kwargs)

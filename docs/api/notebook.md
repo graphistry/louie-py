@@ -375,7 +375,7 @@ client = LouieClient(
     personal_key_id="your_key_id",
     personal_key_secret="your_key_secret",
     org_name="your_org",
-    server="hub.graphistry.com"
+    graphistry_server="hub.graphistry.com"
 )
 
 # Or with username/password
@@ -442,8 +442,9 @@ print(lui.text)
   - `username`, `password`: Basic authentication
   - `personal_key_id`, `personal_key_secret`: Service account auth
   - `api_key`: API key authentication
+  - `token`: Direct bearer token (anonymous or Graphistry)
   - `org_name`: Organization name (optional)
-  - `server`: PyGraphistry server URL
+  - `graphistry_server`: PyGraphistry server URL
   - `server_url`: Custom Louie server URL
 
 ## Configuration

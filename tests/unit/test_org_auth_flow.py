@@ -26,7 +26,7 @@ class TestOrgAuthFlow:
                 personal_key_id="CU5V6VZJB7",
                 personal_key_secret="32RBP6PUCSUVAIYJ",
                 org_name=target_org,
-                server="graphistry-dev.grph.xyz",
+                graphistry_server="graphistry-dev.grph.xyz",
                 server_url="https://louie-dev.grph.xyz",
             )
 

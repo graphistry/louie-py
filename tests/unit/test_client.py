@@ -82,6 +82,15 @@ class TestLouieClient:
 
         assert client.auth_manager.is_anonymous is True
 
+    def test_client_initialization_with_token(self):
+        """Test client supports direct token auth."""
+        client = LouieClient(
+            server_url="https://test.louie.ai",
+            token="direct-token-123",
+        )
+
+        assert client.auth_manager.get_token() == "direct-token-123"
+
     def test_client_anonymous_auth_conflicts(self):
         """Test anonymous auth cannot be combined with credentials."""
         with pytest.raises(ValueError, match="Anonymous auth cannot be combined"):
@@ -90,6 +99,29 @@ class TestLouieClient:
                 anonymous=True,
                 username="user",
                 password="pass",
+            )
+
+    def test_client_token_auth_conflicts(self):
+        """Test token auth cannot be combined with credentials."""
+        with pytest.raises(ValueError, match="Token auth cannot be combined"):
+            LouieClient(
+                server_url="https://test.louie.ai",
+                token="direct-token-123",
+                username="user",
+                password="pass",
+            )
+
+    def test_client_rejects_legacy_server_alias(self):
+        """Test legacy server alias raises a clear error."""
+        with pytest.raises(ValueError, match="server is no longer supported"):
+            LouieClient(server="hub.graphistry.com")
+
+    def test_client_rejects_legacy_anonymous_token(self):
+        """Test legacy anonymous_token alias raises a clear error."""
+        with pytest.raises(ValueError, match="anonymous_token is no longer supported"):
+            LouieClient(
+                server_url="http://localhost:8513",
+                anonymous_token="anon-token-123",
             )
 
     def test_multiple_clients_with_distinct_graphistry_clients(self):
@@ -499,7 +531,7 @@ class TestLouieClient:
             password="test_pass",
             api_key="test-key",
             api=3,
-            server="test.server.com",
+            graphistry_server="test.server.com",
         )
 
         # Should call register with API key (since no personal key provided)
