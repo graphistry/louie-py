@@ -233,6 +233,7 @@ class TestLouieClientMethods:
                 name="Custom Name",
                 folder=None,
                 parsing_options={"delimiter": ";"},
+                session_trace_id=None,
             )
             assert result == mock_response
 
@@ -258,6 +259,7 @@ class TestLouieClientMethods:
                 share_mode="Private",
                 name=None,
                 folder=None,
+                session_trace_id=None,
             )
 
             # Test binary upload with thread_id
@@ -272,4 +274,5 @@ class TestLouieClientMethods:
                 name=None,
                 folder=None,
                 filename=None,
+                session_trace_id=None,
             )

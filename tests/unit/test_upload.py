@@ -200,6 +200,7 @@ class TestLouieClientUpload:
             name=None,
             folder=None,
             parsing_options=None,
+            session_trace_id=None,
         )
         assert response == mock_response
 

@@ -30,7 +30,9 @@ def mock_client(monkeypatch: pytest.MonkeyPatch) -> LouieClient:
     client = LouieClient(server_url="http://test")
     httpx_mock = MagicMock()
     client._client = httpx_mock  # type: ignore[attr-defined]
-    monkeypatch.setattr(client, "_get_headers", lambda: {})  # avoid auth
+    monkeypatch.setattr(
+        client, "_get_headers", lambda **kwargs: {}
+    )  # avoid auth, accept any kwargs
     monkeypatch.setattr(client, "_fetch_dataframe_arrow", lambda *args, **kwargs: None)
     return client
 
@@ -117,7 +119,7 @@ def test_upload_dataframe_with_table_ai_overrides(
 ) -> None:
     client = LouieClient(server_url="http://test")
     upload_client = UploadClient(client)
-    monkeypatch.setattr(client, "_get_headers", lambda: {})  # avoid auth
+    monkeypatch.setattr(client, "_get_headers", lambda **kwargs: {})  # avoid auth
 
     class FakeStreamResponse:
         def __init__(self) -> None:
@@ -196,7 +198,7 @@ def test_upload_dataframe_with_table_ai_overrides(
 def test_upload_dataframe_with_legacy_kwargs(monkeypatch: pytest.MonkeyPatch) -> None:
     client = LouieClient(server_url="http://test")
     upload_client = UploadClient(client)
-    monkeypatch.setattr(client, "_get_headers", lambda: {})
+    monkeypatch.setattr(client, "_get_headers", lambda **kwargs: {})
 
     class FakeStreamResponse:
         def __init__(self) -> None:
