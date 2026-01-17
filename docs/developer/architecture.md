@@ -130,3 +130,30 @@ User Query → Agent Selection → LouieAI API → Agent Processing → Structur
 - Real-time streaming with progressive updates
 - Automatic dataframe and visualization rendering
 - History management with indexed access (`lui[-1]`, `lui[-2]`, etc.)
+
+### Distributed Tracing (OpenTelemetry)
+
+LouieAI automatically propagates W3C `traceparent` headers for distributed tracing:
+
+**With OpenTelemetry configured:**
+```python
+# Your existing OTel span context is automatically propagated
+with tracer.start_as_current_span("my_analysis"):
+    lui("analyze data")  # Request includes your trace context
+```
+
+**Without OpenTelemetry:**
+```python
+# Session-level trace ID generated automatically for correlation
+lui = louieai.Cursor()
+lui("query 1")  # All requests share a session trace_id
+lui("query 2")  # Same trace_id, different span_id
+
+child = lui.new()
+child("query 3")  # Same session trace_id (inherited)
+```
+
+This enables:
+- Linking client requests to server-side traces in Tempo, Jaeger, etc.
+- Correlating all prompts within a Cursor session
+- No configuration required - works automatically

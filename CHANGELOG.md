@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - None.
 
+## [0.7.0] - 2026-01-16
+
+### Added
+- **Distributed tracing**: W3C `traceparent` propagation for correlating requests with OpenTelemetry
+  - Automatic OTel context propagation when available
+  - Session-level trace ID for correlation when OTel is not configured
+  - `Cursor.new()` children inherit parent trace ID for session-wide correlation
+  - Zero configuration required - works automatically
+
+### Changed
+- `LouieClient._get_headers()` now accepts `session_trace_id` and `traceparent` parameters
+- All HTTP methods (`add_cell`, `upload_*`, streaming) propagate trace context
+
 ## [0.6.2] - 2025-12-22
 
 ### Added

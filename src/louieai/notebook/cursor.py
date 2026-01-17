@@ -7,6 +7,7 @@ from typing import Any
 import pandas as pd
 
 from louieai._client import LouieClient, Response
+from louieai._tracing import generate_trace_id
 
 logger = logging.getLogger(__name__)
 
@@ -522,6 +523,7 @@ class Cursor:
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
+        _parent_trace_id: str | None = None,
     ):
         """Initialize global cursor.
 
@@ -531,6 +533,8 @@ class Cursor:
             name: Optional thread name (auto-generated from first message if not
                 provided)
             folder: Optional folder path for new threads (server support required)
+            _parent_trace_id: Internal parameter for inheriting trace context from
+                parent cursor. Do not use directly.
         """
         # Validate share_mode
         valid_modes = {"Private", "Organization", "Public"}
@@ -610,6 +614,8 @@ class Cursor:
         self._name: str | None = name
         self._folder: str | None = folder
         self._last_display_id: str | None = None
+        # Session-level trace ID for correlating requests when OTel is not available
+        self._trace_id: str = _parent_trace_id or generate_trace_id()
 
     def __call__(
         self,
@@ -819,6 +825,7 @@ class Cursor:
                     folder=self._folder,
                     format=kwargs.get("format", "parquet"),
                     parsing_options=kwargs.get("parsing_options"),
+                    session_trace_id=self._trace_id,
                 )
             elif actual_image is not None:
                 # Use upload_image for image queries
@@ -831,6 +838,7 @@ class Cursor:
                     share_mode=use_share_mode,
                     name=self._name,
                     folder=self._folder,
+                    session_trace_id=self._trace_id,
                 )
             elif actual_binary is not None:
                 # Use upload_binary for binary file queries
@@ -844,6 +852,7 @@ class Cursor:
                     name=self._name,
                     folder=self._folder,
                     filename=kwargs.get("filename"),
+                    session_trace_id=self._trace_id,
                 )
             elif self._in_jupyter() and self._last_display_id is None:
                 # Use streaming display for better UX (non-DataFrame queries)
@@ -858,6 +867,7 @@ class Cursor:
                     share_mode=use_share_mode,
                     name=self._name,
                     folder=self._folder,
+                    session_trace_id=self._trace_id,
                 )
 
                 # Create Response object from streaming result
@@ -876,6 +886,7 @@ class Cursor:
                     folder=self._folder,
                     traces=use_traces,
                     share_mode=use_share_mode,
+                    session_trace_id=self._trace_id,
                 )
 
             # Update thread ID in case it was created
@@ -1479,6 +1490,7 @@ class Cursor:
 
         # Create new Cursor with same client but fresh thread
         # The client instance contains all auth and configuration
+        # Pass parent trace_id so all cursors in same session share a trace
         if folder is None:
             folder = self._folder
 
@@ -1487,6 +1499,7 @@ class Cursor:
             share_mode=share_mode,
             name=name,
             folder=folder,
+            _parent_trace_id=self._trace_id,  # Share session trace for correlation
         )
 
     def _extract_dataframes(self, response: Response) -> list[pd.DataFrame]:

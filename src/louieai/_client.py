@@ -18,6 +18,7 @@ from ._table_ai import (
     collect_table_ai_kwargs,
     normalize_table_ai_overrides,
 )
+from ._tracing import get_traceparent
 from .auth import AuthManager, auto_retry_auth
 
 logger = logging.getLogger(__name__)
@@ -368,8 +369,21 @@ class LouieClient:
             logger.debug("Full error details: ", exc_info=True)
             return None
 
-    def _get_headers(self) -> dict[str, str]:
-        """Get authorization headers using auth manager."""
+    def _get_headers(
+        self, session_trace_id: str | None = None, traceparent: str | None = None
+    ) -> dict[str, str]:
+        """Get authorization headers using auth manager.
+
+        Args:
+            session_trace_id: Optional session trace ID for correlation when
+                OTel is not available. Used to generate traceparent if no
+                explicit traceparent is provided and OTel is not active.
+            traceparent: Optional explicit traceparent header value. If provided,
+                takes precedence over auto-generated values.
+
+        Returns:
+            Headers dict with Authorization and optionally traceparent.
+        """
         token = self._auth_manager.get_token()
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -382,6 +396,15 @@ class LouieClient:
             if org_name:  # Ensure org_name is not None
                 org_slug = self._to_slug(str(org_name))
                 headers["X-Graphistry-Org"] = org_slug
+
+        # Add traceparent for distributed tracing
+        # Priority: explicit traceparent > OTel context > session trace
+        if traceparent:
+            headers["traceparent"] = traceparent
+        else:
+            tp = get_traceparent(session_trace_id)
+            if tp:
+                headers["traceparent"] = tp
 
         return headers
 
@@ -619,6 +642,7 @@ class LouieClient:
         share_mode: str = "Private",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         use_batch: bool | None = None,
+        session_trace_id: str | None = None,
         **legacy_overrides: Any,
     ) -> Response:
         """Add a cell (query) to a thread and get response.
@@ -634,13 +658,15 @@ class LouieClient:
             table_ai_overrides: Structured overrides via dataclass or mapping.
             use_batch: Force singleshot (`True`) or streaming (`False`); defaults to
                 singleshot when overrides are provided.
+            session_trace_id: Optional session trace ID for distributed tracing
+                correlation when OpenTelemetry is not available.
             **legacy_overrides: Backwards-compatible Table AI keyword arguments like
                 ``table_ai_semantic_mode``. Prefer `table_ai_overrides`.
 
         Returns:
             Response object containing thread_id and all elements
         """
-        headers = self._get_headers()
+        headers = self._get_headers(session_trace_id=session_trace_id)
 
         # Build query parameters
         params: dict[str, Any] = {
@@ -940,6 +966,7 @@ class LouieClient:
         name: str | None = None,
         folder: str | None = None,
         parsing_options: dict[str, Any] | None = None,
+        session_trace_id: str | None = None,
     ) -> Response:
         """Upload a DataFrame with a natural language query for AI analysis.
 
@@ -954,6 +981,8 @@ class LouieClient:
             name: Optional thread name
             folder: Optional folder path for the thread (server support required)
             parsing_options: Format-specific parsing options
+            session_trace_id: Optional session trace ID for distributed tracing
+                correlation when OpenTelemetry is not available.
 
         Returns:
             Response object with analysis results
@@ -975,6 +1004,7 @@ class LouieClient:
             name=name,
             folder=folder,
             parsing_options=parsing_options,
+            session_trace_id=session_trace_id,
         )
 
     def upload_image(
@@ -988,6 +1018,7 @@ class LouieClient:
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
+        session_trace_id: str | None = None,
     ) -> Response:
         """Upload an image with a natural language query for analysis.
 
@@ -1000,6 +1031,8 @@ class LouieClient:
             share_mode: Visibility setting
             name: Optional thread name
             folder: Optional folder path for the thread (server support required)
+            session_trace_id: Optional session trace ID for distributed tracing
+                correlation when OpenTelemetry is not available.
 
         Returns:
             Response object with analysis results
@@ -1018,6 +1051,7 @@ class LouieClient:
             share_mode=share_mode,
             name=name,
             folder=folder,
+            session_trace_id=session_trace_id,
         )
 
     def upload_binary(
@@ -1032,6 +1066,7 @@ class LouieClient:
         name: str | None = None,
         folder: str | None = None,
         filename: str | None = None,
+        session_trace_id: str | None = None,
     ) -> Response:
         """Upload a binary file with a natural language query for analysis.
 
@@ -1045,6 +1080,8 @@ class LouieClient:
             name: Optional thread name
             folder: Optional folder path for the thread (server support required)
             filename: Optional filename to use
+            session_trace_id: Optional session trace ID for distributed tracing
+                correlation when OpenTelemetry is not available.
 
         Returns:
             Response object with analysis results
@@ -1064,6 +1101,7 @@ class LouieClient:
             name=name,
             folder=folder,
             filename=filename,
+            session_trace_id=session_trace_id,
         )
 
     def __enter__(self):

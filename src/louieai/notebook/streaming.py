@@ -372,9 +372,10 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     share_mode = kwargs.get("share_mode", "Private")
     name = kwargs.get("name")
     folder = kwargs.get("folder")
+    session_trace_id = kwargs.get("session_trace_id")
 
-    # Get headers
-    headers = client._get_headers()
+    # Get headers with tracing
+    headers = client._get_headers(session_trace_id=session_trace_id)
 
     # Build parameters
     params = {

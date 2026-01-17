@@ -50,6 +50,7 @@ class UploadClient:
         folder: str | None = None,
         parsing_options: dict[str, Any] | None = None,
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
+        session_trace_id: str | None = None,
         **legacy_overrides: Any,
     ) -> Response:
         """Upload a DataFrame with a natural language query for analysis.
@@ -106,8 +107,8 @@ class UploadClient:
             ...     thread_id=response.thread_id
             ... )
         """
-        # Get headers with auth
-        headers = self._client._get_headers()
+        # Get headers with auth and tracing
+        headers = self._client._get_headers(session_trace_id=session_trace_id)
 
         # Serialize DataFrame to specified format
         file_data, filename, content_type = self._serialize_dataframe(df, format)
@@ -334,6 +335,7 @@ class UploadClient:
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
+        session_trace_id: str | None = None,
     ) -> Response:
         """Upload an image with a natural language query for analysis.
 
@@ -375,8 +377,8 @@ class UploadClient:
             ...     img_bytes = f.read()
             >>> response = client.upload_image("Extract text", img_bytes)
         """
-        # Get headers with auth
-        headers = self._client._get_headers()
+        # Get headers with auth and tracing
+        headers = self._client._get_headers(session_trace_id=session_trace_id)
 
         # Serialize image
         file_data, filename, content_type = self._serialize_image(image)
@@ -601,6 +603,7 @@ class UploadClient:
         name: str | None = None,
         folder: str | None = None,
         filename: str | None = None,
+        session_trace_id: str | None = None,
     ) -> Response:
         """Upload a binary file with a natural language query for analysis.
 
@@ -641,8 +644,8 @@ class UploadClient:
             ...     file_bytes = f.read()
             >>> response = client.upload_binary("Key points from this doc", file_bytes)
         """
-        # Get headers with auth
-        headers = self._client._get_headers()
+        # Get headers with auth and tracing
+        headers = self._client._get_headers(session_trace_id=session_trace_id)
 
         # Serialize binary file
         file_data, file_name, content_type = self._serialize_binary(file, filename)
