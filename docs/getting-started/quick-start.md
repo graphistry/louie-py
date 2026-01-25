@@ -6,8 +6,6 @@ Get up and running with LouieAI in minutes using the notebook-friendly API.
 
 See the [Installation Guide](installation.md) if you haven't installed LouieAI yet.
 
-LouieAI supports pandas 2.x and 3.x (installed automatically as a dependency).
-
 ## 2. Set Up Authentication
 
 Set your Graphistry credentials as environment variables:
