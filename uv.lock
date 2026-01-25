@@ -796,7 +796,6 @@ dependencies = [
     { name = "pandas" },
     { name = "pillow" },
     { name = "pyarrow" },
-    { name = "pytz" },
 ]
 
 [package.optional-dependencies]
@@ -854,7 +853,6 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "python-dotenv", marker = "extra == 'dev'", specifier = ">=1.0.0" },
-    { name = "pytz", specifier = ">=2024.1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12.0" },
 ]
 provides-extras = ["dev", "docs"]

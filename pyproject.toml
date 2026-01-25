@@ -29,7 +29,6 @@ dependencies = [
   "graphistry>=0.41.0",
   "httpx>=0.28.0",
   "pandas>=2.0.0,<4",
-  "pytz>=2024.1",
   "pillow>=11.3.0",
   "pyarrow>=14.0.0",
 ]
