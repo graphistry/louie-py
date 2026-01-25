@@ -485,7 +485,7 @@ wheels = [
 
 [[package]]
 name = "graphistry"
-version = "0.41.0"
+version = "0.50.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -499,9 +499,9 @@ dependencies = [
     { name = "squarify" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b8/af/8c5399d77351e4767a4e5bd268eb6828ae20d01a6cbc4caac4484a13739e/graphistry-0.41.0.tar.gz", hash = "sha256:a56d790b5251b0a9eb715b641ea9717b79d8589b9ff8e86e922ffcee67ba891d", size = 308164, upload-time = "2025-07-26T16:15:09.309Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/96/38eeef45d1e16e3f1b9ee7876e96a1b2fd28564023afda45b0ac9fa9c666/graphistry-0.50.5.tar.gz", hash = "sha256:480e418a0eb5da75b9218c2e5729f48a01622ea7a3241ca9cecef416dd2c7c6a", size = 403937, upload-time = "2026-01-25T23:05:55.054Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f5/61/a24176a2b92baab083f92c8bcd334b6ba19f1abee78d203eb8d53ad4eacf/graphistry-0.41.0-py3-none-any.whl", hash = "sha256:e274863c1c0a779512d5292f6b89f958e882a4b04d61061c495cc020d7b2bb77", size = 332422, upload-time = "2025-07-26T16:15:07.521Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/03/f60c59ad6744bd3433ba710beb6b466676c76a521f32391975e7ca51e610/graphistry-0.50.5-py3-none-any.whl", hash = "sha256:82ab666031ee5632cbe78b67a888c00a16fac6a8d4475b4ffc8ac067078420b9", size = 439800, upload-time = "2026-01-25T23:05:53.204Z" },
 ]
 
 [[package]]
