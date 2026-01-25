@@ -17,6 +17,8 @@ Welcome to the **LouieAI** Python client library documentation.
 pip install louieai
 ```
 
+LouieAI supports pandas 2.x and 3.x (installed automatically as a dependency).
+
 ```python
 import graphistry
 import louieai

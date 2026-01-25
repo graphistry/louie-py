@@ -844,7 +844,7 @@ requires-dist = [
     { name = "nbclient", marker = "extra == 'dev'", specifier = ">=0.10.2" },
     { name = "nbclient", marker = "extra == 'docs'", specifier = ">=0.10.2" },
     { name = "opentelemetry-api", marker = "extra == 'dev'", specifier = ">=1.0.0" },
-    { name = "pandas", specifier = ">=2.0.0" },
+    { name = "pandas", specifier = ">=2.0.0,<4" },
     { name = "pillow", specifier = ">=11.3.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.2.0" },
     { name = "pyarrow", specifier = ">=14.0.0" },
