@@ -137,10 +137,12 @@ class TestCursorNewIntegration:
                 share_mode="Private",
                 name="Run analysis",
                 folder=None,
+                session_trace_id=parent._trace_id,
             )
 
         # Create new cursor with different share_mode
         child = parent.new(share_mode="Organization")
+        assert child._trace_id == parent._trace_id
 
         # Test streaming with new cursor
         with (
@@ -164,6 +166,7 @@ class TestCursorNewIntegration:
                 share_mode="Organization",  # Inherited from new()
                 name="New analysis",
                 folder=None,
+                session_trace_id=child._trace_id,
             )
 
     def test_error_handling_preserved_in_new(self):

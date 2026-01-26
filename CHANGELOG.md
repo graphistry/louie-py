@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - None.
 
+## [0.7.1] - 2026-01-25
+
+### Added
+- Targeted pandas 2.x/3.x compatibility tests in CI.
+
+### Changed
+- pandas requirement updated to `>=2,<4` (supports 2.x and 3.x).
+- Dropped direct `pytz` dependency; now only transitive via pandas 2.x.
+
+### Fixed
+- Secret detection CI no longer rewrites `.secrets.baseline` on check-only runs.
+
 ## [0.7.0] - 2026-01-16
 
 ### Added

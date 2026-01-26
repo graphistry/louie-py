@@ -65,37 +65,42 @@ if [ "$CHECK_ONLY" == true ]; then
     # Pre-commit mode: just check for new secrets
     echo "🔍 Checking for secrets in staged files..."
     
-    # Get list of staged files (excluding plans/ and tmp/)
-    STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -v '^plans/' | grep -v '^tmp/' || true)
+    # Get list of staged files (excluding plans/, tmp/, and the baseline itself)
+    STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM \
+        | grep -v '^plans/' \
+        | grep -v '^tmp/' \
+        | grep -v '^\.secrets\.baseline$' \
+        || true)
     
     if [ -z "$STAGED_FILES" ]; then
         print_success "No files to check"
         exit 0
     fi
     
-    # Check staged files for secrets
+    # Check staged files for secrets using a temp baseline to avoid mutating the real one
     TEMP_BASELINE=$(mktemp)
-    echo "$STAGED_FILES" | xargs $DETECT_SECRETS scan --baseline .secrets.baseline > "$TEMP_BASELINE" 2>/dev/null || true
+    TEMP_SCAN=$(mktemp)
+    cp .secrets.baseline "$TEMP_BASELINE"
+    echo "$STAGED_FILES" | xargs $DETECT_SECRETS scan --baseline "$TEMP_BASELINE" > "$TEMP_SCAN" 2>/dev/null || true
     
     # Check if any new secrets were detected
-    if [ -s "$TEMP_BASELINE" ]; then
+    if [ -s "$TEMP_SCAN" ]; then
         NEW_SECRETS=$(python3 -c "
 import json
 import sys
-with open('$TEMP_BASELINE') as f:
+with open('$TEMP_SCAN') as f:
     data = json.load(f)
     total = sum(len(secrets) for secrets in data.get('results', {}).values())
     sys.exit(0 if total == 0 else 1)
 " 2>/dev/null || echo "1")
-        
-        rm "$TEMP_BASELINE"
-        
+        rm -f "$TEMP_SCAN" "$TEMP_BASELINE"
+
         if [ "$NEW_SECRETS" == "1" ]; then
             print_error "New secrets detected! Use clear placeholders like 'sk-XXXXXXXX' or '<your-password>'"
         fi
     fi
     
-    rm -f "$TEMP_BASELINE"
+    rm -f "$TEMP_SCAN" "$TEMP_BASELINE"
     print_success "No secrets detected"
 else
     # CI mode: full scan
