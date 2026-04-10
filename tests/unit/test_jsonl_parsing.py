@@ -142,8 +142,7 @@ class TestJSONLParsing:
         client = LouieClient()
 
         jsonl = (
-            '{"type":"StreamingApiMessageTrace",'
-            '"payload":[20,1712345678000,"msg"]}\n'
+            '{"type":"StreamingApiMessageTrace","payload":[20,1712345678000,"msg"]}\n'
         )
 
         result = client._parse_jsonl_response(jsonl)

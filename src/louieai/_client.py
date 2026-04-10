@@ -531,11 +531,7 @@ class LouieClient:
                 if elem.get(field):
                     existing[field] = elem[field]
             existing.update(
-                {
-                    k: v
-                    for k, v in elem.items()
-                    if k not in ["content", "text", "value"]
-                }
+                {k: v for k, v in elem.items() if k not in ["content", "text", "value"]}
             )
         else:
             elements_by_id[elem_id] = elem
