@@ -8,10 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## dev
 
 ### Added
-- None.
+- **Streaming protocol compat**: Type-discriminated NDJSON message routing for `StreamingApiMessageRunUpdate`, `StreamingApiMessageTrace`, and other new server message types (graphistry/graphistrygpt#2628). Falls back to legacy `payload`-presence check for old servers.
 
 ### Changed
-- None.
+- `_parse_jsonl_response()` now routes on `data.get("type")` first, with `isinstance(elem, dict)` guard for Trace array payloads.
+
+### Server compatibility
+- **Louie >= 0.14.x (develop)**: Works via legacy fallback (no `type` field)
+- **Louie with graphistry/graphistrygpt#2628**: Works via type-discriminated routing
 
 ## [0.7.1] - 2026-01-25
 
