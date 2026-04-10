@@ -486,37 +486,59 @@ class LouieClient:
                 if "dthread_id" in data:
                     result["dthread_id"] = data["dthread_id"]
 
-                # Handle element updates
-                if "payload" in data:
+                # Route by type discriminator (new servers),
+                # fall back to payload check (old servers)
+                msg_type = data.get("type")
+
+                if msg_type == "StreamingApiMessageOutputUpdate":
+                    elem = data.get("payload")
+                    if isinstance(elem, dict):
+                        self._merge_element(elem, elements_by_id)
+
+                elif msg_type in (
+                    "StreamingApiMessageRunUpdate",
+                    "StreamingApiMessageTrace",
+                    "StreamingApiMessageStart",
+                    "StreamingApiMessageTerminal",
+                ):
+                    pass  # Non-element messages, skip
+
+                elif msg_type is None and "payload" in data:
+                    # Legacy fallback: old servers without type field
                     elem = data["payload"]
-                    elem_id = elem.get("id")
-                    if elem_id:
-                        # For text elements, merge content
-                        if elem_id in elements_by_id and elem.get("type") in [
-                            "TextElement",
-                            "text",
-                        ]:
-                            existing = elements_by_id[elem_id]
-                            # Merge text content fields
-                            for field in ["content", "text", "value"]:
-                                if elem.get(field):
-                                    existing[field] = elem[field]
-                            # Update other fields
-                            existing.update(
-                                {
-                                    k: v
-                                    for k, v in elem.items()
-                                    if k not in ["content", "text", "value"]
-                                }
-                            )
-                        else:
-                            # Update or add element
-                            elements_by_id[elem_id] = elem
+                    if isinstance(elem, dict):
+                        self._merge_element(elem, elements_by_id)
 
         # Convert to list, preserving order
         elements = list(elements_by_id.values())
         result["elements"] = elements
         return result
+
+    @staticmethod
+    def _merge_element(
+        elem: dict[str, Any], elements_by_id: dict[str, dict[str, Any]]
+    ) -> None:
+        """Merge an element into the elements_by_id map, handling text updates."""
+        elem_id = elem.get("id")
+        if not elem_id:
+            return
+        if elem_id in elements_by_id and elem.get("type") in [
+            "TextElement",
+            "text",
+        ]:
+            existing = elements_by_id[elem_id]
+            for field in ["content", "text", "value"]:
+                if elem.get(field):
+                    existing[field] = elem[field]
+            existing.update(
+                {
+                    k: v
+                    for k, v in elem.items()
+                    if k not in ["content", "text", "value"]
+                }
+            )
+        else:
+            elements_by_id[elem_id] = elem
 
     def _attach_dataframes(
         self, thread_id: str, elements: list[dict[str, Any]]
