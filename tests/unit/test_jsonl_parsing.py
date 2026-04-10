@@ -141,7 +141,10 @@ class TestJSONLParsing:
         """Trace payloads (arrays) must not crash the parser."""
         client = LouieClient()
 
-        jsonl = '{"type":"StreamingApiMessageTrace","payload":[20,1712345678000,"msg"]}\n'
+        jsonl = (
+            '{"type":"StreamingApiMessageTrace",'
+            '"payload":[20,1712345678000,"msg"]}\n'
+        )
 
         result = client._parse_jsonl_response(jsonl)
         assert len(result["elements"]) == 0
