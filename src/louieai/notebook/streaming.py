@@ -319,14 +319,32 @@ class StreamingDisplay:
         if "dthread_id" in data:
             self.thread_id = data["dthread_id"]
 
-        # Handle payload updates
-        elif "payload" in data:
-            elem = data["payload"]
-            elem_id = elem.get("id")
+        # Route by type discriminator (new servers),
+        # fall back to payload check (old servers)
+        msg_type = data.get("type")
 
-            if elem_id:
-                # Update element
-                self.elements_by_id[elem_id] = elem
+        if msg_type == "StreamingApiMessageOutputUpdate":
+            elem = data.get("payload")
+            if isinstance(elem, dict):
+                elem_id = elem.get("id")
+                if elem_id:
+                    self.elements_by_id[elem_id] = elem
+
+        elif msg_type in (
+            "StreamingApiMessageRunUpdate",
+            "StreamingApiMessageTrace",
+            "StreamingApiMessageStart",
+            "StreamingApiMessageTerminal",
+        ):
+            pass  # Non-element messages, skip
+
+        elif msg_type is None and "payload" in data:
+            # Legacy fallback: old servers without type field
+            elem = data["payload"]
+            if isinstance(elem, dict):
+                elem_id = elem.get("id")
+                if elem_id:
+                    self.elements_by_id[elem_id] = elem
 
         # Update display if in Jupyter
         if HAS_IPYTHON:
@@ -425,11 +443,29 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                     if "dthread_id" in data:
                         result["dthread_id"] = data["dthread_id"]
 
-                    elif "payload" in data:
+                    msg_type = data.get("type")
+
+                    if msg_type == "StreamingApiMessageOutputUpdate":
+                        elem = data.get("payload")
+                        if isinstance(elem, dict):
+                            elem_id = elem.get("id")
+                            if elem_id:
+                                elements_by_id[elem_id] = elem
+
+                    elif msg_type in (
+                        "StreamingApiMessageRunUpdate",
+                        "StreamingApiMessageTrace",
+                        "StreamingApiMessageStart",
+                        "StreamingApiMessageTerminal",
+                    ):
+                        pass  # Non-element messages, skip
+
+                    elif msg_type is None and "payload" in data:
                         elem = data["payload"]
-                        elem_id = elem.get("id")
-                        if elem_id:
-                            elements_by_id[elem_id] = elem
+                        if isinstance(elem, dict):
+                            elem_id = elem.get("id")
+                            if elem_id:
+                                elements_by_id[elem_id] = elem
 
                 except json.JSONDecodeError:
                     continue

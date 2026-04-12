@@ -119,6 +119,64 @@ class TestJSONLParsing:
         assert result["dthread_id"] is None
         assert len(result["elements"]) == 0
 
+    def test_run_update_not_in_elements(self):
+        """StreamingApiMessageRunUpdate should not appear in elements."""
+        client = LouieClient()
+
+        jsonl = (
+            '{"type":"StreamingApiMessageStart","dthread_id":"D_123"}\n'
+            '{"type":"StreamingApiMessageOutputUpdate","position":0,'
+            '"payload":{"id":"B_1","type":"TextElement","text":"hi"}}\n'
+            '{"type":"StreamingApiMessageRunUpdate","run_node":{'
+            '"node_type":"Run","id":"R_1","state":"Done","run_type":"AE",'
+            '"children":[],"results":{}}}\n'
+            '{"type":"StreamingApiMessageTerminal","success":true}\n'
+        )
+
+        result = client._parse_jsonl_response(jsonl)
+        assert len(result["elements"]) == 1
+        assert result["elements"][0]["type"] == "TextElement"
+
+    def test_trace_array_payload_no_crash(self):
+        """Trace payloads (arrays) must not crash the parser."""
+        client = LouieClient()
+
+        jsonl = (
+            '{"type":"StreamingApiMessageTrace","payload":[20,1712345678000,"msg"]}\n'
+        )
+
+        result = client._parse_jsonl_response(jsonl)
+        assert len(result["elements"]) == 0
+
+    def test_legacy_no_type_field(self):
+        """Old servers without type field still work via payload fallback."""
+        client = LouieClient()
+
+        jsonl = (
+            '{"dthread_id":"D_123"}\n'
+            '{"payload":{"id":"B_1","type":"TextElement","text":"hi"}}\n'
+        )
+
+        result = client._parse_jsonl_response(jsonl)
+        assert result["dthread_id"] == "D_123"
+        assert len(result["elements"]) == 1
+        assert result["elements"][0]["text"] == "hi"
+
+    def test_typed_output_update_with_merge(self):
+        """Typed OutputUpdate messages merge text elements correctly."""
+        client = LouieClient()
+
+        jsonl = (
+            '{"type":"StreamingApiMessageOutputUpdate","position":0,'
+            '"payload":{"id":"B_1","type":"TextElement","text":"hello"}}\n'
+            '{"type":"StreamingApiMessageOutputUpdate","position":0,'
+            '"payload":{"id":"B_1","type":"TextElement","text":"hello world"}}\n'
+        )
+
+        result = client._parse_jsonl_response(jsonl)
+        assert len(result["elements"]) == 1
+        assert result["elements"][0]["text"] == "hello world"
+
     def test_parse_malformed_json_skipped(self):
         """Test malformed JSON lines are skipped."""
         client = LouieClient()
