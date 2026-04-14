@@ -537,9 +537,10 @@ class Cursor:
                 provided)
             folder: Optional folder path for new threads (server support required)
             user_agent: DataThread creation_user_agent — "API" or "Louie"
-            frontend_url: Base URL for thread links. Auto-detected if not set:
-                desktop (localhost) uses ``louie://n/`` deep links,
-                team servers use ``server_url``.
+            frontend_url: Override base URL for thread links. Auto-detected
+                if not set: localhost → ``louie://n/`` deep links, remote →
+                ``server_url``. Devs running a team server on localhost can
+                pass e.g. ``frontend_url="http://localhost:5173"``.
             _parent_trace_id: Internal parameter for inheriting trace context from
                 parent cursor. Do not use directly.
         """
@@ -993,9 +994,13 @@ class Cursor:
         """
         if not self._current_thread:
             return None
+        # Explicit override (e.g., devs running a team server on localhost)
         if self._frontend_url is not None:
             base = self._frontend_url.rstrip("/")
+            if base.startswith("louie://"):
+                return f"{base}/{self._current_thread}"
             return f"{base}/?dthread={self._current_thread}"
+        # Auto-detect: localhost → desktop deep link, otherwise web URL
         server = self._client.server_url
         if "localhost" in server or "127.0.0.1" in server:
             return f"louie://n/{self._current_thread}"
