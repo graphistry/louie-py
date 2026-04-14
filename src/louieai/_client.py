@@ -613,7 +613,7 @@ class LouieClient:
         *,
         agent: str = "LouieAgent",
         traces: bool = False,
-        share_mode: str = "Private",
+        share_mode: ShareMode = "Private",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         **override_kwargs: Any,
     ) -> Thread:
@@ -828,7 +828,7 @@ class LouieClient:
         thread_id: str | None = None,
         traces: bool = False,
         agent: str = "LouieAgent",
-        share_mode: str = "Private",
+        share_mode: ShareMode = "Private",
         **kwargs: Any,
     ) -> Response:
         """Make the client callable for ergonomic usage.

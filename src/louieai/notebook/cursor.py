@@ -618,10 +618,10 @@ class Cursor:
         self._history: deque[Response] = deque(maxlen=100)
         self._current_thread: str | None = None
         self._traces: bool = False
-        self._share_mode: str = share_mode
+        self._share_mode: ShareMode = share_mode
         self._name: str | None = name
         self._folder: str | None = folder
-        self._user_agent: str = user_agent
+        self._user_agent: UserAgent = user_agent
         self._frontend_url: str | None = frontend_url
         self._last_display_id: str | None = None
         # Session-level trace ID for correlating requests when OTel is not available
@@ -633,7 +633,7 @@ class Cursor:
         df: pd.DataFrame | None = None,
         *,
         traces: bool | None = None,
-        share_mode: str | None = None,
+        share_mode: ShareMode | None = None,
         **kwargs: Any,
     ) -> "Cursor":
         """Execute a query with implicit thread management and optional DataFrame.
@@ -1463,7 +1463,7 @@ class Cursor:
 
     def new(
         self,
-        share_mode: str | None = None,
+        share_mode: ShareMode | None = None,
         name: str | None = None,
         folder: str | None = None,
     ) -> "Cursor":

@@ -10,6 +10,7 @@ except ImportError:
 
 from ._client import Response, Thread
 from ._table_ai import TableAIOverrides
+from ._types import ShareMode, UserAgent
 from .notebook import Cursor
 
 
@@ -82,7 +83,7 @@ def _extract_org_name_from_graphistry(graphistry_client) -> str | None:
 
 def louie(
     graphistry_client: Any | None = None,
-    share_mode: str = "Private",
+    share_mode: ShareMode = "Private",
     name: str | None = None,
     folder: str | None = None,
     **kwargs: Any,
@@ -207,8 +208,10 @@ def louie(
 __all__ = [
     "Cursor",
     "Response",
+    "ShareMode",
     "TableAIOverrides",
     "Thread",
+    "UserAgent",
     "__version__",
     "louie",
 ]
