@@ -8,6 +8,7 @@ import pandas as pd
 
 from louieai._client import LouieClient, Response
 from louieai._tracing import generate_trace_id
+from louieai._types import ShareMode, UserAgent
 
 logger = logging.getLogger(__name__)
 
@@ -520,9 +521,11 @@ class Cursor:
     def __init__(
         self,
         client: LouieClient | None = None,
-        share_mode: str = "Private",
+        share_mode: ShareMode = "Private",
         name: str | None = None,
         folder: str | None = None,
+        user_agent: UserAgent = "API",
+        frontend_url: str | None = None,
         _parent_trace_id: str | None = None,
     ):
         """Initialize global cursor.
@@ -533,6 +536,11 @@ class Cursor:
             name: Optional thread name (auto-generated from first message if not
                 provided)
             folder: Optional folder path for new threads (server support required)
+            user_agent: DataThread creation_user_agent — "API" or "Louie"
+            frontend_url: Override base URL for thread links. Auto-detected
+                if not set: localhost → ``louie://n/`` deep links, remote →
+                ``server_url``. Devs running a team server on localhost can
+                pass e.g. ``frontend_url="http://localhost:5173"``.
             _parent_trace_id: Internal parameter for inheriting trace context from
                 parent cursor. Do not use directly.
         """
@@ -610,9 +618,11 @@ class Cursor:
         self._history: deque[Response] = deque(maxlen=100)
         self._current_thread: str | None = None
         self._traces: bool = False
-        self._share_mode: str = share_mode
+        self._share_mode: ShareMode = share_mode
         self._name: str | None = name
         self._folder: str | None = folder
+        self._user_agent: UserAgent = user_agent
+        self._frontend_url: str | None = frontend_url
         self._last_display_id: str | None = None
         # Session-level trace ID for correlating requests when OTel is not available
         self._trace_id: str = _parent_trace_id or generate_trace_id()
@@ -623,7 +633,7 @@ class Cursor:
         df: pd.DataFrame | None = None,
         *,
         traces: bool | None = None,
-        share_mode: str | None = None,
+        share_mode: ShareMode | None = None,
         **kwargs: Any,
     ) -> "Cursor":
         """Execute a query with implicit thread management and optional DataFrame.
@@ -865,6 +875,7 @@ class Cursor:
                     agent=agent,
                     traces=use_traces,
                     share_mode=use_share_mode,
+                    user_agent=self._user_agent,
                     name=self._name,
                     folder=self._folder,
                     session_trace_id=self._trace_id,
@@ -886,6 +897,7 @@ class Cursor:
                     folder=self._folder,
                     traces=use_traces,
                     share_mode=use_share_mode,
+                    user_agent=self._user_agent,
                     session_trace_id=self._trace_id,
                 )
 
@@ -968,9 +980,9 @@ class Cursor:
     def url(self) -> str | None:
         """Get the URL for the current thread.
 
-        Returns a shareable URL that opens the current conversation thread
-        in the Louie web interface. Useful for sharing analysis results
-        with team members or bookmarking conversations.
+        Returns a link that opens the current conversation thread.
+        Desktop servers (localhost) produce ``louie://`` deep links;
+        team servers produce web URLs. Override with ``frontend_url``.
 
         Returns:
             str | None: The thread URL if a thread exists, None otherwise.
@@ -982,8 +994,17 @@ class Cursor:
         """
         if not self._current_thread:
             return None
-        base_url = self._client.server_url.rstrip("/")
-        return f"{base_url}/?dthread={self._current_thread}"
+        # Explicit override (e.g., devs running a team server on localhost)
+        if self._frontend_url is not None:
+            base = self._frontend_url.rstrip("/")
+            if base.startswith("louie://"):
+                return f"{base}/{self._current_thread}"
+            return f"{base}/?dthread={self._current_thread}"
+        # Auto-detect: localhost → desktop deep link, otherwise web URL
+        server = self._client.server_url
+        if "localhost" in server or "127.0.0.1" in server:
+            return f"louie://n/{self._current_thread}"
+        return f"{server.rstrip('/')}/?dthread={self._current_thread}"
 
     @property
     def df(self) -> pd.DataFrame | None:
@@ -1442,7 +1463,7 @@ class Cursor:
 
     def new(
         self,
-        share_mode: str | None = None,
+        share_mode: ShareMode | None = None,
         name: str | None = None,
         folder: str | None = None,
     ) -> "Cursor":

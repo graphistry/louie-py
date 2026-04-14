@@ -388,6 +388,7 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     agent = kwargs.get("agent", "LouieAgent")
     traces = kwargs.get("traces", False)
     share_mode = kwargs.get("share_mode", "Private")
+    user_agent = kwargs.get("user_agent", "API")
     name = kwargs.get("name")
     folder = kwargs.get("folder")
     session_trace_id = kwargs.get("session_trace_id")
@@ -400,6 +401,7 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
         "query": prompt,
         "agent": agent,
         "ignore_traces": str(not traces).lower(),
+        "user_agent": user_agent,
         "share_mode": share_mode,
     }
 
@@ -418,12 +420,21 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     result: dict[str, Any] = {"dthread_id": None, "elements": []}
     elements_by_id = {}
 
+    overall_timeout = client._timeout
+    read_timeout = client._streaming_timeout
+
     # Make streaming request
+    lines_received = 0
     try:
         with (
-            httpx.Client(timeout=httpx.Timeout(300.0, read=120.0)) as stream_client,
+            httpx.Client(
+                timeout=httpx.Timeout(overall_timeout, read=read_timeout)
+            ) as stream_client,
             stream_client.stream(
-                "POST", f"{client.server_url}/api/chat/", headers=headers, params=params
+                "POST",
+                f"{client.server_url}/api/chat/",
+                headers=headers,
+                params=params,
             ) as response,
         ):
             response.raise_for_status()
@@ -432,6 +443,8 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
             for line in response.iter_lines():
                 if not line:
                     continue
+
+                lines_received += 1
 
                 try:
                     data = json.loads(line)
@@ -471,8 +484,14 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                     continue
 
     except httpx.ReadTimeout:
-        # This is expected - server keeps connection open
-        pass
+        import warnings
+
+        timeout_msg = (
+            f"Streaming timed out after {lines_received} lines "
+            f"(read_timeout={read_timeout:.0f}s). "
+            f"Increase streaming_timeout when creating LouieClient."
+        )
+        warnings.warn(timeout_msg, RuntimeWarning, stacklevel=2)
     except Exception as e:
         # Show error in display
         error_elem = {"id": "error", "type": "ExceptionElement", "message": str(e)}
@@ -491,6 +510,14 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     if actual_thread_id and result["elements"]:
         for elem in result["elements"]:
             if elem.get("type") in ["DfElement", "df"]:
+                shape = (elem.get("metadata") or {}).get("shape", [])
+                if shape and shape[0] == 0:
+                    # Workaround: server GCs empty DFs before fetch (#40)
+                    import pandas as pd
+
+                    elem["table"] = pd.DataFrame()
+                    continue
+
                 # Try multiple possible field names for the dataframe ID
                 df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
 

@@ -19,6 +19,7 @@ from ._table_ai import (
     normalize_table_ai_overrides,
 )
 from ._tracing import get_traceparent
+from ._types import ShareMode, UserAgent
 from .auth import AuthManager, auto_retry_auth
 
 logger = logging.getLogger(__name__)
@@ -546,6 +547,12 @@ class LouieClient:
 
         for elem in elements:
             if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
+                # Workaround: server GCs empty DFs before fetch (#40)
+                shape = (elem.get("metadata") or {}).get("shape", [])
+                if shape and shape[0] == 0:
+                    elem["table"] = pd.DataFrame()
+                    continue
+
                 df_id = (
                     elem.get("df_id")
                     or elem.get("block_id")
@@ -603,7 +610,7 @@ class LouieClient:
         *,
         agent: str = "LouieAgent",
         traces: bool = False,
-        share_mode: str = "Private",
+        share_mode: ShareMode = "Private",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         **override_kwargs: Any,
     ) -> Thread:
@@ -657,7 +664,8 @@ class LouieClient:
         name: str | None = None,
         folder: str | None = None,
         traces: bool = False,
-        share_mode: str = "Private",
+        share_mode: ShareMode = "Private",
+        user_agent: UserAgent = "API",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         use_batch: bool | None = None,
         session_trace_id: str | None = None,
@@ -673,6 +681,7 @@ class LouieClient:
             folder: Optional folder path (applied only when creating a new thread)
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
+            user_agent: DataThread creation_user_agent — "API" or "Louie"
             table_ai_overrides: Structured overrides via dataclass or mapping.
             use_batch: Force singleshot (`True`) or streaming (`False`); defaults to
                 singleshot when overrides are provided.
@@ -693,6 +702,7 @@ class LouieClient:
             # Convert bool to string for HTTP params
             "ignore_traces": str(not traces).lower(),
             "share_mode": share_mode,
+            "user_agent": user_agent,
         }
 
         # Add thread ID if continuing existing thread
@@ -815,7 +825,7 @@ class LouieClient:
         thread_id: str | None = None,
         traces: bool = False,
         agent: str = "LouieAgent",
-        share_mode: str = "Private",
+        share_mode: ShareMode = "Private",
         **kwargs: Any,
     ) -> Response:
         """Make the client callable for ergonomic usage.
