@@ -8,6 +8,7 @@ import pandas as pd
 
 from louieai._client import LouieClient, Response
 from louieai._tracing import generate_trace_id
+from louieai._types import ShareMode, UserAgent
 
 logger = logging.getLogger(__name__)
 
@@ -520,9 +521,10 @@ class Cursor:
     def __init__(
         self,
         client: LouieClient | None = None,
-        share_mode: str = "Private",
+        share_mode: ShareMode = "Private",
         name: str | None = None,
         folder: str | None = None,
+        user_agent: UserAgent = "API",
         _parent_trace_id: str | None = None,
     ):
         """Initialize global cursor.
@@ -533,6 +535,7 @@ class Cursor:
             name: Optional thread name (auto-generated from first message if not
                 provided)
             folder: Optional folder path for new threads (server support required)
+            user_agent: DataThread creation_user_agent — "API" or "Louie"
             _parent_trace_id: Internal parameter for inheriting trace context from
                 parent cursor. Do not use directly.
         """
@@ -613,6 +616,7 @@ class Cursor:
         self._share_mode: str = share_mode
         self._name: str | None = name
         self._folder: str | None = folder
+        self._user_agent: str = user_agent
         self._last_display_id: str | None = None
         # Session-level trace ID for correlating requests when OTel is not available
         self._trace_id: str = _parent_trace_id or generate_trace_id()
@@ -865,6 +869,7 @@ class Cursor:
                     agent=agent,
                     traces=use_traces,
                     share_mode=use_share_mode,
+                    user_agent=self._user_agent,
                     name=self._name,
                     folder=self._folder,
                     session_trace_id=self._trace_id,
@@ -886,6 +891,7 @@ class Cursor:
                     folder=self._folder,
                     traces=use_traces,
                     share_mode=use_share_mode,
+                    user_agent=self._user_agent,
                     session_trace_id=self._trace_id,
                 )
 

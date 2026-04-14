@@ -391,6 +391,7 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     agent = kwargs.get("agent", "LouieAgent")
     traces = kwargs.get("traces", False)
     share_mode = kwargs.get("share_mode", "Private")
+    user_agent = kwargs.get("user_agent", "API")
     name = kwargs.get("name")
     folder = kwargs.get("folder")
     session_trace_id = kwargs.get("session_trace_id")
@@ -403,6 +404,7 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
         "query": prompt,
         "agent": agent,
         "ignore_traces": str(not traces).lower(),
+        "user_agent": user_agent,
         "share_mode": share_mode,
     }
 

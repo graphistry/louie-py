@@ -9,6 +9,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
+from louieai._types import ShareMode, UserAgent
+
 import httpx
 import pandas as pd
 import pyarrow as pa
@@ -657,7 +659,8 @@ class LouieClient:
         name: str | None = None,
         folder: str | None = None,
         traces: bool = False,
-        share_mode: str = "Private",
+        share_mode: ShareMode = "Private",
+        user_agent: UserAgent = "API",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         use_batch: bool | None = None,
         session_trace_id: str | None = None,
@@ -673,6 +676,7 @@ class LouieClient:
             folder: Optional folder path (applied only when creating a new thread)
             traces: Whether to include reasoning traces in response (default: False)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
+            user_agent: DataThread creation_user_agent — "API" or "Louie"
             table_ai_overrides: Structured overrides via dataclass or mapping.
             use_batch: Force singleshot (`True`) or streaming (`False`); defaults to
                 singleshot when overrides are provided.
@@ -693,6 +697,7 @@ class LouieClient:
             # Convert bool to string for HTTP params
             "ignore_traces": str(not traces).lower(),
             "share_mode": share_mode,
+            "user_agent": user_agent,
         }
 
         # Add thread ID if continuing existing thread
