@@ -548,6 +548,15 @@ class LouieClient:
 
         for elem in elements:
             if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
+                # Skip empty DataFrames — server may GC them before fetch
+                meta = elem.get("metadata", {})
+                shape = meta.get("shape", [])
+                if shape and shape[0] == 0:
+                    logger.debug(
+                        "Skipping empty DF %s (shape=%s)", elem.get("id"), shape
+                    )
+                    continue
+
                 df_id = (
                     elem.get("df_id")
                     or elem.get("block_id")

@@ -533,6 +533,16 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     if actual_thread_id and result["elements"]:
         for elem in result["elements"]:
             if elem.get("type") in ["DfElement", "df"]:
+                # Skip empty DataFrames — server GCs them before we can fetch
+                meta = elem.get("metadata", {})
+                shape = meta.get("shape", [])
+                if shape and shape[0] == 0:
+                    logger.debug(
+                        "stream_response: skipping empty DF %s (shape=%s)",
+                        elem.get("id"), shape,
+                    )
+                    continue
+
                 # Try multiple possible field names for the dataframe ID
                 df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
 
