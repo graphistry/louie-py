@@ -547,13 +547,10 @@ class LouieClient:
 
         for elem in elements:
             if elem.get("type") in ["DfElement", "df", "DataFrame", "dataframe"]:
-                # Skip empty DataFrames — server may GC them before fetch
-                meta = elem.get("metadata", {})
-                shape = meta.get("shape", [])
+                # Workaround: server GCs empty DFs before fetch (#40)
+                shape = (elem.get("metadata") or {}).get("shape", [])
                 if shape and shape[0] == 0:
-                    logger.debug(
-                        "Skipping empty DF %s (shape=%s)", elem.get("id"), shape
-                    )
+                    elem["table"] = pd.DataFrame()
                     continue
 
                 df_id = (
