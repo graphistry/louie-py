@@ -420,9 +420,8 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     result: dict[str, Any] = {"dthread_id": None, "elements": []}
     elements_by_id = {}
 
-    # Use client's timeout settings if available, otherwise defaults
-    overall_timeout = getattr(client, "_timeout", 600.0)
-    read_timeout = getattr(client, "_streaming_timeout", 300.0)
+    overall_timeout = client._timeout
+    read_timeout = client._streaming_timeout
 
     # Make streaming request
     lines_received = 0
