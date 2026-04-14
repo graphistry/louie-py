@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-04-14
+
+### Fixed
+- **Streaming timeouts**: `stream_response()` now uses client's `timeout`/`streaming_timeout` instead of hardcoded 120s read timeout that silently dropped responses
+- **Empty DataFrame warnings**: Attach `pd.DataFrame()` for DfElements with `shape: [0, 0]` instead of fetching from server (workaround for #40)
+- **RuntimeWarning on timeout**: Users see a visible warning in notebook output instead of silent empty `texts=[]`
+
+### Added
+- **`user_agent`** param on `Cursor` — sets `creation_user_agent` on DataThread (`"API"` or `"Louie"`)
+- **`folder`** param on `Cursor` — organizes threads into folders
+- **`frontend_url`** param on `Cursor` — override auto-detected thread URL
+- **Desktop deep links**: `Cursor.url` auto-detects localhost and produces `louie://n/` deep links
+- **`ShareMode`** and **`UserAgent`** Literal types in `_types.py`, applied throughout
+
 ## [0.8.0] - 2026-04-10
 
 ### Added
