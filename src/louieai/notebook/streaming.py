@@ -514,6 +514,7 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                 if shape and shape[0] == 0:
                     # Workaround: server GCs empty DFs before fetch (#40)
                     import pandas as pd
+
                     elem["table"] = pd.DataFrame()
                     continue
 
