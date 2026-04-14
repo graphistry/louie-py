@@ -1,6 +1,7 @@
 """Streaming display support for Jupyter notebooks."""
 
 import json
+import logging
 import time
 from typing import Any
 
@@ -12,6 +13,8 @@ except ImportError:
     HAS_IPYTHON = False
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 class StreamingDisplay:
@@ -418,23 +421,45 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
     result: dict[str, Any] = {"dthread_id": None, "elements": []}
     elements_by_id = {}
 
+    # Use client's timeout settings if available, otherwise defaults
+    overall_timeout = getattr(client, "_timeout", 600.0)
+    read_timeout = getattr(client, "_streaming_timeout", 300.0)
+
+    logger.debug(
+        "stream_response: url=%s/api/chat/ timeout=%.0f read=%.0f params=%s",
+        client.server_url, overall_timeout, read_timeout,
+        {k: v for k, v in params.items() if k != "query"},
+    )
+
     # Make streaming request
+    lines_received = 0
     try:
         with (
-            httpx.Client(timeout=httpx.Timeout(300.0, read=120.0)) as stream_client,
+            httpx.Client(
+                timeout=httpx.Timeout(overall_timeout, read=read_timeout)
+            ) as stream_client,
             stream_client.stream(
                 "POST", f"{client.server_url}/api/chat/", headers=headers, params=params
             ) as response,
         ):
             response.raise_for_status()
+            logger.debug("stream_response: connected, status=%d", response.status_code)
 
             # Process streaming lines
             for line in response.iter_lines():
                 if not line:
                     continue
 
+                lines_received += 1
+
                 try:
                     data = json.loads(line)
+
+                    msg_type = data.get("type", "unknown")
+                    logger.debug(
+                        "stream_response: line %d type=%s keys=%s",
+                        lines_received, msg_type, list(data.keys())[:6],
+                    )
 
                     # Update display
                     display_handler.update(data)
@@ -442,8 +467,6 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                     # Track data for result
                     if "dthread_id" in data:
                         result["dthread_id"] = data["dthread_id"]
-
-                    msg_type = data.get("type")
 
                     if msg_type == "StreamingApiMessageOutputUpdate":
                         elem = data.get("payload")
@@ -468,17 +491,34 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                                 elements_by_id[elem_id] = elem
 
                 except json.JSONDecodeError:
+                    logger.warning(
+                        "stream_response: line %d JSON decode error: %s",
+                        lines_received, line[:200],
+                    )
                     continue
 
     except httpx.ReadTimeout:
-        # This is expected - server keeps connection open
-        pass
+        import warnings
+
+        timeout_msg = (
+            f"Streaming timed out after {lines_received} lines "
+            f"(read_timeout={read_timeout:.0f}s). "
+            f"Increase streaming_timeout when creating LouieClient."
+        )
+        logger.warning("stream_response: %s", timeout_msg)
+        warnings.warn(timeout_msg, RuntimeWarning, stacklevel=2)
     except Exception as e:
+        logger.error("stream_response: error after %d lines: %s", lines_received, e)
         # Show error in display
         error_elem = {"id": "error", "type": "ExceptionElement", "message": str(e)}
         display_handler.elements_by_id["error"] = error_elem
         display_handler.finalize()
         raise
+
+    logger.info(
+        "stream_response: done, lines=%d dthread=%s elements=%d",
+        lines_received, result["dthread_id"], len(elements_by_id),
+    )
 
     # Final update
     display_handler.finalize()
