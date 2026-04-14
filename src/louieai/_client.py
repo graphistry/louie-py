@@ -9,8 +9,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
-from louieai._types import ShareMode, UserAgent
-
 import httpx
 import pandas as pd
 import pyarrow as pa
@@ -21,6 +19,7 @@ from ._table_ai import (
     normalize_table_ai_overrides,
 )
 from ._tracing import get_traceparent
+from ._types import ShareMode, UserAgent
 from .auth import AuthManager, auto_retry_auth
 
 logger = logging.getLogger(__name__)
