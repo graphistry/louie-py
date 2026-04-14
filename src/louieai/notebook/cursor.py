@@ -525,6 +525,7 @@ class Cursor:
         name: str | None = None,
         folder: str | None = None,
         user_agent: UserAgent = "API",
+        frontend_url: str | None = None,
         _parent_trace_id: str | None = None,
     ):
         """Initialize global cursor.
@@ -536,6 +537,9 @@ class Cursor:
                 provided)
             folder: Optional folder path for new threads (server support required)
             user_agent: DataThread creation_user_agent — "API" or "Louie"
+            frontend_url: Base URL for thread links. Auto-detected if not set:
+                desktop (localhost) uses ``louie://n/`` deep links,
+                team servers use ``server_url``.
             _parent_trace_id: Internal parameter for inheriting trace context from
                 parent cursor. Do not use directly.
         """
@@ -617,6 +621,7 @@ class Cursor:
         self._name: str | None = name
         self._folder: str | None = folder
         self._user_agent: str = user_agent
+        self._frontend_url: str | None = frontend_url
         self._last_display_id: str | None = None
         # Session-level trace ID for correlating requests when OTel is not available
         self._trace_id: str = _parent_trace_id or generate_trace_id()
@@ -974,9 +979,9 @@ class Cursor:
     def url(self) -> str | None:
         """Get the URL for the current thread.
 
-        Returns a shareable URL that opens the current conversation thread
-        in the Louie web interface. Useful for sharing analysis results
-        with team members or bookmarking conversations.
+        Returns a link that opens the current conversation thread.
+        Desktop servers (localhost) produce ``louie://`` deep links;
+        team servers produce web URLs. Override with ``frontend_url``.
 
         Returns:
             str | None: The thread URL if a thread exists, None otherwise.
@@ -988,8 +993,13 @@ class Cursor:
         """
         if not self._current_thread:
             return None
-        base_url = self._client.server_url.rstrip("/")
-        return f"{base_url}/?dthread={self._current_thread}"
+        if self._frontend_url is not None:
+            base = self._frontend_url.rstrip("/")
+            return f"{base}/?dthread={self._current_thread}"
+        server = self._client.server_url
+        if "localhost" in server or "127.0.0.1" in server:
+            return f"louie://n/{self._current_thread}"
+        return f"{server.rstrip('/')}/?dthread={self._current_thread}"
 
     @property
     def df(self) -> pd.DataFrame | None:
