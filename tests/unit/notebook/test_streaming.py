@@ -150,6 +150,8 @@ class TestStreamResponse:
         client.server_url = "https://test.louie.ai"
         client._get_headers.return_value = {"Authorization": "Bearer test"}
         client._fetch_dataframe_arrow.return_value = None
+        client._timeout = 600.0
+        client._streaming_timeout = 300.0
         return client
 
     def test_basic_streaming(self, mock_client):
