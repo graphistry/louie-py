@@ -429,7 +429,9 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
 
     logger.debug(
         "stream_response: url=%s/api/chat/ timeout=%.0f read=%.0f params=%s",
-        client.server_url, overall_timeout, read_timeout,
+        client.server_url,
+        overall_timeout,
+        read_timeout,
         {k: v for k, v in params.items() if k != "query"},
     )
 
@@ -460,7 +462,9 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                     msg_type = data.get("type", "unknown")
                     logger.debug(
                         "stream_response: line %d type=%s keys=%s",
-                        lines_received, msg_type, list(data.keys())[:6],
+                        lines_received,
+                        msg_type,
+                        list(data.keys())[:6],
                     )
 
                     # Update display
@@ -495,7 +499,8 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                 except json.JSONDecodeError:
                     logger.warning(
                         "stream_response: line %d JSON decode error: %s",
-                        lines_received, line[:200],
+                        lines_received,
+                        line[:200],
                     )
                     continue
 
@@ -519,7 +524,9 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
 
     logger.info(
         "stream_response: done, lines=%d dthread=%s elements=%d",
-        lines_received, result["dthread_id"], len(elements_by_id),
+        lines_received,
+        result["dthread_id"],
+        len(elements_by_id),
     )
 
     # Final update
@@ -539,7 +546,8 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                 if shape and shape[0] == 0:
                     logger.debug(
                         "stream_response: skipping empty DF %s (shape=%s)",
-                        elem.get("id"), shape,
+                        elem.get("id"),
+                        shape,
                     )
                     continue
 
