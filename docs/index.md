@@ -63,9 +63,15 @@ lui = louieai(g, server_url="https://den.louie.ai")  # or your enterprise URL
 lui = louieai(share_mode="Organization")  # Share within your org
 lui("Analyze sales trends", share_mode="Private")  # Override per query
 
-# Enable AI reasoning traces
-lui.traces = True
+# Opt in to provisional reasoning
+lui.include_reasoning = True
 lui("Complex analysis requiring step-by-step reasoning")
+print(lui.reasoning_text)
+
+# Request server trace events separately
+lui.traces = True
+lui("Debug this analysis")
+print(lui.trace_events)
 
 # Access conversation history
 previous_result = lui[-1]  # Last response

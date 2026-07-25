@@ -86,6 +86,9 @@ def louie(
     share_mode: ShareMode = "Private",
     name: str | None = None,
     folder: str | None = None,
+    *,
+    include_reasoning: bool = False,
+    traces: bool = False,
     **kwargs: Any,
 ) -> Cursor:
     """Create a callable Louie interface.
@@ -119,6 +122,8 @@ def louie(
         share_mode: Default visibility mode - "Private", "Organization", or "Public"
         name: Optional thread name (auto-generated from first message if not provided)
         folder: Optional folder path for new threads (server support required)
+        include_reasoning: Include provisional reasoning by default for this session.
+        traces: Request server trace events by default for this session.
         **kwargs: Authentication parameters passed to LouieClient
             - username: PyGraphistry username
             - password: PyGraphistry password
@@ -177,6 +182,17 @@ def louie(
     """
     from ._client import LouieClient
 
+    def make_cursor(client: LouieClient | None = None) -> Cursor:
+        cursor = Cursor(
+            client=client,
+            share_mode=share_mode,
+            name=name,
+            folder=folder,
+            include_reasoning=include_reasoning,
+        )
+        cursor.traces = traces
+        return cursor
+
     # If graphistry_client provided, create LouieClient with it
     if graphistry_client is not None:
         # Implement org_name cascade: explicit > env > extracted > None
@@ -194,15 +210,15 @@ def louie(
                     kwargs["org_name"] = extracted_org
 
         client = LouieClient(graphistry_client=graphistry_client, **kwargs)
-        return Cursor(client=client, share_mode=share_mode, name=name, folder=folder)
+        return make_cursor(client)
 
     # If kwargs provided, create LouieClient with them
     if kwargs:
         client = LouieClient(**kwargs)
-        return Cursor(client=client, share_mode=share_mode, name=name, folder=folder)
+        return make_cursor(client)
 
     # Otherwise, create a new cursor with environment variables
-    return Cursor(share_mode=share_mode, name=name, folder=folder)
+    return make_cursor()
 
 
 __all__ = [

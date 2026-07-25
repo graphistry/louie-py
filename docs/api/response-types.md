@@ -40,13 +40,30 @@ lui = louie()
 
 # Access raw response
 lui("Query database for customer data")
-response = lui._response  # Raw Response object
+response = lui.response  # Raw Response object
 
 # Elements are dictionaries with type and data
 for element in response.elements:
     element_type = element.get("type")
     print(f"Element type: {element_type}")
 ```
+
+## Streaming envelopes and final-answer semantics
+
+Current streaming and singleshot routes return typed envelopes:
+
+- `StreamingApiMessageStart`: thread ID
+- `StreamingApiMessageOutputUpdate`: latest element snapshot at an output position
+- `StreamingApiMessageRunUpdate`: root or method-run state/token snapshot
+- `StreamingApiMessageTrace`: requested server trace payload
+- `StreamingApiMessageTerminal`: stream success/error metadata
+
+`Response.elements` contains the latest output snapshots, while
+`Response.stream_messages` retains the ordered envelopes. A `TextElement` uses
+`complete=False` while it is still appending and `complete=True` when finalized.
+That lifecycle flag does not distinguish reasoning from the final answer. The
+root run's `final_answer` ID does; use `final_text*` and `reasoning_text*`
+instead of inspecting fields yourself.
 
 ## Element Types
 

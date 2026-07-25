@@ -35,21 +35,43 @@ class Thread:
 
 
 class Response:
-    """Response containing thread_id and multiple elements from a query."""
+    """Response containing output elements and optional streaming metadata."""
 
-    def __init__(self, thread_id: str, elements: list[dict[str, Any]]):
-        """Initialize response with thread ID and elements.
+    def __init__(
+        self,
+        thread_id: str,
+        elements: list[dict[str, Any]],
+        *,
+        stream_messages: list[dict[str, Any]] | None = None,
+        include_reasoning: bool | None = None,
+    ):
+        """Initialize a response.
 
         Args:
-            thread_id: The thread ID this response belongs to
-            elements: List of element dictionaries from the response
+            thread_id: The thread ID this response belongs to.
+            elements: Latest output element snapshots in server position order.
+            stream_messages: Ordered raw streaming envelopes when available.
+            include_reasoning: Whether structural reasoning was requested. ``None``
+                preserves conservative behavior for manually constructed responses.
         """
         self.thread_id = thread_id
         self.elements = elements
+        self.stream_messages = list(stream_messages or [])
+        self.include_reasoning = include_reasoning
+
+    @staticmethod
+    def _element_text(element: dict[str, Any]) -> str:
+        """Extract text across current and legacy element field names."""
+        content = (
+            element.get("content")
+            or element.get("text", "")
+            or element.get("value", "")
+        )
+        return str(content) if content is not None else ""
 
     @property
     def text_elements(self) -> list[dict[str, Any]]:
-        """Get all text elements from the response."""
+        """Get all text elements, including opt-in reasoning elements."""
         return [e for e in self.elements if e.get("type") in ["TextElement", "text"]]
 
     @property
@@ -63,6 +85,15 @@ class Response:
         return [e for e in self.elements if e.get("type") in ["GraphElement", "graph"]]
 
     @property
+    def errors(self) -> list[dict[str, Any]]:
+        """Get structured output error elements."""
+        return [
+            e
+            for e in self.elements
+            if e.get("type") in ["ExceptionElement", "exception", "error"]
+        ]
+
+    @property
     def has_dataframes(self) -> bool:
         """Check if response contains any dataframe elements."""
         return len(self.dataframe_elements) > 0
@@ -74,28 +105,198 @@ class Response:
 
     @property
     def has_errors(self) -> bool:
-        """Check if response contains any error elements."""
-        return any(
-            e.get("type") in ["ExceptionElement", "exception", "error"]
-            for e in self.elements
+        """Check for output errors or a failed streaming terminal."""
+        return bool(self.errors) or self.succeeded is False
+
+    @property
+    def run_updates(self) -> list[dict[str, Any]]:
+        """Ordered root and method run snapshots from the stream."""
+        return [
+            node
+            for message in self.stream_messages
+            if message.get("type") == "StreamingApiMessageRunUpdate"
+            and isinstance((node := message.get("run_node")), dict)
+        ]
+
+    @property
+    def phase_updates(self) -> list[dict[str, Any]]:
+        """Ordered method-run snapshots, which represent execution phases."""
+        return [
+            node for node in self.run_updates if node.get("node_type") == "MethodRun"
+        ]
+
+    @property
+    def run_nodes(self) -> list[dict[str, Any]]:
+        """Latest snapshot for each run node, preserving first-seen order."""
+        latest: dict[str, dict[str, Any]] = {}
+        for node in self.run_updates:
+            node_id = node.get("id")
+            if node_id is not None:
+                latest[str(node_id)] = node
+        return list(latest.values())
+
+    @property
+    def phases(self) -> list[dict[str, Any]]:
+        """Latest snapshot for each method-run execution phase."""
+        return [node for node in self.run_nodes if node.get("node_type") == "MethodRun"]
+
+    @property
+    def root_run(self) -> dict[str, Any] | None:
+        """Latest root-run snapshot, if the server emitted one."""
+        for node in reversed(self.run_updates):
+            if node.get("node_type") == "Run":
+                return node
+        return None
+
+    @property
+    def token_flow(self) -> dict[str, Any] | None:
+        """Latest root-run token-flow counters, if available."""
+        root = self.root_run
+        value = root.get("token_flow") if root else None
+        return value if isinstance(value, dict) else None
+
+    @property
+    def trace_events(self) -> list[Any]:
+        """Returned server trace payloads (distinct from reasoning and traceparent)."""
+        return [
+            message.get("payload")
+            for message in self.stream_messages
+            if message.get("type") == "StreamingApiMessageTrace"
+        ]
+
+    @property
+    def terminals(self) -> list[dict[str, Any]]:
+        """All terminal envelopes; uploads may emit more than one."""
+        return [
+            message
+            for message in self.stream_messages
+            if message.get("type") == "StreamingApiMessageTerminal"
+        ]
+
+    @property
+    def terminal(self) -> dict[str, Any] | None:
+        """Last terminal envelope, representing whole-stream plumbing outcome."""
+        terminals = self.terminals
+        return terminals[-1] if terminals else None
+
+    @property
+    def terminal_error(self) -> str | None:
+        """Error from the final terminal envelope, if any."""
+        terminal = self.terminal
+        error = terminal.get("error") if terminal else None
+        return str(error) if error else None
+
+    @property
+    def succeeded(self) -> bool | None:
+        """Final terminal success flag, independent of the agent run state."""
+        terminal = self.terminal
+        success = terminal.get("success") if terminal else None
+        return success if isinstance(success, bool) else None
+
+    @property
+    def status(self) -> str:
+        """Normalized execution status from terminal metadata and root-run state."""
+        if self.succeeded is False:
+            return "failed"
+
+        root = self.root_run
+        state = str(root.get("state", "")) if root else ""
+        normalized = {
+            "Scheduled": "scheduled",
+            "Running": "running",
+            "Done": "succeeded",
+            "Failed": "failed",
+            "Cancelled": "cancelled",
+            "Interrupted": "interrupted",
+        }.get(state)
+        if normalized:
+            return normalized
+        if self.succeeded is True:
+            return "succeeded"
+        return "unknown"
+
+    @property
+    def final_answer_id(self) -> str | None:
+        """Server-selected final-answer element ID, if available."""
+        root = self.root_run
+        value = root.get("final_answer") if root else None
+        return str(value) if value else None
+
+    def _is_reasoning_element(self, element: dict[str, Any]) -> bool:
+        """Classify reasoning conservatively using old or current wire semantics."""
+        if element.get("draft") is True:
+            return True
+        if self.include_reasoning is not True:
+            return False
+
+        root = self.root_run
+        final_id = self.final_answer_id
+        root_id = root.get("id") if root else None
+        if not final_id or not root_id:
+            return False
+        return (
+            element.get("type") in ["TextElement", "text"]
+            and element.get("during_run_id") == root_id
+            and str(element.get("id", "")) != final_id
         )
 
     @property
-    def text(self) -> str | None:
-        """Get the primary text response.
+    def reasoning_elements(self) -> list[dict[str, Any]]:
+        """Latest text snapshots classified as opt-in reasoning."""
+        return [e for e in self.text_elements if self._is_reasoning_element(e)]
 
-        Returns the text from the first text element, or None if no text elements.
+    @property
+    def reasoning_texts(self) -> list[str]:
+        """Text for each reasoning element in output order."""
+        return [self._element_text(e) for e in self.reasoning_elements]
+
+    @property
+    def reasoning_text(self) -> str | None:
+        """Reasoning parts joined for convenient reading."""
+        parts = [part for part in self.reasoning_texts if part]
+        return "\n\n".join(parts) if parts else None
+
+    @property
+    def final_text_elements(self) -> list[dict[str, Any]]:
+        """Text outputs excluding elements classified as reasoning."""
+        return [e for e in self.text_elements if not self._is_reasoning_element(e)]
+
+    @property
+    def final_texts(self) -> list[str]:
+        """Non-reasoning text outputs in output order."""
+        return [self._element_text(e) for e in self.final_text_elements]
+
+    @property
+    def final_text_element(self) -> dict[str, Any] | None:
+        """Explicit final-answer element, or latest legacy non-reasoning text."""
+        final_id = self.final_answer_id
+        if final_id:
+            for element in self.final_text_elements:
+                if str(element.get("id", "")) == final_id:
+                    return element
+        elements = self.final_text_elements
+        return elements[-1] if elements else None
+
+    @property
+    def final_text(self) -> str | None:
+        """Explicit final answer, with latest-text fallback for legacy responses."""
+        element = self.final_text_element
+        return self._element_text(element) if element is not None else None
+
+    @property
+    def text(self) -> str | None:
+        """Get the primary final-oriented text response.
+
+        An explicit server final-answer pointer wins. Without one, preserve the
+        historical SDK behavior of returning the first text element, excluding
+        only an old wire-format element explicitly marked ``draft=true``.
         """
-        text_elems = self.text_elements
-        if not text_elems:
-            return None
-        first_elem = text_elems[0]
-        content = (
-            first_elem.get("content")
-            or first_elem.get("text")
-            or first_elem.get("value", "")
-        )
-        return str(content) if content else ""
+        final_id = self.final_answer_id
+        if final_id and self.include_reasoning is True:
+            element = self.final_text_element
+            return self._element_text(element) if element is not None else None
+        elements = self.final_text_elements
+        return self._element_text(elements[0]) if elements else None
 
     @property
     def df(self) -> Any | None:
@@ -109,11 +310,7 @@ class Response:
     @property
     def dfs(self) -> list[Any]:
         """Get all DataFrames from the response."""
-        dfs = []
-        for elem in self.dataframe_elements:
-            if "table" in elem:
-                dfs.append(elem["table"])
-        return dfs
+        return [elem["table"] for elem in self.dataframe_elements if "table" in elem]
 
 
 class LouieClient:
@@ -429,113 +626,113 @@ class LouieClient:
         slug = slug.strip("-")
         return slug
 
-    def _parse_jsonl_response(self, response_text: str) -> dict[str, Any]:
-        """Parse JSONL response into structured data.
+    @staticmethod
+    def _decode_json_objects(response_text: str) -> list[dict[str, Any]]:
+        """Decode newline-delimited or concatenated top-level JSON objects."""
+        objects: list[dict[str, Any]] = []
+        decoder = json.JSONDecoder()
+        for line in response_text.splitlines():
+            index = 0
+            while index < len(line):
+                while index < len(line) and line[index].isspace():
+                    index += 1
+                if index >= len(line):
+                    break
+                try:
+                    value, end_index = decoder.raw_decode(line, index)
+                except json.JSONDecodeError:
+                    break
+                if isinstance(value, dict):
+                    objects.append(value)
+                index = end_index
+        return objects
 
-        Handles both standard JSONL and cases where server concatenates
-        multiple JSON objects on the same line.
+    @classmethod
+    def _parse_stream_objects(cls, objects: list[Any]) -> dict[str, Any]:
+        """Accumulate typed or legacy stream objects into a lossless response."""
+        result: dict[str, Any] = {
+            "dthread_id": None,
+            "elements": [],
+            "stream_messages": [],
+        }
+        elements_by_key: dict[str, dict[str, Any]] = {}
+        element_positions: dict[str, int] = {}
+        element_orders: dict[str, int] = {}
+        position_keys: dict[int, str] = {}
 
-        Returns dict with:
-        - dthread_id: The thread ID
-        - elements: List of response elements
-        """
-        result: dict[str, Any] = {"dthread_id": None, "elements": []}
+        for sequence, data in enumerate(objects):
+            if not isinstance(data, dict):
+                continue
+            result["stream_messages"].append(data)
 
-        # Track elements by ID to handle streaming updates
-        elements_by_id: dict[str, dict[str, Any]] = {}
+            if "dthread_id" in data:
+                result["dthread_id"] = data["dthread_id"]
 
-        for line in response_text.strip().split("\n"):
-            if not line:
+            msg_type = data.get("type")
+            elem: dict[str, Any] | None = None
+            if msg_type == "StreamingApiMessageOutputUpdate":
+                payload = data.get("payload")
+                if isinstance(payload, dict):
+                    elem = payload
+            elif msg_type is None and isinstance(data.get("payload"), dict):
+                elem = data["payload"]
+
+            if elem is None:
                 continue
 
-            # Handle multiple JSON objects on same line
-            # The server sometimes sends: {"dthread_id":"..."}{"}payload":{...}}
-            json_objects = []
-            decoder = json.JSONDecoder()
-            idx = 0
+            position = data.get("position")
+            elem_id = elem.get("id")
+            if elem_id:
+                key = f"id:{elem_id}"
+            elif isinstance(position, int):
+                key = f"position:{position}"
+            else:
+                key = f"message:{sequence}"
 
-            while idx < len(line):
-                # Skip whitespace
-                while idx < len(line) and line[idx].isspace():
-                    idx += 1
+            if isinstance(position, int):
+                previous_key = position_keys.get(position)
+                if previous_key is not None and previous_key != key:
+                    elements_by_key.pop(previous_key, None)
+                    element_positions.pop(previous_key, None)
+                    element_orders.pop(previous_key, None)
+                position_keys[position] = key
+                element_positions[key] = position
 
-                if idx >= len(line):
-                    break
+            element_orders.setdefault(key, sequence)
+            cls._merge_element(elem, elements_by_key, key=key)
 
-                try:
-                    # Try to decode a JSON object starting at idx
-                    obj, end_idx = decoder.raw_decode(line, idx)
-                    json_objects.append(obj)
-                    idx += end_idx
-                except json.JSONDecodeError:
-                    # If we can't decode, try parsing as single object
-                    try:
-                        obj = json.loads(line[idx:])
-                        json_objects.append(obj)
-                        break
-                    except json.JSONDecodeError:
-                        # Move to next character if we can't decode
-                        idx += 1
-
-            # Process each JSON object found
-            for data in json_objects:
-                # Skip non-dict objects (could be position integers, etc)
-                if not isinstance(data, dict):
-                    continue
-
-                # Handle thread ID
-                if "dthread_id" in data:
-                    result["dthread_id"] = data["dthread_id"]
-
-                # Route by type discriminator (new servers),
-                # fall back to payload check (old servers)
-                msg_type = data.get("type")
-
-                if msg_type == "StreamingApiMessageOutputUpdate":
-                    elem = data.get("payload")
-                    if isinstance(elem, dict):
-                        self._merge_element(elem, elements_by_id)
-
-                elif msg_type in (
-                    "StreamingApiMessageRunUpdate",
-                    "StreamingApiMessageTrace",
-                    "StreamingApiMessageStart",
-                    "StreamingApiMessageTerminal",
-                ):
-                    pass  # Non-element messages, skip
-
-                elif msg_type is None and "payload" in data:
-                    # Legacy fallback: old servers without type field
-                    elem = data["payload"]
-                    if isinstance(elem, dict):
-                        self._merge_element(elem, elements_by_id)
-
-        # Convert to list, preserving order
-        elements = list(elements_by_id.values())
-        result["elements"] = elements
+        keys = sorted(
+            elements_by_key,
+            key=lambda key: (
+                0,
+                element_positions[key],
+            )
+            if key in element_positions
+            else (1, element_orders[key]),
+        )
+        result["elements"] = [elements_by_key[key] for key in keys]
         return result
+
+    def _parse_jsonl_response(self, response_text: str) -> dict[str, Any]:
+        """Parse typed NDJSON, legacy JSONL, or concatenated JSON objects."""
+        return self._parse_stream_objects(self._decode_json_objects(response_text))
 
     @staticmethod
     def _merge_element(
-        elem: dict[str, Any], elements_by_id: dict[str, dict[str, Any]]
+        elem: dict[str, Any],
+        elements_by_id: dict[str, dict[str, Any]],
+        *,
+        key: str | None = None,
     ) -> None:
-        """Merge an element into the elements_by_id map, handling text updates."""
-        elem_id = elem.get("id")
-        if not elem_id:
-            return
-        if elem_id in elements_by_id and elem.get("type") in [
-            "TextElement",
-            "text",
-        ]:
-            existing = elements_by_id[elem_id]
-            for field in ["content", "text", "value"]:
-                if elem.get(field):
-                    existing[field] = elem[field]
-            existing.update(
-                {k: v for k, v in elem.items() if k not in ["content", "text", "value"]}
-            )
+        """Merge a full or partial element snapshot, including empty updates."""
+        resolved_key = key or (
+            f"id:{elem['id']}" if elem.get("id") else f"anonymous:{len(elements_by_id)}"
+        )
+        existing = elements_by_id.get(resolved_key)
+        if existing is None:
+            elements_by_id[resolved_key] = dict(elem)
         else:
-            elements_by_id[elem_id] = elem
+            existing.update(elem)
 
     def _attach_dataframes(
         self, thread_id: str, elements: list[dict[str, Any]]
@@ -571,8 +768,10 @@ class LouieClient:
                         f"{thread_id} for DfElement. Element: {elem}"
                     )
 
-    def _chat_singleshot(self, params: dict[str, Any]) -> Response:
-        """Call the batch chat endpoint and return a Response."""
+    def _chat_singleshot(
+        self, params: dict[str, Any], *, include_reasoning: bool = False
+    ) -> Response:
+        """Call the batch chat endpoint and return a metadata-preserving Response."""
 
         headers = self._get_headers()
         response = self._client.post(
@@ -584,23 +783,17 @@ class LouieClient:
         response.raise_for_status()
 
         payload = response.json()
-        dthread_id: str | None = None
-        elements: list[dict[str, Any]] = []
-
-        if isinstance(payload, list):
-            for item in payload:
-                if isinstance(item, dict):
-                    if dthread_id is None:
-                        dthread_id = item.get("dthread_id") or dthread_id
-                    payload_obj = item.get("payload")
-                    if isinstance(payload_obj, dict):
-                        elements.append(payload_obj)
-
-        if dthread_id is None:
-            dthread_id = ""
-
+        objects = payload if isinstance(payload, list) else [payload]
+        parsed = self._parse_stream_objects(objects)
+        dthread_id = parsed.get("dthread_id") or ""
+        elements = parsed.get("elements", [])
         self._attach_dataframes(dthread_id, elements)
-        return Response(thread_id=dthread_id, elements=elements)
+        return Response(
+            thread_id=dthread_id,
+            elements=elements,
+            stream_messages=parsed.get("stream_messages", []),
+            include_reasoning=include_reasoning,
+        )
 
     def create_thread(
         self,
@@ -610,6 +803,7 @@ class LouieClient:
         *,
         agent: str = "LouieAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: ShareMode = "Private",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         **override_kwargs: Any,
@@ -621,7 +815,9 @@ class LouieClient:
             folder: Optional folder path for the thread (server support required)
             initial_prompt: Optional first message to initialize thread
             agent: Agent to use for initial prompt (default: LouieAgent)
-            traces: Whether to include reasoning traces (default: False)
+            traces: Whether to request server trace events (default: False)
+            include_reasoning: Whether to include the agent's provisional reasoning text
+                (default: False).
             share_mode: Visibility mode for initial message
             table_ai_overrides: Structured Table AI overrides applied to initial prompt
             **override_kwargs: Legacy Table AI override keyword arguments forwarded to
@@ -646,6 +842,7 @@ class LouieClient:
                 name=name,
                 folder=folder,
                 traces=traces,
+                include_reasoning=include_reasoning,
                 share_mode=share_mode,
                 **add_kwargs,
             )
@@ -664,6 +861,7 @@ class LouieClient:
         name: str | None = None,
         folder: str | None = None,
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: ShareMode = "Private",
         user_agent: UserAgent = "API",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
@@ -679,7 +877,9 @@ class LouieClient:
             agent: Agent to use (default: LouieAgent)
             name: Optional thread name (applied only when creating a new thread)
             folder: Optional folder path (applied only when creating a new thread)
-            traces: Whether to include reasoning traces in response (default: False)
+            traces: Whether to request server trace events (default: False)
+            include_reasoning: Include the agent's provisional reasoning
+                text in addition to final response elements (default: False).
             share_mode: Visibility mode - "Private", "Organization", or "Public"
             user_agent: DataThread creation_user_agent — "API" or "Louie"
             table_ai_overrides: Structured overrides via dataclass or mapping.
@@ -701,6 +901,7 @@ class LouieClient:
             "agent": agent,
             # Convert bool to string for HTTP params
             "ignore_traces": str(not traces).lower(),
+            "include_reasoning": str(include_reasoning).lower(),
             "share_mode": share_mode,
             "user_agent": user_agent,
         }
@@ -725,7 +926,7 @@ class LouieClient:
         params.update(overrides)
 
         if use_batch or (use_batch is None and bool(overrides)):
-            return self._chat_singleshot(params)
+            return self._chat_singleshot(params, include_reasoning=include_reasoning)
 
         # Make streaming request with custom timeout handling
         response_text = ""
@@ -816,7 +1017,12 @@ class LouieClient:
         self._attach_dataframes(actual_thread_id, elements)
 
         # Return Response with all elements
-        return Response(thread_id=actual_thread_id, elements=elements)
+        return Response(
+            thread_id=actual_thread_id,
+            elements=elements,
+            stream_messages=result.get("stream_messages", []),
+            include_reasoning=include_reasoning,
+        )
 
     def __call__(
         self,
@@ -839,7 +1045,7 @@ class LouieClient:
         Args:
             prompt: Natural language query
             thread_id: Thread ID to use (None creates new thread)
-            traces: Whether to include reasoning traces
+            traces: Whether to request server trace events
             agent: Agent to use (default: LouieAgent)
             share_mode: Visibility mode - "Private", "Organization", or "Public"
             **kwargs: Additional keyword arguments forwarded to `add_cell`
@@ -990,6 +1196,7 @@ class LouieClient:
         format: str = "parquet",
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -1004,7 +1211,7 @@ class LouieClient:
             thread_id: Thread ID to continue conversation
             format: Serialization format (parquet, csv, json, jsonl, arrow)
             agent: AI agent to use
-            traces: Include reasoning traces
+            traces: Request server trace events
             share_mode: Visibility setting
             name: Optional thread name
             folder: Optional folder path for the thread (server support required)
@@ -1028,6 +1235,7 @@ class LouieClient:
             format=format,
             agent=agent,
             traces=traces,
+            include_reasoning=include_reasoning,
             share_mode=share_mode,
             name=name,
             folder=folder,
@@ -1043,6 +1251,7 @@ class LouieClient:
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -1055,7 +1264,7 @@ class LouieClient:
             image: Image to analyze (file path, bytes, file-like, or PIL Image)
             thread_id: Thread ID to continue conversation
             agent: AI agent to use
-            traces: Include reasoning traces
+            traces: Request server trace events
             share_mode: Visibility setting
             name: Optional thread name
             folder: Optional folder path for the thread (server support required)
@@ -1076,6 +1285,7 @@ class LouieClient:
             thread_id=thread_id,
             agent=agent,
             traces=traces,
+            include_reasoning=include_reasoning,
             share_mode=share_mode,
             name=name,
             folder=folder,
@@ -1090,6 +1300,7 @@ class LouieClient:
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -1103,7 +1314,7 @@ class LouieClient:
             file: File to analyze (file path, bytes, or file-like)
             thread_id: Thread ID to continue conversation
             agent: AI agent to use
-            traces: Include reasoning traces
+            traces: Request server trace events
             share_mode: Visibility setting
             name: Optional thread name
             folder: Optional folder path for the thread (server support required)
@@ -1125,6 +1336,7 @@ class LouieClient:
             thread_id=thread_id,
             agent=agent,
             traces=traces,
+            include_reasoning=include_reasoning,
             share_mode=share_mode,
             name=name,
             folder=folder,

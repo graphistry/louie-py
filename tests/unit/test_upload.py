@@ -166,6 +166,7 @@ class TestUploadClient:
         assert "/api/chat_upload/" in call_args[0][1]
         assert "data" in call_args[1]
         assert "files" in call_args[1]
+        assert call_args[1]["data"]["include_reasoning"] == "false"
 
 
 class TestLouieClientUpload:
@@ -196,6 +197,7 @@ class TestLouieClientUpload:
             format="csv",
             agent="UploadPassthroughAgent",
             traces=False,
+            include_reasoning=False,
             share_mode="Private",
             name=None,
             folder=None,

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Default-off `include_reasoning` support across client, Cursor, Jupyter, and all upload paths.
+- Final-safe `final_text*` and explicit `reasoning_text*` accessors on `Response`, Cursor, and history proxies.
+- Lossless `stream_messages`, run/phase/status/token, terminal, and returned `trace_events` accessors.
+
+### Changed
+- Streaming, singleshot, upload, and notebook paths now share typed/legacy/concatenated JSON accumulation with position-aware replacement.
+- Notebook displays label and collapse identifiable reasoning, show execution phase/status, and escape untrusted streamed HTML.
+- `traces` documentation now describes server trace events; provisional model reasoning uses `include_reasoning`.
+
+### Compatibility
+- Reasoning stays off by default. `Response.text` keeps its historical first-text fallback and Cursor keeps its latest-text fallback when the server has no explicit final-answer pointer.
+
 ## [0.8.1] - 2026-04-14
 
 ### Fixed

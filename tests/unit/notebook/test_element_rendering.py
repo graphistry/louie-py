@@ -131,3 +131,21 @@ class TestElementRendering:
 
         html = _render_response_html(response)
         assert "After empty" in html  # Should still render other elements
+
+    def test_graph_dataset_id_cannot_inject_iframe_attributes(self):
+        """Final renderer URL-encodes dataset IDs and escapes attributes."""
+        response = Response(
+            thread_id="D_test",
+            elements=[
+                {
+                    "type": "GraphElement",
+                    "dataset_id": 'x" onload="alert(1)',
+                }
+            ],
+        )
+
+        rendered = _render_response_html(response)
+
+        assert ' onload="' not in rendered
+        assert "%22+onload%3D%22alert%281%29" in rendered
+        assert 'rel="noopener noreferrer"' in rendered

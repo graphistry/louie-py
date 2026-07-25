@@ -8,10 +8,11 @@ import pandas as pd
 import pytest
 
 from louieai.globals import lui
+from louieai.notebook.cursor import Cursor
 
 # Skip if no credentials provided
-has_username = os.environ.get("GRAPHISTRY_USERNAME") is not None
-has_password = os.environ.get("GRAPHISTRY_PASSWORD") is not None
+has_username = bool(os.environ.get("GRAPHISTRY_USERNAME"))
+has_password = bool(os.environ.get("GRAPHISTRY_PASSWORD"))
 pytestmark = pytest.mark.skipif(
     not (has_username and has_password),
     reason="Integration tests require GRAPHISTRY_USERNAME and GRAPHISTRY_PASSWORD",
@@ -27,11 +28,11 @@ def output_dir():
 
 
 @pytest.fixture(autouse=True)
-def reset_lui():
-    """Reset lui singleton before each test."""
+def reset_lui(real_client):
+    """Bind the global proxy to the shared fail-closed client for each test."""
     import louieai.notebook
 
-    louieai.notebook._global_cursor = None
+    louieai.notebook._global_cursor = Cursor(client=real_client)
     yield
     # Cleanup after test
     louieai.notebook._global_cursor = None

@@ -45,6 +45,7 @@ class UploadClient:
         format: str = "parquet",
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -69,7 +70,9 @@ class UploadClient:
                 "jsonl", or "arrow". Parquet is fastest and preserves data types best.
             agent: AI agent to use. "UploadPassthroughAgent" (default) automatically
                 parses data without LLM. "UploadAgent" uses LLM for parsing.
-            traces: Whether to include reasoning traces in response (default: False)
+            traces: Whether to request server trace events (default: False)
+            include_reasoning: Include the agent's provisional reasoning
+                text in addition to final response elements (default: False).
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
             folder: Optional folder path for the thread (server support required)
@@ -120,6 +123,7 @@ class UploadClient:
             "query": prompt,
             "agent": agent,
             "ignore_traces": str(not traces).lower(),
+            "include_reasoning": str(include_reasoning).lower(),
             "share_mode": share_mode,
         }
 
@@ -221,7 +225,12 @@ class UploadClient:
             if used_fallback:
                 self._fallback_attach_dataframes(dthread_id, elements)
 
-        return Response(thread_id=dthread_id, elements=elements)
+        return Response(
+            thread_id=dthread_id,
+            elements=elements,
+            stream_messages=parsed.get("stream_messages", []),
+            include_reasoning=include_reasoning,
+        )
 
     def _serialize_dataframe(
         self, df: pd.DataFrame, format: str
@@ -332,6 +341,7 @@ class UploadClient:
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -355,7 +365,7 @@ class UploadClient:
                 new thread)
             agent: AI agent to use. "UploadPassthroughAgent" (default) for
                 direct analysis
-            traces: Whether to include reasoning traces in response (default: False)
+            traces: Whether to request server trace events (default: False)
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
             folder: Optional folder path for the thread (server support required)
@@ -390,6 +400,7 @@ class UploadClient:
             "query": prompt,
             "agent": agent,
             "ignore_traces": str(not traces).lower(),
+            "include_reasoning": str(include_reasoning).lower(),
             "share_mode": share_mode,
         }
 
@@ -471,7 +482,10 @@ class UploadClient:
         from ._client import Response
 
         return Response(
-            thread_id=parsed.get("dthread_id", ""), elements=parsed.get("elements", [])
+            thread_id=parsed.get("dthread_id", ""),
+            elements=parsed.get("elements", []),
+            stream_messages=parsed.get("stream_messages", []),
+            include_reasoning=include_reasoning,
         )
 
     def _serialize_image(
@@ -599,6 +613,7 @@ class UploadClient:
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -622,7 +637,7 @@ class UploadClient:
                 new thread)
             agent: AI agent to use. "UploadPassthroughAgent" (default) for
                 direct analysis
-            traces: Whether to include reasoning traces in response (default: False)
+            traces: Whether to request server trace events (default: False)
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
             folder: Optional folder path for the thread (server support required)
@@ -657,6 +672,7 @@ class UploadClient:
             "query": prompt,
             "agent": agent,
             "ignore_traces": str(not traces).lower(),
+            "include_reasoning": str(include_reasoning).lower(),
             "share_mode": share_mode,
         }
 
@@ -738,7 +754,10 @@ class UploadClient:
         from ._client import Response
 
         return Response(
-            thread_id=parsed.get("dthread_id", ""), elements=parsed.get("elements", [])
+            thread_id=parsed.get("dthread_id", ""),
+            elements=parsed.get("elements", []),
+            stream_messages=parsed.get("stream_messages", []),
+            include_reasoning=include_reasoning,
         )
 
     def _serialize_binary(

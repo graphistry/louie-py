@@ -1,5 +1,6 @@
 """Global cursor implementation for notebook-friendly API."""
 
+import html
 import logging
 from collections import deque
 from typing import Any
@@ -9,6 +10,8 @@ import pandas as pd
 from louieai._client import LouieClient, Response
 from louieai._tracing import generate_trace_id
 from louieai._types import ShareMode, UserAgent
+
+from ._html import graph_url
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +31,50 @@ def _render_response_html(response, client=None) -> str:
     html_parts = []
 
     try:
+        status = getattr(response, "status", None)
+        if isinstance(status, str) and status != "unknown":
+            html_parts.append(
+                "<div style=.font-size: 0.9em; margin-bottom: 8px;.>"
+                f"<b>Status:</b> {html.escape(status)}</div>"
+            )
+
+        terminal_error = getattr(response, "terminal_error", None)
+        if isinstance(terminal_error, str) and terminal_error:
+            html_parts.append(
+                "<div style=.color: #d73a49; margin-bottom: 8px;.>"
+                f"<b>Error:</b> {html.escape(terminal_error)}</div>"
+            )
+
+        phases = getattr(response, "phases", None)
+        if isinstance(phases, list) and phases:
+            html_parts.append("<details><summary><b>Execution phases</b></summary><ul>")
+            for phase in phases:
+                if not isinstance(phase, dict):
+                    continue
+                action = phase.get("action")
+                expression = (
+                    action.get("expression") if isinstance(action, dict) else None
+                )
+                label = (
+                    expression or phase.get("run_type") or phase.get("id") or "phase"
+                )
+                state = phase.get("state", "unknown")
+                html_parts.append(
+                    f"<li>{html.escape(str(label))}: {html.escape(str(state))}</li>"
+                )
+            html_parts.append("</ul></details>")
+
+        reasoning = getattr(response, "reasoning_elements", None)
+        reasoning_ids = (
+            {
+                str(element.get("id"))
+                for element in reasoning
+                if isinstance(element, dict) and element.get("id") is not None
+            }
+            if isinstance(reasoning, list)
+            else set()
+        )
+
         # Process all elements in order
         if hasattr(response, "elements") and response.elements:
             for elem in response.elements:
@@ -38,44 +85,33 @@ def _render_response_html(response, client=None) -> str:
 
                 # TextElement
                 if elem_type in ["TextElement", "text"]:
-                    # Handle both old and new field names
-                    content = (
+                    content_value = (
                         elem.get("content")
                         or elem.get("text", "")
                         or elem.get("value", "")
-                    ).strip()
+                    )
+                    content = str(content_value).strip()
                     if content:
-                        # Use IPython's Markdown renderer for consistency
+                        safe_content = html.escape(content, quote=False)
                         try:
+                            from IPython.core.formatters import HTMLFormatter
                             from IPython.display import Markdown
 
-                            md = Markdown(content)
-                            # Get the actual markdown-rendered HTML
-                            from IPython.core.formatters import HTMLFormatter
-
                             formatter = HTMLFormatter()
-                            html_content = formatter(md)
-                            if html_content:
-                                html_parts.append(html_content)
-                            else:
-                                # Fallback: basic markdown-like conversion
-                                import html
-
-                                escaped = html.escape(content)
-                                # Basic markdown-like formatting
-                                escaped = escaped.replace("\n\n", "</p><p>")
-                                escaped = escaped.replace("\n", "<br>")
-                                if escaped.startswith("## "):
-                                    escaped = f"<h2>{escaped[3:]}</h2>"
-                                elif escaped.startswith("# "):
-                                    escaped = f"<h1>{escaped[2:]}</h1>"
-                                html_parts.append(f"<div>{escaped}</div>")
+                            rendered = formatter(Markdown(safe_content))
+                            if not rendered:
+                                rendered = safe_content.replace("\n", "<br>")
                         except ImportError:
-                            # No IPython, use basic HTML
-                            import html
+                            rendered = safe_content.replace("\n", "<br>")
 
-                            escaped = html.escape(content).replace("\n", "<br>")
-                            html_parts.append(f"<div>{escaped}</div>")
+                        if str(elem.get("id")) in reasoning_ids:
+                            html_parts.append(
+                                "<details style='margin: 5px 0;'>"
+                                "<summary><b>Reasoning</b></summary>"
+                                f"<div>{rendered}</div></details>"
+                            )
+                        else:
+                            html_parts.append(f"<div>{rendered}</div>")
 
                 # DfElement
                 elif elem_type in ["DfElement", "df"] and "table" in elem:
@@ -91,7 +127,7 @@ def _render_response_html(response, client=None) -> str:
                     if text:
                         html_parts.append(
                             f"<div style='color: #666; font-family: monospace; "
-                            f"font-size: 0.9em;'>🐛 {text}</div>"
+                            f"font-size: 0.9em;'>🐛 {html.escape(str(text))}</div>"
                         )
 
                 # InfoLine
@@ -100,7 +136,7 @@ def _render_response_html(response, client=None) -> str:
                     if text:
                         html_parts.append(
                             f"<div style='color: #0066cc; font-family: monospace; "
-                            f"font-size: 0.9em;'>i {text}</div>"
+                            f"font-size: 0.9em;'>i {html.escape(str(text))}</div>"
                         )
 
                 # WarningLine
@@ -109,7 +145,7 @@ def _render_response_html(response, client=None) -> str:
                     if text:
                         html_parts.append(
                             f"<div style='color: #ff8800; font-family: monospace; "
-                            f"font-size: 0.9em;'>⚠️ {text}</div>"
+                            f"font-size: 0.9em;'>⚠️ {html.escape(str(text))}</div>"
                         )
 
                 # ErrorLine
@@ -118,7 +154,7 @@ def _render_response_html(response, client=None) -> str:
                     if text:
                         html_parts.append(
                             f"<div style='color: #cc0000; font-family: monospace; "
-                            f"font-size: 0.9em;'>❌ {text}</div>"
+                            f"font-size: 0.9em;'>❌ {html.escape(str(text))}</div>"
                         )
 
                 # ExceptionElement
@@ -126,16 +162,17 @@ def _render_response_html(response, client=None) -> str:
                     msg = elem.get("message", "Unknown error")
                     html_parts.append(
                         f"<div style='color: red; background: #ffe0e0; padding: 10px; "
-                        f"margin: 5px 0;'>⚠️ Error: {msg}</div>"
+                        f"margin: 5px 0;'>⚠️ Error: {html.escape(str(msg))}</div>"
                     )
 
                 # CodeElement
                 elif elem_type == "CodeElement":
                     code = elem.get("code", "") or elem.get("text", "")
                     if code:
+                        safe_code = html.escape(str(code), quote=False)
                         html_parts.append(
                             f"<pre style='background: #f5f5f5; padding: 10px; "
-                            f"border-radius: 5px;'><code>{code}</code></pre>"
+                            f"border-radius: 5px;'><code>{safe_code}</code></pre>"
                         )
 
                 # GraphElement
@@ -198,19 +235,18 @@ def _render_response_html(response, client=None) -> str:
                         except Exception:
                             pass  # Use default
 
-                    if dataset_id:
-                        # Create iframe for Graphistry visualization
-                        iframe_url = (
-                            f"{server_url}/graph/graph.html?dataset={dataset_id}"
-                        )
+                    iframe_url = graph_url(server_url, dataset_id)
+                    if iframe_url:
+                        safe_iframe_url = html.escape(iframe_url, quote=True)
                         html_parts.append(
                             f'<div style="margin: 10px 0;">'
-                            f'<iframe src="{iframe_url}" '
+                            f'<iframe src="{safe_iframe_url}" '
                             f'width="100%" height="600" '
                             f'style="border: 1px solid #ddd; border-radius: 5px;">'
                             f"</iframe>"
                             f'<div style="text-align: center; margin-top: 5px;">'
-                            f'<a href="{iframe_url}" target="_blank" '
+                            f'<a href="{safe_iframe_url}" target="_blank" '
+                            f'rel="noopener noreferrer" '
                             f'style="color: #0066cc; text-decoration: none;">'
                             f"🔗 Open graph in new tab</a>"
                             f"</div>"
@@ -232,8 +268,10 @@ def _render_response_html(response, client=None) -> str:
                         or str(elem.get("value", ""))
                     )
                     if text:
+                        safe_type = html.escape(str(elem_type))
                         html_parts.append(
-                            f"<div style='color: gray;'>[{elem_type}] {text}</div>"
+                            f"<div style='color: gray;'>[{safe_type}] "
+                            f"{html.escape(str(text))}</div>"
                         )
 
     except Exception:
@@ -250,6 +288,131 @@ class ResponseProxy:
 
     def __init__(self, response: Response | None):
         self._response = response
+
+    @property
+    def response(self) -> Response | None:
+        """Underlying raw response, if available."""
+        return self._response
+
+    def _list_property(self, name: str) -> list[Any]:
+        if not self._response:
+            return []
+        value = getattr(self._response, name, None)
+        return value if isinstance(value, list) else []
+
+    @property
+    def stream_messages(self) -> list[dict[str, Any]]:
+        """Ordered raw stream envelopes."""
+        return self._list_property("stream_messages")
+
+    @property
+    def run_updates(self) -> list[dict[str, Any]]:
+        """Ordered root and method run snapshots."""
+        return self._list_property("run_updates")
+
+    @property
+    def phase_updates(self) -> list[dict[str, Any]]:
+        """Ordered method-run phase snapshots."""
+        return self._list_property("phase_updates")
+
+    @property
+    def phases(self) -> list[dict[str, Any]]:
+        """Latest snapshot for each execution phase."""
+        return self._list_property("phases")
+
+    @property
+    def root_run(self) -> dict[str, Any] | None:
+        """Latest root-run snapshot."""
+        value = getattr(self._response, "root_run", None) if self._response else None
+        return value if isinstance(value, dict) else None
+
+    @property
+    def status(self) -> str:
+        """Normalized execution status."""
+        value = getattr(self._response, "status", None) if self._response else None
+        return value if isinstance(value, str) else "unknown"
+
+    @property
+    def token_flow(self) -> dict[str, Any] | None:
+        """Latest root-run token counters."""
+        value = getattr(self._response, "token_flow", None) if self._response else None
+        return value if isinstance(value, dict) else None
+
+    @property
+    def trace_events(self) -> list[Any]:
+        """Returned server trace payloads; distinct from the traces request bool."""
+        return self._list_property("trace_events")
+
+    @property
+    def terminal(self) -> dict[str, Any] | None:
+        """Final terminal stream envelope."""
+        value = getattr(self._response, "terminal", None) if self._response else None
+        return value if isinstance(value, dict) else None
+
+    @property
+    def terminal_error(self) -> str | None:
+        """Final terminal error message."""
+        value = (
+            getattr(self._response, "terminal_error", None) if self._response else None
+        )
+        return value if isinstance(value, str) else None
+
+    @property
+    def succeeded(self) -> bool | None:
+        """Final stream success flag."""
+        value = getattr(self._response, "succeeded", None) if self._response else None
+        return value if isinstance(value, bool) else None
+
+    @property
+    def reasoning_elements(self) -> list[dict[str, Any]]:
+        """Latest text snapshots classified as reasoning."""
+        return self._list_property("reasoning_elements")
+
+    @property
+    def reasoning_texts(self) -> list[str]:
+        """Reasoning text parts."""
+        return self._list_property("reasoning_texts")
+
+    @property
+    def reasoning_text(self) -> str | None:
+        """Joined reasoning text."""
+        value = (
+            getattr(self._response, "reasoning_text", None) if self._response else None
+        )
+        return value if isinstance(value, str) else None
+
+    @property
+    def final_text_elements(self) -> list[dict[str, Any]]:
+        """Non-reasoning text output elements."""
+        if not self._response:
+            return []
+        value = getattr(self._response, "final_text_elements", None)
+        if isinstance(value, list):
+            return value
+        value = getattr(self._response, "text_elements", None)
+        return value if isinstance(value, list) else []
+
+    @property
+    def final_texts(self) -> list[str]:
+        """Non-reasoning text outputs."""
+        if self._response:
+            value = getattr(self._response, "final_texts", None)
+            if isinstance(value, list):
+                return value
+        return [
+            elem.get("content") or elem.get("text", "") or elem.get("value", "")
+            for elem in self.final_text_elements
+        ]
+
+    @property
+    def final_text(self) -> str | None:
+        """Explicit final answer, with latest-text fallback for legacy responses."""
+        if self._response:
+            value = getattr(self._response, "final_text", None)
+            if isinstance(value, str) or value is None:
+                return value
+        texts = self.final_texts
+        return texts[-1] if texts else None
 
     @property
     def df(self) -> pd.DataFrame | None:
@@ -303,25 +466,13 @@ class ResponseProxy:
 
     @property
     def text(self) -> str | None:
-        """Primary text or None."""
-        texts = self.texts
-        return texts[-1] if texts else None
+        """Primary final-oriented text or None."""
+        return self.final_text
 
     @property
     def texts(self) -> list[str]:
-        """All text elements."""
-        if not self._response:
-            return []
-        if (
-            not hasattr(self._response, "text_elements")
-            or not self._response.text_elements
-        ):
-            return []
-        # Handle 'content', 'text', and 'value' keys for backward compatibility
-        return [
-            elem.get("content") or elem.get("text", "") or elem.get("value", "")
-            for elem in self._response.text_elements
-        ]
+        """All non-reasoning text outputs."""
+        return self.final_texts
 
     @property
     def g(self) -> dict[str, Any] | None:
@@ -349,31 +500,23 @@ class ResponseProxy:
 
         result = []
 
-        # If response has raw elements list, check for ExceptionElements
-        if hasattr(self._response, "elements") and self._response.elements:
-            for elem in self._response.elements:
-                if isinstance(elem, dict) and elem.get("type") == "ExceptionElement":
-                    result.append(
-                        {
-                            "type": "error",
-                            "value": elem.get("message", "Unknown error"),
-                            "error_type": elem.get("error_type"),
-                            "traceback": elem.get("traceback"),
-                        }
-                    )
+        for elem in self.errors:
+            result.append(
+                {
+                    "type": "error",
+                    "value": elem.get("message", "Unknown error"),
+                    "error_type": elem.get("error_type"),
+                    "traceback": elem.get("traceback"),
+                }
+            )
 
-        # Add text elements
-        if hasattr(self._response, "text_elements") and self._response.text_elements:
-            for elem in self._response.text_elements:
-                if isinstance(elem, dict):
-                    # Check 'content', 'text', and 'value' keys for backward
-                    # compatibility
-                    value = (
-                        elem.get("content")
-                        or elem.get("text", "")
-                        or elem.get("value", "")
-                    )
-                    result.append({"type": "text", "value": value})
+        for elem in self.final_text_elements:
+            value = elem.get("content") or elem.get("text", "") or elem.get("value", "")
+            result.append({"type": "text", "value": value})
+
+        for elem in self.reasoning_elements:
+            value = elem.get("content") or elem.get("text", "") or elem.get("value", "")
+            result.append({"type": "reasoning", "value": value})
 
         # Add dataframe elements
         if (
@@ -405,17 +548,25 @@ class ResponseProxy:
         """All error elements."""
         if not self._response:
             return []
+        response_errors = getattr(self._response, "errors", None)
+        if isinstance(response_errors, list):
+            return [elem for elem in response_errors if isinstance(elem, dict)]
         if not hasattr(self._response, "elements"):
             return []
         return [
             elem
             for elem in self._response.elements
-            if isinstance(elem, dict) and elem.get("type") == "ExceptionElement"
+            if isinstance(elem, dict)
+            and elem.get("type") in {"ExceptionElement", "exception", "error"}
         ]
 
     @property
     def has_errors(self) -> bool:
         """Check if response contains errors."""
+        if self._response and hasattr(self._response, "has_errors"):
+            value = self._response.has_errors
+            if isinstance(value, bool):
+                return value
         return len(self.errors) > 0
 
     def _extract_dataframes(self, response: Response) -> list[pd.DataFrame]:
@@ -505,8 +656,12 @@ class Cursor:
         >>> lui("Query", share_mode="Private")  # Override for this query
 
     Trace Control:
-        >>> lui.traces = True  # Enable reasoning traces
+        >>> lui.traces = True  # Request server trace events
         >>> lui("Complex query", traces=False)  # Override per query
+
+    Reasoning Control:
+        >>> lui.include_reasoning = True  # Include provisional reasoning
+        >>> lui("Query", include_reasoning=False)  # Override per query
 
     Data Access:
         - lui.df: Latest dataframe (or None)
@@ -514,7 +669,9 @@ class Cursor:
         - lui.g: Latest graph element (or None)
         - lui.gs: All graph elements from latest response
         - lui.text: Primary text response
-        - lui.texts: All text elements
+        - lui.texts: All non-reasoning text outputs
+        - lui.reasoning_text: Opt-in provisional reasoning
+        - lui.phases: Latest execution phase snapshots
         - lui.elements: All elements with type tags
     """
 
@@ -527,6 +684,8 @@ class Cursor:
         user_agent: UserAgent = "API",
         frontend_url: str | None = None,
         _parent_trace_id: str | None = None,
+        *,
+        include_reasoning: bool = False,
     ):
         """Initialize global cursor.
 
@@ -543,6 +702,8 @@ class Cursor:
                 pass e.g. ``frontend_url="http://localhost:5173"``.
             _parent_trace_id: Internal parameter for inheriting trace context from
                 parent cursor. Do not use directly.
+            include_reasoning: Include provisional reasoning by default for this
+                Cursor. Can be overridden per query.
         """
         # Validate share_mode
         valid_modes = {"Private", "Organization", "Public"}
@@ -618,6 +779,7 @@ class Cursor:
         self._history: deque[Response] = deque(maxlen=100)
         self._current_thread: str | None = None
         self._traces: bool = False
+        self._include_reasoning: bool = include_reasoning
         self._share_mode: ShareMode = share_mode
         self._name: str | None = name
         self._folder: str | None = folder
@@ -633,6 +795,7 @@ class Cursor:
         df: pd.DataFrame | None = None,
         *,
         traces: bool | None = None,
+        include_reasoning: bool | None = None,
         share_mode: ShareMode | None = None,
         **kwargs: Any,
     ) -> "Cursor":
@@ -646,7 +809,8 @@ class Cursor:
         Args:
             prompt: Natural language query string, or DataFrame if using reversed syntax
             df: Optional pandas DataFrame to upload and analyze with the query
-            traces: Override session trace setting for this query (shows AI reasoning)
+            traces: Override whether server trace events are requested.
+            include_reasoning: Override whether provisional reasoning text is returned.
             share_mode: Override default visibility for this query:
                 - "Private": Only you can see it
                 - "Organization": Visible to your organization
@@ -801,8 +965,13 @@ class Cursor:
                     "..." if len(actual_prompt) > 50 else ""
                 )
 
-        # Determine trace setting
+        # Determine trace and reasoning settings
         use_traces = traces if traces is not None else self._traces
+        use_reasoning = (
+            include_reasoning
+            if include_reasoning is not None
+            else self._include_reasoning
+        )
 
         # Determine share_mode setting
         use_share_mode = share_mode if share_mode is not None else self._share_mode
@@ -830,6 +999,7 @@ class Cursor:
                     thread_id=thread_id,
                     agent=agent,
                     traces=use_traces,
+                    include_reasoning=use_reasoning,
                     share_mode=use_share_mode,
                     name=self._name,
                     folder=self._folder,
@@ -845,6 +1015,7 @@ class Cursor:
                     thread_id=thread_id,
                     agent=agent,
                     traces=use_traces,
+                    include_reasoning=use_reasoning,
                     share_mode=use_share_mode,
                     name=self._name,
                     folder=self._folder,
@@ -858,6 +1029,7 @@ class Cursor:
                     thread_id=thread_id,
                     agent=agent,
                     traces=use_traces,
+                    include_reasoning=use_reasoning,
                     share_mode=use_share_mode,
                     name=self._name,
                     folder=self._folder,
@@ -874,6 +1046,7 @@ class Cursor:
                     prompt=actual_prompt,
                     agent=agent,
                     traces=use_traces,
+                    include_reasoning=use_reasoning,
                     share_mode=use_share_mode,
                     user_agent=self._user_agent,
                     name=self._name,
@@ -885,7 +1058,10 @@ class Cursor:
                 from .._client import Response
 
                 response = Response(
-                    thread_id=result["dthread_id"], elements=result["elements"]
+                    thread_id=result["dthread_id"],
+                    elements=result["elements"],
+                    stream_messages=result.get("stream_messages", []),
+                    include_reasoning=use_reasoning,
                 )
             else:
                 # Non-Jupyter or updating existing display
@@ -896,6 +1072,7 @@ class Cursor:
                     name=self._name,
                     folder=self._folder,
                     traces=use_traces,
+                    include_reasoning=use_reasoning,
                     share_mode=use_share_mode,
                     user_agent=self._user_agent,
                     session_trace_id=self._trace_id,
@@ -930,13 +1107,12 @@ class Cursor:
         return ""
 
     def _in_jupyter(self) -> bool:
-        """Check if running in Jupyter environment."""
+        """Check for an active IPython shell, not merely an imported module."""
         try:
-            # Check for IPython without importing it
-            import sys
+            from IPython.core.getipython import get_ipython
 
-            return "IPython" in sys.modules
-        except Exception:
+            return get_ipython() is not None
+        except (ImportError, AttributeError):
             return False
 
     def _display(self, response: Response) -> None:
@@ -963,13 +1139,23 @@ class Cursor:
 
     @property
     def traces(self) -> bool:
-        """Get trace setting for this session."""
+        """Get whether server trace events are requested for this session."""
         return self._traces
 
     @traces.setter
     def traces(self, value: bool) -> None:
-        """Set trace setting for this session."""
+        """Set whether server trace events are requested for this session."""
         self._traces = value
+
+    @property
+    def include_reasoning(self) -> bool:
+        """Get whether provisional reasoning is requested for this session."""
+        return self._include_reasoning
+
+    @include_reasoning.setter
+    def include_reasoning(self, value: bool) -> None:
+        """Set whether provisional reasoning is requested for this session."""
+        self._include_reasoning = value
 
     @property
     def thread_id(self) -> str | None:
@@ -1005,6 +1191,96 @@ class Cursor:
         if "localhost" in server or "127.0.0.1" in server:
             return f"louie://n/{self._current_thread}"
         return f"{server.rstrip('/')}/?dthread={self._current_thread}"
+
+    @property
+    def response(self) -> Response | None:
+        """Latest raw Response, including streaming metadata."""
+        return self._history[-1] if self._history else None
+
+    @property
+    def stream_messages(self) -> list[dict[str, Any]]:
+        """Ordered raw stream envelopes from the latest response."""
+        return ResponseProxy(self.response).stream_messages
+
+    @property
+    def run_updates(self) -> list[dict[str, Any]]:
+        """Ordered run snapshots from the latest response."""
+        return ResponseProxy(self.response).run_updates
+
+    @property
+    def phase_updates(self) -> list[dict[str, Any]]:
+        """Ordered method-run phase snapshots from the latest response."""
+        return ResponseProxy(self.response).phase_updates
+
+    @property
+    def phases(self) -> list[dict[str, Any]]:
+        """Latest snapshot for each execution phase."""
+        return ResponseProxy(self.response).phases
+
+    @property
+    def root_run(self) -> dict[str, Any] | None:
+        """Latest root-run snapshot."""
+        return ResponseProxy(self.response).root_run
+
+    @property
+    def status(self) -> str:
+        """Normalized execution status for the latest response."""
+        return ResponseProxy(self.response).status
+
+    @property
+    def token_flow(self) -> dict[str, Any] | None:
+        """Latest root-run token counters."""
+        return ResponseProxy(self.response).token_flow
+
+    @property
+    def trace_events(self) -> list[Any]:
+        """Returned trace events; distinct from the traces request bool."""
+        return ResponseProxy(self.response).trace_events
+
+    @property
+    def terminal(self) -> dict[str, Any] | None:
+        """Final terminal stream envelope."""
+        return ResponseProxy(self.response).terminal
+
+    @property
+    def terminal_error(self) -> str | None:
+        """Final terminal error message."""
+        return ResponseProxy(self.response).terminal_error
+
+    @property
+    def succeeded(self) -> bool | None:
+        """Final stream success flag."""
+        return ResponseProxy(self.response).succeeded
+
+    @property
+    def reasoning_elements(self) -> list[dict[str, Any]]:
+        """Latest text snapshots classified as reasoning."""
+        return ResponseProxy(self.response).reasoning_elements
+
+    @property
+    def reasoning_texts(self) -> list[str]:
+        """Reasoning text parts."""
+        return ResponseProxy(self.response).reasoning_texts
+
+    @property
+    def reasoning_text(self) -> str | None:
+        """Joined reasoning text."""
+        return ResponseProxy(self.response).reasoning_text
+
+    @property
+    def final_text_elements(self) -> list[dict[str, Any]]:
+        """Non-reasoning text output elements."""
+        return ResponseProxy(self.response).final_text_elements
+
+    @property
+    def final_texts(self) -> list[str]:
+        """Non-reasoning text outputs."""
+        return ResponseProxy(self.response).final_texts
+
+    @property
+    def final_text(self) -> str | None:
+        """Explicit final answer, with latest-text fallback for legacy responses."""
+        return ResponseProxy(self.response).final_text
 
     @property
     def df(self) -> pd.DataFrame | None:
@@ -1054,22 +1330,13 @@ class Cursor:
 
     @property
     def text(self) -> str | None:
-        """Primary text or None."""
-        texts = self.texts
-        return texts[-1] if texts else None
+        """Primary final-oriented text or None."""
+        return ResponseProxy(self.response).text
 
     @property
     def texts(self) -> list[str]:
-        """All text elements."""
-        if not self._history:
-            return []
-        latest = self._history[-1]
-        if not hasattr(latest, "text_elements") or not latest.text_elements:
-            return []
-        # Handle both 'content' and 'text' keys for backward compatibility
-        return [
-            elem.get("content") or elem.get("text", "") for elem in latest.text_elements
-        ]
+        """All non-reasoning text outputs from the latest response."""
+        return ResponseProxy(self.response).texts
 
     @property
     def g(self) -> dict[str, Any] | None:
@@ -1121,7 +1388,7 @@ class Cursor:
     @property
     def has_errors(self) -> bool:
         """Check if latest response contains errors."""
-        return len(self.errors) > 0
+        return ResponseProxy(self.response).has_errors
 
     def _is_image_input(self, obj: Any) -> bool:
         """Check if object is an image input.
@@ -1275,8 +1542,11 @@ class Cursor:
         history_count = len(self._history)
         status_parts.append(f"History: {history_count} responses")
 
-        # Traces info
+        # Request controls
         status_parts.append(f"Traces: {'Enabled' if self._traces else 'Disabled'}")
+        status_parts.append(
+            f"Reasoning: {'Enabled' if self._include_reasoning else 'Disabled'}"
+        )
 
         # Latest data info
         if self._history:
@@ -1362,13 +1632,25 @@ class Cursor:
         if self._traces:
             html_parts.append(
                 "<p style='margin: 5px 0; font-size: 0.9em;'>"
-                "🔍 <b>Traces:</b> Enabled (showing AI reasoning)</p>"
+                "🔍 <b>Traces:</b> Enabled (requesting server trace events)</p>"
             )
         else:
             html_parts.append(
                 "<p style='margin: 5px 0; font-size: 0.9em;'>"
                 "🔍 <b>Traces:</b> Disabled "
-                "(use <code>lui.traces = True</code> to enable)</p>"
+                "(use <code>lui.traces = True</code> to request events)</p>"
+            )
+
+        if self._include_reasoning:
+            html_parts.append(
+                "<p style='margin: 5px 0; font-size: 0.9em;'>"
+                "🧠 <b>Reasoning:</b> Included for this session</p>"
+            )
+        else:
+            html_parts.append(
+                "<p style='margin: 5px 0; font-size: 0.9em;'>"
+                "🧠 <b>Reasoning:</b> Final answer only "
+                "(use <code>lui.include_reasoning = True</code> to opt in)</p>"
             )
 
         # Latest data
@@ -1382,13 +1664,23 @@ class Cursor:
                 html_parts.append("<ul style='margin: 5px 0; color: #d73a49;'>")
                 for error in proxy.errors[:3]:  # Show first 3 errors
                     msg = error.get("message", "Unknown error")
-                    html_parts.append(f"<li>{msg}</li>")
+                    html_parts.append(f"<li>{html.escape(str(msg))}</li>")
                 if len(proxy.errors) > 3:
                     html_parts.append(
                         f"<li>... and {len(proxy.errors) - 3} more errors</li>"
                     )
+                if not proxy.errors and proxy.terminal_error:
+                    html_parts.append(f"<li>{html.escape(proxy.terminal_error)}</li>")
                 html_parts.append("</ul>")
-                html_parts.append("<p>Access errors with <code>lui.errors</code></p>")
+                if proxy.errors:
+                    html_parts.append(
+                        "<p>Access errors with <code>lui.errors</code></p>"
+                    )
+                else:
+                    html_parts.append(
+                        "<p>Access the stream error with "
+                        "<code>lui.terminal_error</code></p>"
+                    )
             else:
                 html_parts.append("<p><b>Latest Response:</b></p>")
                 html_parts.append("<ul style='margin: 5px 0;'>")
@@ -1442,9 +1734,12 @@ class Cursor:
         html_parts.append("all_dfs = lui.dfs    # All dataframes\n\n")
         html_parts.append("# History\n")
         html_parts.append("lui[-1].df           # Previous response's dataframe\n\n")
-        html_parts.append("# Traces (AI reasoning)\n")
-        html_parts.append("lui.traces = True    # Enable for session\n")
-        html_parts.append("lui('query', traces=True)  # Enable for one query")
+        html_parts.append("# Server trace events\n")
+        html_parts.append("lui.traces = True    # Request for session\n")
+        html_parts.append("events = lui.trace_events\n\n")
+        html_parts.append("# Provisional reasoning (opt in)\n")
+        html_parts.append("lui.include_reasoning = True\n")
+        html_parts.append("reasoning = lui.reasoning_text")
         html_parts.append("</pre>")
         html_parts.append("</details>")
 
@@ -1518,6 +1813,7 @@ class Cursor:
         return Cursor(
             client=self._client,  # Pass entire authenticated client instance
             share_mode=share_mode,
+            include_reasoning=getattr(self, "_include_reasoning", False),
             name=name,
             folder=folder,
             _parent_trace_id=self._trace_id,  # Share session trace for correlation

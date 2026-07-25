@@ -69,14 +69,14 @@ class TestArrowDataFrameIntegration:
 
         with patch("louieai._client.httpx.Client") as mock_httpx:
             # Setup streaming mock
-            mock_stream_cm = Mock()
+            mock_stream_cm = MagicMock()
             mock_stream_cm.__enter__ = Mock(return_value=mock_stream_response)
             mock_stream_cm.__exit__ = Mock(return_value=None)
 
-            mock_httpx_instance = Mock()
+            mock_httpx_instance = MagicMock()
             mock_httpx_instance.stream.return_value = mock_stream_cm
             mock_httpx_instance.get.return_value = arrow_response
-            mock_httpx.return_value.__enter__.return_value = mock_httpx_instance
+            mock_httpx.return_value = mock_httpx_instance
 
             # Patch the client's _client attribute
             with patch.object(lui._client, "_client", mock_httpx_instance):
@@ -130,15 +130,15 @@ class TestArrowDataFrameIntegration:
 
         with patch("louieai._client.httpx.Client") as mock_httpx:
             # Setup streaming mock
-            mock_stream_cm = Mock()
+            mock_stream_cm = MagicMock()
             mock_stream_cm.__enter__ = Mock(return_value=mock_stream_response)
             mock_stream_cm.__exit__ = Mock(return_value=None)
 
-            mock_httpx_instance = Mock()
+            mock_httpx_instance = MagicMock()
             mock_httpx_instance.stream.return_value = mock_stream_cm
             # Return different responses for each df_id
             mock_httpx_instance.get.side_effect = [arrow_response1, arrow_response2]
-            mock_httpx.return_value.__enter__.return_value = mock_httpx_instance
+            mock_httpx.return_value = mock_httpx_instance
 
             # Patch the client's _client attribute
             with patch.object(lui._client, "_client", mock_httpx_instance):
@@ -179,15 +179,15 @@ class TestArrowDataFrameIntegration:
 
         with patch("louieai._client.httpx.Client") as mock_httpx:
             # Setup streaming mock
-            mock_stream_cm = Mock()
+            mock_stream_cm = MagicMock()
             mock_stream_cm.__enter__ = Mock(return_value=mock_stream_response)
             mock_stream_cm.__exit__ = Mock(return_value=None)
 
-            mock_httpx_instance = Mock()
+            mock_httpx_instance = MagicMock()
             mock_httpx_instance.stream.return_value = mock_stream_cm
             # Make Arrow fetch fail
             mock_httpx_instance.get.side_effect = Exception("Network error")
-            mock_httpx.return_value.__enter__.return_value = mock_httpx_instance
+            mock_httpx.return_value = mock_httpx_instance
 
             # Patch the client's _client attribute
             with (
@@ -231,14 +231,14 @@ class TestArrowDataFrameIntegration:
         lui = louie(graphistry_client=MagicMock())
 
         with patch("louieai._client.httpx.Client") as mock_httpx:
-            mock_stream_cm = Mock()
+            mock_stream_cm = MagicMock()
             mock_stream_cm.__enter__ = Mock(return_value=mock_stream_response)
             mock_stream_cm.__exit__ = Mock(return_value=None)
 
-            mock_httpx_instance = Mock()
+            mock_httpx_instance = MagicMock()
             mock_httpx_instance.stream.return_value = mock_stream_cm
             mock_httpx_instance.get.return_value = arrow_response
-            mock_httpx.return_value.__enter__.return_value = mock_httpx_instance
+            mock_httpx.return_value = mock_httpx_instance
 
             with patch.object(lui._client, "_client", mock_httpx_instance):
                 lui("Show data with block_id")
@@ -256,30 +256,6 @@ class TestArrowDataFrameIntegration:
 @pytest.mark.integration
 class TestArrowDataFrameRealIntegration:
     """Integration tests with real Louie instance (requires credentials)."""
-
-    @pytest.fixture
-    def real_client(self):
-        """Create a real Louie client if credentials are available."""
-        from ..utils import load_test_credentials
-
-        creds = load_test_credentials()
-        if not creds:
-            pytest.skip("Test credentials not available")
-
-        import graphistry
-
-        graphistry_client = graphistry.register(
-            api=creds["api_version"],
-            server=creds["server"],
-            username=creds["username"],
-            password=creds["password"],
-        )
-
-        from louieai._client import LouieClient
-
-        return LouieClient(
-            server_url="https://louie.example.com", graphistry_client=graphistry_client
-        )
 
     def test_real_arrow_dataframe_fetch(self, real_client):
         """Test fetching real dataframe via Arrow API."""

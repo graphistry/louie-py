@@ -27,6 +27,28 @@ class TestCursor:
         cursor = Cursor(client=mock_client)
         assert cursor._client is mock_client
 
+    def test_legacy_positional_init_preserves_name_and_configuration(self):
+        """New keyword options must not shift historical positional slots."""
+        mock_client = Mock()
+        cursor = Cursor(
+            mock_client,
+            "Organization",
+            "Legacy name",
+            "Legacy folder",
+            "Louie",
+            "https://louie.example",
+            "legacy-trace-id",
+        )
+
+        assert cursor._client is mock_client
+        assert cursor._share_mode == "Organization"
+        assert cursor._name == "Legacy name"
+        assert cursor._folder == "Legacy folder"
+        assert cursor._user_agent == "Louie"
+        assert cursor._frontend_url == "https://louie.example"
+        assert cursor._trace_id == "legacy-trace-id"
+        assert cursor.include_reasoning is False
+
     def test_call_creates_thread_on_first_use(self):
         """Test thread creation on first query."""
         mock_client = Mock()
@@ -195,24 +217,14 @@ class TestCursor:
         assert "Query failed" in str(mock_logger.error.call_args)
 
     def test_jupyter_detection(self):
-        """Test Jupyter environment detection."""
+        """Detection requires an active shell, not an imported IPython module."""
         cursor = Cursor()
 
-        # Our implementation checks sys.modules
-        import sys
+        with patch("IPython.core.getipython.get_ipython", return_value=None):
+            assert cursor._in_jupyter() is False
 
-        # Test without IPython
-        if "IPython" in sys.modules:
-            del sys.modules["IPython"]
-        assert cursor._in_jupyter() is False
-
-        # Test with IPython
-        sys.modules["IPython"] = Mock()
-        assert cursor._in_jupyter() is True
-
-        # Clean up
-        if "IPython" in sys.modules:
-            del sys.modules["IPython"]
+        with patch("IPython.core.getipython.get_ipython", return_value=Mock()):
+            assert cursor._in_jupyter() is True
 
     def test_no_display_outside_jupyter(self):
         """Test display is skipped outside Jupyter."""

@@ -22,21 +22,6 @@ from unit.test_documentation import extract_python_blocks
 class TestDocumentationIntegration:
     """Test documentation examples against real Louie API."""
 
-    @pytest.fixture
-    def real_client(self, test_credentials):
-        """Create real LouieClient with test credentials."""
-        # Register with Graphistry
-        graphistry.register(
-            api=test_credentials.get("api_version", 3),
-            server=test_credentials["server"],
-            username=test_credentials["username"],
-            password=test_credentials["password"],
-        )
-
-        # Create Louie client
-        louie_server = test_credentials.get("louie_server", "https://louie.example.com")
-        return LouieClient(server_url=louie_server)
-
     def _should_test_code(self, code: str) -> bool:
         """Determine if code block should be tested in integration."""
         # Skip shell commands and setup code
