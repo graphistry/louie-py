@@ -7,6 +7,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from tests.utils import INTEGRATION_MODES, get_test_mode
+
 # Python version check
 MIN_PYTHON_VERSION = (3, 10)
 CURRENT_PYTHON_VERSION = sys.version_info[:2]
@@ -53,16 +55,14 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow running")
 
 
-# Test mode detection
-def get_test_mode() -> str:
-    """Get the current test mode from environment."""
-    return os.environ.get("LOUIE_TEST_MODE", "unit").lower()
+# Test mode detection — single source of truth lives in tests/utils.py so this
+# and the .env gate cannot drift (they previously disagreed about `all`).
 
 
 def should_run_integration_tests() -> bool:
     """Check if integration tests should run."""
     # Check explicit test mode
-    if get_test_mode() == "integration":
+    if get_test_mode() in INTEGRATION_MODES:
         return True
 
     # Check if credentials are available
@@ -102,23 +102,43 @@ def test_credentials():
 def real_client(test_credentials):
     """Create a real LouieClient for integration tests."""
     if not test_credentials:
-        pytest.skip("No test credentials available")
+        pytest.skip(
+            "No test credentials available "
+            "(set LOUIE_TEST_MODE=integration to read .env)"
+        )
+
+    from urllib.parse import urlsplit
+
+    louie_server = (
+        os.getenv("LOUIE_SERVER")
+        or os.getenv("LOUIE_SERVER_URL")
+        or os.getenv("LOUIE_URL")
+    )
+    if not louie_server:
+        pytest.skip("LOUIE_SERVER is required for credentialed integration tests")
+    if "://" not in louie_server:
+        louie_server = f"https://{louie_server}"
+
+    parsed_server = urlsplit(louie_server)
+    is_local = parsed_server.hostname in {"localhost", "127.0.0.1", "::1"}
+    if not parsed_server.hostname or (parsed_server.scheme != "https" and not is_local):
+        raise ValueError(
+            "LOUIE_SERVER must use HTTPS except for an explicit localhost endpoint"
+        )
 
     import graphistry
 
     from louieai._client import LouieClient
 
-    # Register with Graphistry
-    graphistry.register(
+    # Authenticate only after the target Louie endpoint has passed validation.
+    graphistry_client = graphistry.register(
         api=test_credentials.get("api_version", 3),
         server=test_credentials["server"],
         username=test_credentials["username"],
         password=test_credentials["password"],
     )
-
-    # Create Louie client
-    louie_server = test_credentials.get("louie_server", "https://louie-dev.grph.xyz")
-    return LouieClient(server_url=louie_server)
+    # Never copy credentials or tokens into test output.
+    return LouieClient(server_url=louie_server, graphistry_client=graphistry_client)
 
 
 # Test data fixtures

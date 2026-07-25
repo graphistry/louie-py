@@ -37,7 +37,9 @@ This guide covers the technical setup and development workflow for contributors 
 
 ### Environment Variables
 
-For integration testing, create a `.env` file:
+For integration testing, create a `.env` file. Note that `.env` is only
+read when `LOUIE_TEST_MODE=integration` (or `all`) — see
+[docs/developer/testing.md](docs/developer/testing.md):
 
 ```bash
 GRAPHISTRY_USERNAME=your_username

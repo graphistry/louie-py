@@ -41,14 +41,14 @@ class TestThreadProperties:
             ("https://den.louie.ai/", "abc123", "https://den.louie.ai/?dthread=abc123"),
             # Dev server
             (
-                "https://louie-dev.grph.xyz",
+                "https://louie.example.com",
                 "xyz789",
-                "https://louie-dev.grph.xyz/?dthread=xyz789",
+                "https://louie.example.com/?dthread=xyz789",
             ),
             (
-                "https://louie-dev.grph.xyz/",
+                "https://louie.example.com/",
                 "xyz789",
-                "https://louie-dev.grph.xyz/?dthread=xyz789",
+                "https://louie.example.com/?dthread=xyz789",
             ),
             # Custom/enterprise servers
             (

@@ -24,17 +24,21 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dependencies
-        run: |
-          uv venv --python python3.12
-          uv pip install -e ".[dev]"
+        # Lockfile-pinned: lint/format/type results must be reproducible.
+        # `uv pip install -e ".[dev]"` ignores uv.lock and resolves floors
+        # (ruff>=0.12.0) to whatever is newest, so CI silently drifted to
+        # ruff 0.16 / mypy 2.3 while uv.lock pins 0.12.5 / 1.17.0.
+        # --locked (not --frozen) so a lockfile that has drifted from
+        # pyproject.toml fails the build instead of installing a stale set.
+        run: uv sync --locked --all-extras
       - name: Secret Detection
         run: ./scripts/ci/secret-detection.sh
       - name: Lint (ruff)
-        run: uv run ruff check .
+        run: uv run --locked ruff check .
       - name: Format (ruff)
-        run: uv run ruff format --check .
+        run: uv run --locked ruff format --check .
       - name: Type Check (mypy)
-        run: uv run mypy .
+        run: uv run --locked mypy .
 
   # Stage 2: Light smoke test (quick test run before full matrix)
   light-smoke-test:
@@ -159,7 +163,7 @@ jobs:
         run: |
           # Only run if credentials are configured
           if [ -n "$GRAPHISTRY_USERNAME" ]; then
-            uv run pytest tests/integration/ -v --cov=louieai --cov-report=xml
+            uv run --locked pytest tests/integration/ -v --cov=louieai --cov-report=xml
           else
             echo "⚠️  Skipping integration tests - no credentials configured"
           fi
@@ -187,17 +191,19 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dependencies
-        run: |
-          uv venv --python python3.12
-          uv pip install -e ".[dev,docs]"
+        # Lockfile-pinned: `mkdocs build --strict` is a determinism gate, so a
+        # floating mkdocs/plugin version must not change pass/fail. See the
+        # matching note in quality-checks.
+        run: uv sync --locked --all-extras
       - name: Test documentation examples
         run: |
-          uv run pytest tests/unit/test_documentation.py -v
+          uv run --locked pytest tests/unit/test_documentation.py -v
       - name: Validate ReadTheDocs config
         run: |
           curl -sSL https://raw.githubusercontent.com/readthedocs/readthedocs.org/main/readthedocs/rtd_tests/fixtures/spec/v2/schema.json -o rtd-schema.json
-          uv pip install jsonschema pyyaml
-          uv run python -c "
+          # jsonschema and pyyaml already come from `uv sync --all-extras`; a
+          # bare `uv pip install` here would perturb the pinned environment.
+          uv run --locked python -c "
           import yaml, json, jsonschema
           with open('.readthedocs.yml') as f:
               config = yaml.safe_load(f)
@@ -207,7 +213,7 @@ jobs:
           print('✅ ReadTheDocs config is valid')
           "
       - name: Build documentation
-        run: uv run mkdocs build --strict
+        run: uv run --locked mkdocs build --strict
       - name: Verify logo included
         run: |
           test -f site/assets/louie-logo.png || (echo "❌ Logo not found in built docs" && exit 1)

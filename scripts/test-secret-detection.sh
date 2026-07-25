@@ -3,7 +3,7 @@
 # This script creates temporary test files to verify secret detection works correctly
 # Usage: ./scripts/test-secret-detection.sh
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -12,137 +12,164 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
+
 echo -e "${BLUE}🔬 Testing Secret Detection System${NC}"
 echo "========================================"
 
 # Create a temporary directory for testing
 TEST_DIR=$(mktemp -d -t secret-test-XXXXXX)
-trap "rm -rf $TEST_DIR" EXIT
+trap 'rm -rf "$TEST_DIR"' EXIT
 
 echo -e "${YELLOW}📁 Test directory: $TEST_DIR${NC}"
 echo ""
 
-# Function to run a test
+PASSED=0
+FAILED=0
+
+# NOTE: `((PASSED++))` returns a non-zero status when the variable is 0, which
+# under `set -e` aborted this script and made the first passing test increment
+# FAILED via the `||` branch. Always use the assignment form below.
+pass() {
+    PASSED=$((PASSED + 1))
+    echo -e "${GREEN}  ✅ PASS: $1${NC}"
+}
+
+fail() {
+    FAILED=$((FAILED + 1))
+    echo -e "${RED}  ❌ FAIL: $1${NC}"
+}
+
+# Run detect-secrets over a single file.
+#
+# NOTE: detect-secrets only reports files located under the current working
+# directory. The previous version scanned an absolute path in /tmp while cd'ed
+# to the repo root, so every scan came back empty and all five "unsafe"
+# fixtures silently looked undetected. Scan from inside TEST_DIR instead.
+# NOTE: `--frozen` is required. A bare `uv run` re-resolves and rewrites
+# uv.lock, silently dropping its `[options] exclude-newer` pin — that is the
+# source of the "incidental uv.lock delta" that keeps reappearing in this repo.
+detect_secrets_finds() {
+    local relative_file="$1"
+    (
+        cd "$TEST_DIR"
+        uv run --frozen --project "$REPO_ROOT" detect-secrets scan "$relative_file" \
+            2>/dev/null
+    ) | python3 -c 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("results") else 1)'
+}
+
+# Run a detect-secrets expectation test.
 run_test() {
     local test_name="$1"
-    local file_path="$2"
-    local content="$3"
-    local should_detect="$4"  # "yes" or "no"
-    
+    local content="$2"
+    local should_detect="$3" # "yes" or "no"
+
     echo -e "${BLUE}Test: $test_name${NC}"
-    echo "$content" > "$file_path"
-    
-    # Stage the file for pre-commit test
-    cd "$(dirname "$0")/.."
-    cp "$file_path" "$TEST_DIR/test_file.py"
-    
-    # Run detection
-    if uv run detect-secrets scan "$TEST_DIR/test_file.py" 2>/dev/null | grep -q "\"$TEST_DIR/test_file.py\""; then
+    printf '%s\n' "$content" > "$TEST_DIR/test_file.py"
+
+    local detected="no"
+    if detect_secrets_finds "test_file.py"; then
         detected="yes"
-    else
-        detected="no"
     fi
-    
+
     if [ "$detected" = "$should_detect" ]; then
-        echo -e "${GREEN}  ✅ PASS: Detection result as expected ($detected)${NC}"
-        return 0
+        pass "Detection result as expected ($detected)"
     else
-        echo -e "${RED}  ❌ FAIL: Expected detection=$should_detect, got=$detected${NC}"
-        echo "  Content: $content"
-        return 1
+        fail "Expected detection=$should_detect, got=$detected"
     fi
 }
 
-# Test counter
-PASSED=0
-FAILED=0
+# Run a check_credential_literals.py expectation test.
+run_credential_test() {
+    local test_name="$1"
+    local content="$2"
+    local should_reject="$3" # "yes" or "no"
+
+    echo -e "${BLUE}Test: $test_name${NC}"
+    printf '%s\n' "$content" > "$TEST_DIR/cred_file.py"
+
+    local rejected="no"
+    local output
+    if ! output=$(python3 scripts/ci/check_credential_literals.py "$TEST_DIR/cred_file.py" 2>&1); then
+        rejected="yes"
+    fi
+
+    if [ "$rejected" != "$should_reject" ]; then
+        fail "Expected reject=$should_reject, got=$rejected"
+        return
+    fi
+
+    # The checker must never echo the value it rejected.
+    if [ "$rejected" = "yes" ]; then
+        local value
+        value=$(printf '%s' "$content" | sed -n 's/.*"\([^"]*\)".*/\1/p')
+        if [ -n "$value" ] && printf '%s' "$output" | grep -qF -- "$value"; then
+            fail "Checker echoed the rejected value"
+            return
+        fi
+    fi
+    pass "Credential gate behaved as expected (reject=$rejected)"
+}
 
 echo -e "${YELLOW}🚨 Testing UNSAFE patterns (should be detected)${NC}"
 echo "----------------------------------------"
 
-# Real-looking secrets that SHOULD be detected
-run_test "Generic API Key" \
-    "$TEST_DIR/api.py" \
-    'api_key = "super_secret_api_key_12345"' \
-    "yes" && ((PASSED++)) || ((FAILED++))
-
-run_test "Generic Password" \
-    "$TEST_DIR/password.py" \
-    'password = "mysecretpassword123"' \
-    "yes" && ((PASSED++)) || ((FAILED++))
-
-run_test "API Token" \
-    "$TEST_DIR/token.py" \
-    'api_token = "token_abc123def456ghi789"' \
-    "yes" && ((PASSED++)) || ((FAILED++))
-
-run_test "Private Key" \
-    "$TEST_DIR/key.py" \
-    'private_key = "private_key_secret_value_123"' \
-    "yes" && ((PASSED++)) || ((FAILED++))
-
-run_test "Base64 Secret" \
-    "$TEST_DIR/b64.py" \
-    'secret = "cGFzc3dvcmQ9bXlfc2VjcmV0X3Bhc3N3b3Jk"' \
-    "yes" && ((PASSED++)) || ((FAILED++))
+run_test "Generic API Key" 'api_key = "super_secret_api_key_12345"' "yes"
+run_test "Generic Password" 'password = "mysecretpassword123"' "yes"
+run_test "API Token" 'api_token = "token_abc123def456ghi789"' "yes"
+run_test "Private Key" 'private_key = "private_key_secret_value_123"' "yes"
+run_test "Base64 Secret" 'secret = "cGFzc3dvcmQ9bXlfc2VjcmV0X3Bhc3N3b3Jk"' "yes"
 
 echo ""
 echo -e "${YELLOW}✅ Testing SAFE patterns (should NOT be detected)${NC}"
 echo "----------------------------------------"
 
-# Safe placeholders that should NOT be detected
-run_test "XXXX Placeholder" \
-    "$TEST_DIR/safe1.py" \
-    'API_KEY = "sk-XXXXXXXXXXXXXXXX"' \
-    "no" && ((PASSED++)) || ((FAILED++))
+# `.secret-patterns.md` lists `sk-XXXXXXXXXXXXXXXX` as a safe placeholder, but a
+# raw detect-secrets scan reports it as `Secret Keyword` when it sits in a
+# keyword-adjacent assignment — its placeholder filters recognise
+# `token-XXXX-XXXX-XXXX` and `your-api-key-here` but not this form. Documented
+# under "API Keys" in .secret-patterns.md; asserted here as the real behaviour.
+run_test "XXXX Placeholder (keyword-adjacent)" 'API_KEY = "sk-XXXXXXXXXXXXXXXX"' "yes"
+run_test "Angle Bracket Placeholder" 'password = "<your-password>"' "no"
+run_test "Token with XXXX" 'token = "token-XXXX-XXXX-XXXX"' "no"
+run_test "Stars Placeholder" 'SECRET = "****"' "no"
+run_test "Example Placeholder" 'key = "your-api-key-here"' "no"
+run_test "Dots Placeholder" 'token = "..."' "no"
 
-run_test "Angle Bracket Placeholder" \
-    "$TEST_DIR/safe2.py" \
-    'password = "<your-password>"' \
-    "no" && ((PASSED++)) || ((FAILED++))
+echo ""
+echo -e "${YELLOW}🔑 Testing Graphistry personal-key gate${NC}"
+echo "----------------------------------------"
 
-run_test "Token with XXXX" \
-    "$TEST_DIR/safe3.py" \
-    'token = "token-XXXX-XXXX-XXXX"' \
-    "no" && ((PASSED++)) || ((FAILED++))
+# Assembled at runtime so this script contains no credential-shaped literal.
+FAKE_ID="A1B2C3""D4E5"
+FAKE_SECRET="A1B2C3D4""E5F6G7H8"
+KEY_ID="personal_key_""id"
+KEY_SECRET="personal_key_""secret"
 
-run_test "Stars Placeholder" \
-    "$TEST_DIR/safe4.py" \
-    'SECRET = "****"' \
-    "no" && ((PASSED++)) || ((FAILED++))
-
-run_test "Example Placeholder" \
-    "$TEST_DIR/safe5.py" \
-    'key = "your-api-key-here"' \
-    "no" && ((PASSED++)) || ((FAILED++))
-
-run_test "Dots Placeholder" \
-    "$TEST_DIR/safe6.py" \
-    'token = "..."' \
-    "no" && ((PASSED++)) || ((FAILED++))
+run_credential_test "Key id literal" "$KEY_ID = \"$FAKE_ID\"" "yes"
+run_credential_test "Key secret literal" "$KEY_SECRET = \"$FAKE_SECRET\"" "yes"
+run_credential_test "Shape in unrelated variable" "blob = \"$FAKE_SECRET\"" "yes"
+run_credential_test "Env default" "os.getenv(\"PERSONAL_KEY_SECRET\", \"$FAKE_SECRET\")" "yes"
+run_credential_test "Angle placeholder" "$KEY_ID = \"<your-personal-key-id>\"" "no"
+run_credential_test "Mock value" "$KEY_ID = \"pk_123\"" "no"
 
 echo ""
 echo -e "${YELLOW}🧪 Testing with actual scripts${NC}"
 echo "----------------------------------------"
 
-# Test our actual detection script
 echo -e "${BLUE}Testing centralized script:${NC}"
 if ./scripts/ci/secret-detection.sh > /dev/null 2>&1; then
-    echo -e "${GREEN}  ✅ Secret detection script runs successfully${NC}"
-    ((PASSED++))
+    pass "Secret detection script runs successfully"
 else
-    echo -e "${RED}  ❌ Secret detection script failed${NC}"
-    ((FAILED++))
+    fail "Secret detection script failed"
 fi
 
-# Test the pre-commit wrapper
 echo -e "${BLUE}Testing pre-commit wrapper:${NC}"
 if ./scripts/pre-commit-secret-check.sh > /dev/null 2>&1; then
-    echo -e "${GREEN}  ✅ Pre-commit wrapper runs successfully${NC}"
-    ((PASSED++))
+    pass "Pre-commit wrapper runs successfully"
 else
-    echo -e "${RED}  ❌ Pre-commit wrapper failed${NC}"
-    ((FAILED++))
+    fail "Pre-commit wrapper failed"
 fi
 
 # Summary
@@ -153,7 +180,7 @@ echo "----------------------------------------"
 echo -e "  Passed: ${GREEN}$PASSED${NC}"
 echo -e "  Failed: ${RED}$FAILED${NC}"
 
-if [ $FAILED -eq 0 ]; then
+if [ "$FAILED" -eq 0 ]; then
     echo ""
     echo -e "${GREEN}🎉 All tests passed!${NC}"
     exit 0

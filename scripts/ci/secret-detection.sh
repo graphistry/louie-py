@@ -42,88 +42,127 @@ if [ ! -f "pyproject.toml" ]; then
     print_error "Must run from project root (where pyproject.toml exists)"
 fi
 
+# detect-secrets entropy heuristics can miss short Graphistry personal keys.
+# This deterministic check reports only key names and locations, never values.
+# In --check-only (pre-commit) mode scan the staged index, so a credential
+# cannot be committed even when the working tree has already been cleaned.
+CREDENTIAL_SCAN_ARGS=()
+if [ "$CHECK_ONLY" == true ]; then
+    CREDENTIAL_SCAN_ARGS+=(--staged)
+fi
+python3 scripts/ci/check_credential_literals.py "${CREDENTIAL_SCAN_ARGS[@]}" || {
+    print_error "Hard-coded Graphistry personal key detected"
+}
+
 # Check if detect-secrets is available
 if ! command -v detect-secrets &> /dev/null; then
-    # Try with uv run
-    if ! uv run detect-secrets --version &> /dev/null 2>&1; then
+    # Try with uv run. `--frozen` is required: a bare `uv run` re-resolves and
+    # rewrites uv.lock, silently dropping its `[options] exclude-newer` pin.
+    # That is the source of the stray uv.lock diff that keeps reappearing after
+    # running the security or lint scripts.
+    if ! uv run --frozen detect-secrets --version &> /dev/null 2>&1; then
         print_error "detect-secrets not found. Install with: uv pip install detect-secrets"
     fi
-    DETECT_SECRETS="uv run detect-secrets"
+    # --project is required: the pre-commit path scans a materialised copy of
+    # the index from a temp directory, and a bare `uv run` there cannot find the
+    # project and fails with "Failed to spawn: detect-secrets".
+    DETECT_SECRETS="uv run --frozen --project $PWD detect-secrets"  # pragma: allowlist secret
 else
     DETECT_SECRETS="detect-secrets"
 fi
 
-# Ensure baseline exists
+# Ensure baseline exists.
+#
+# This must NOT exit 0. Generating a baseline accepts whatever is currently in
+# the tree, so `rm .secrets.baseline && ./secret-detection.sh` used to pass while
+# permanently whitelisting any secret present — the same "always exit 0" shape
+# this script exists to eliminate. Generate, then fail so a human reviews it.
 if [ ! -f ".secrets.baseline" ]; then
     print_warning "No .secrets.baseline found. Creating initial baseline..."
-    $DETECT_SECRETS scan --exclude-files '^(plans/|tmp/)' > .secrets.baseline
-    print_success "Created .secrets.baseline - please review and commit"
-    exit 0
+    $DETECT_SECRETS scan --exclude-files '^(plans/|tmp/|\.secrets\.baseline$)' > .secrets.baseline
+    print_error "Created .secrets.baseline from the current tree. Review it (it accepts everything found), commit it, then re-run."
 fi
 
 if [ "$CHECK_ONLY" == true ]; then
     # Pre-commit mode: just check for new secrets
     echo "🔍 Checking for secrets in staged files..."
     
-    # Get list of staged files (excluding plans/, tmp/, and the baseline itself)
-    STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM \
-        | grep -v '^plans/' \
-        | grep -v '^tmp/' \
-        | grep -v '^\.secrets\.baseline$' \
-        || true)
-    
-    if [ -z "$STAGED_FILES" ]; then
+    # NUL-delimited end to end. The previous newline+`xargs` pipeline word-split
+    # on spaces, and detect-secrets exits 0 with empty results for a path that
+    # does not exist — so a staged file named `zz spaced.py` scanned nothing and
+    # the gate reported success.
+    #
+    # --no-renames: with rename detection on, `git mv a.py b.py` plus an edit
+    # reports only `R`, which --diff-filter=ACM drops — a working bypass that
+    # let a secret reach a commit with a green hook.
+    TEMP_LIST=$(mktemp)
+    TEMP_SCAN=$(mktemp)
+    trap 'rm -f "$TEMP_LIST" "$TEMP_SCAN"' EXIT
+
+    git diff --cached --no-renames --name-only --diff-filter=ACM -z \
+        | python3 -c '
+import sys
+skip = ("plans/", "tmp/")
+data = sys.stdin.buffer.read().split(b"\0")
+keep = [
+    p for p in data
+    if p and p != b".secrets.baseline"
+    and not any(p.startswith(s.encode()) for s in skip)
+]
+# NUL-TERMINATE, do not NUL-separate. `read -r -d ""` only emits a field when
+# it sees the delimiter, so joining instead of terminating silently drops the
+# last staged file — which meant it was never scanned.
+sys.stdout.buffer.write(b"".join(p + b"\0" for p in keep))
+' > "$TEMP_LIST"
+
+    if [ ! -s "$TEMP_LIST" ]; then
         print_success "No files to check"
         exit 0
     fi
-    
-    # Check staged files for secrets using a temp baseline to avoid mutating the real one
-    TEMP_BASELINE=$(mktemp)
-    TEMP_SCAN=$(mktemp)
-    cp .secrets.baseline "$TEMP_BASELINE"
-    echo "$STAGED_FILES" | xargs $DETECT_SECRETS scan --baseline "$TEMP_BASELINE" > "$TEMP_SCAN" 2>/dev/null || true
-    
-    # Check if any new secrets were detected
-    if [ -s "$TEMP_SCAN" ]; then
-        NEW_SECRETS=$(python3 -c "
-import json
-import sys
-with open('$TEMP_SCAN') as f:
-    data = json.load(f)
-    total = sum(len(secrets) for secrets in data.get('results', {}).values())
-    sys.exit(0 if total == 0 else 1)
-" 2>/dev/null || echo "1")
-        rm -f "$TEMP_SCAN" "$TEMP_BASELINE"
 
-        if [ "$NEW_SECRETS" == "1" ]; then
-            print_error "New secrets detected! Use clear placeholders like 'sk-XXXXXXXX' or '<your-password>'"
-        fi
-    fi
-    
-    rm -f "$TEMP_SCAN" "$TEMP_BASELINE"
+    # Materialise the INDEX, not the working tree. detect-secrets scans files on
+    # disk, so `git add <secret>` followed by cleaning or deleting the file made
+    # the hook pass while the commit still carried the secret — the same evasion
+    # `--staged` closes for the personal-key rule, but it applied to every
+    # detect-secrets finding class.
+    STAGE_DIR=$(mktemp -d)
+    trap 'rm -rf "$TEMP_LIST" "$TEMP_SCAN" "$STAGE_DIR"' EXIT
+    while IFS= read -r -d '' staged_path; do
+        mkdir -p "$STAGE_DIR/$(dirname "$staged_path")"
+        git show ":$staged_path" > "$STAGE_DIR/$staged_path" 2>/dev/null || true
+    done < "$TEMP_LIST"
+
+    # Scan WITHOUT --baseline. `scan --baseline <f>` updates the file in place,
+    # writes nothing to stdout, and exits 0 whatever it finds — so the previous
+    # `if [ -s "$TEMP_SCAN" ]` guard tested an always-empty file and skipped the
+    # check entirely. Compare against the baseline explicitly instead.
+    # stderr is deliberately NOT suppressed: hiding it is what made the
+    # path-mangling failure above invisible.
+    ( cd "$STAGE_DIR" && $DETECT_SECRETS scan --all-files ) > "$TEMP_SCAN"
+
+    python3 scripts/ci/check_new_secrets.py \
+        --baseline .secrets.baseline --scan "$TEMP_SCAN" || {
+        print_error "New secrets detected! Use clear placeholders like 'sk-XXXXXXXX' or '<your-password>'"
+    }
+
     print_success "No secrets detected"
 else
     # CI mode: full scan
     echo "🔍 Running full secret detection scan..."
 
-    # Use a temp baseline to avoid detect-secrets rewriting generated_at.
-    TEMP_BASELINE=$(mktemp)
-    cp .secrets.baseline "$TEMP_BASELINE"
-    cleanup_baseline() {
-        rm -f "$TEMP_BASELINE"
-    }
-    trap cleanup_baseline EXIT
+    # Scan WITHOUT --baseline, then diff against it. `scan --baseline <f>` is an
+    # update command: it rewrites the file and exits 0 regardless of findings, so
+    # both `|| print_error` branches below were unreachable and this gate had
+    # never once failed — a known-live credential passed it for ~12 months.
+    TEMP_SCAN=$(mktemp)
+    trap 'rm -f "$TEMP_SCAN"' EXIT
 
-    # Check for new secrets not in baseline
     echo "Checking for new secrets not in baseline..."
-    $DETECT_SECRETS scan --baseline "$TEMP_BASELINE" --exclude-files '^(plans/|tmp/)' || {
-        print_error "New secrets detected! Either remove them or update baseline with: detect-secrets scan --baseline .secrets.baseline"
-    }
+    $DETECT_SECRETS scan --exclude-files '^(plans/|tmp/|\.secrets\.baseline$)' > "$TEMP_SCAN"
 
-    # Verify no high-confidence secrets
-    echo "Verifying no high-confidence secrets..."
-    $DETECT_SECRETS scan --baseline "$TEMP_BASELINE" --only-verified --exclude-files '^(plans/|tmp/)' || {
-        print_error "High-confidence secrets detected! These must be removed."
+    python3 scripts/ci/check_new_secrets.py \
+        --baseline .secrets.baseline --scan "$TEMP_SCAN" || {
+        print_error "New secrets detected! Either remove them, or re-baseline with: detect-secrets scan > .secrets.baseline (and review the diff)"
     }
 
     print_success "Secret detection passed - no new secrets found"

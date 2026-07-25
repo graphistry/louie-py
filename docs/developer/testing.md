@@ -31,8 +31,16 @@ GRAPHISTRY_USERNAME=your_username
 GRAPHISTRY_PASSWORD=your_password
 ```
 
+`.env` is **opt-in**: it is only read when `LOUIE_TEST_MODE` selects an
+integration mode. Without that, credential-gated tests skip, so a run with no
+credentials stays offline instead of dialling the real service.
+
 ```bash
-./bin/uv run pytest tests/integration/ -v
+# Either set the mode explicitly...
+LOUIE_TEST_MODE=integration ./bin/uv run pytest tests/integration/ -v
+
+# ...or use the wrapper, which sets it for you
+./scripts/test.sh --integration
 ```
 
 ## Writing Tests

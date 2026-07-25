@@ -12,7 +12,7 @@ class TestSimpleCascade:
 
     def test_user_scenario_fixed(self):
         """Test the exact user scenario that was broken."""
-        target_org = "databricks-pat-botsv3"
+        target_org = "example-org"
 
         # Create a simple mock that doesn't auto-generate attributes
         class MockGraphistry:
@@ -27,7 +27,7 @@ class TestSimpleCascade:
         with patch("graphistry.pygraphistry.GraphistryClient", return_value=mock_g):
             # User's original code that was broken:
             lui = louieai.louie(
-                mock_g, server_url="https://louie-dev.grph.xyz", share_mode="Private"
+                mock_g, server_url="https://louie.example.com", share_mode="Private"
             )
 
             # Check if org was extracted correctly
@@ -65,7 +65,7 @@ class TestSimpleCascade:
             lui = louieai.louie(
                 mock_g,
                 org_name=explicit_org,  # This should win
-                server_url="https://louie-dev.grph.xyz",
+                server_url="https://louie.example.com",
             )
 
             stored_org = lui._client._auth_manager._credentials.get("org_name")
@@ -91,7 +91,7 @@ class TestSimpleCascade:
             patch("graphistry.pygraphistry.GraphistryClient", return_value=mock_g),
             patch.dict(os.environ, {"GRAPHISTRY_ORG_NAME": env_org}),
         ):
-            lui = louieai.louie(mock_g, server_url="https://louie-dev.grph.xyz")
+            lui = louieai.louie(mock_g, server_url="https://louie.example.com")
 
             stored_org = lui._client._auth_manager._credentials.get("org_name")
             assert stored_org == env_org, (

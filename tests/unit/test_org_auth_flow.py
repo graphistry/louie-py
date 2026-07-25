@@ -15,7 +15,7 @@ class TestOrgAuthFlow:
 
     def test_direct_client_org_name_flow(self):
         """Test that LouieClient correctly handles org_name parameter."""
-        target_org = "databricks-pat-botsv3"
+        target_org = "example-org"
 
         # Mock PyGraphistry client
         mock_graphistry = MagicMock()
@@ -23,11 +23,11 @@ class TestOrgAuthFlow:
 
         with patch("louieai.auth.GraphistryClient", return_value=mock_graphistry):
             client = LouieClient(
-                personal_key_id="CU5V6VZJB7",
-                personal_key_secret="32RBP6PUCSUVAIYJ",
+                personal_key_id="test-personal-key-id",
+                personal_key_secret="test-personal-key-secret",
                 org_name=target_org,
-                graphistry_server="graphistry-dev.grph.xyz",
-                server_url="https://louie-dev.grph.xyz",
+                graphistry_server="graphistry.example.com",
+                server_url="https://louie.example.com",
             )
 
             # Verify org_name is stored in credentials
@@ -41,7 +41,7 @@ class TestOrgAuthFlow:
     def test_louie_factory_with_graphistry_client_confused_deputy(self):
         """Test the confused deputy problem: louie() factory loses org_name from
         pre-registered graphistry."""
-        target_org = "databricks-pat-botsv3"
+        target_org = "example-org"
 
         # Mock a pre-registered PyGraphistry client (simulating user's scenario)
         mock_graphistry = MagicMock()
@@ -58,7 +58,7 @@ class TestOrgAuthFlow:
         # Test the louie() factory function with pre-registered graphistry
         lui = louieai.louie(
             graphistry_client=mock_graphistry,
-            server_url="https://louie-dev.grph.xyz",
+            server_url="https://louie.example.com",
             share_mode="Private",
         )
 
@@ -96,7 +96,7 @@ class TestOrgAuthFlow:
         """Test that org names are properly converted to slug format."""
         test_cases = [
             ("My Organization", "my-organization"),
-            ("databricks-pat-botsv3", "databricks-pat-botsv3"),
+            ("example-org", "example-org"),
             ("Test_Org-123", "test-org-123"),
             ("UPPERCASE ORG", "uppercase-org"),
             ("Org with Special@#$%", "org-with-special"),
@@ -173,12 +173,12 @@ class TestOrgAuthFlow:
             mock_registered_client.api_token.return_value = "user-jwt-token"
             mock_g_register.return_value = mock_registered_client
 
-            # Simulate: g = graphistry.register(org_name='databricks-pat-botsv3', ...)
+            # Simulate: g = graphistry.register(org_name='example-org', ...)
             g = mock_registered_client
 
             # Step 2: User creates LouieAI interface with the registered client
             lui = louieai.louie(
-                g, server_url="https://louie-dev.grph.xyz", share_mode="Private"
+                g, server_url="https://louie.example.com", share_mode="Private"
             )
 
             # Step 3: User makes a query - this should use the correct org
@@ -188,9 +188,9 @@ class TestOrgAuthFlow:
             auth_manager = lui._client._auth_manager
             stored_org = auth_manager._credentials.get("org_name")
 
-            # This should be 'databricks-pat-botsv3' but is likely None
-            assert stored_org == "databricks-pat-botsv3", (
-                f"Confused deputy: Expected 'databricks-pat-botsv3', got '{stored_org}'"
+            # This should be 'example-org' but is likely None
+            assert stored_org == "example-org", (
+                f"Confused deputy: Expected 'example-org', got '{stored_org}'"
             )
 
             # Check headers that would be sent to LouieAI API
@@ -199,6 +199,6 @@ class TestOrgAuthFlow:
                 "Missing org header - API calls will be made as 'personal'"
             )
 
-            assert headers["X-Graphistry-Org"] == "databricks-pat-botsv3", (
+            assert headers["X-Graphistry-Org"] == "example-org", (
                 f"Wrong org in API headers: {headers.get('X-Graphistry-Org')}"
             )

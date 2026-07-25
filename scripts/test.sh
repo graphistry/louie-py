@@ -103,14 +103,17 @@ case "$TEST_MODE" in
         ;;
 esac
 
-# Load environment variables from .env if it exists
-if [[ -f .env ]]; then
+# Export test mode first: the .env load below is gated on it.
+export LOUIE_TEST_MODE="$TEST_MODE"
+
+# Load environment variables from .env — only for modes that actually talk to a
+# server. Loading it unconditionally re-injected credentials into every unit run,
+# which defeated `tests/utils.py`'s opt-in gate and let a "no credentials" run
+# authenticate against the real service anyway.
+if [[ -f .env && ( "$TEST_MODE" == "integration" || "$TEST_MODE" == "all" ) ]]; then
     echo "📋 Loading environment from .env"
     export $(grep -v '^#' .env | xargs)
 fi
-
-# Export test mode
-export LOUIE_TEST_MODE="$TEST_MODE"
 
 # Run tests
 echo "Running: python -m pytest ${PYTEST_ARGS[*]}"

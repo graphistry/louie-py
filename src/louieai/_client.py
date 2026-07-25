@@ -181,8 +181,8 @@ class LouieClient:
 
             # Use personal key authentication (recommended for service accounts)
             client = LouieClient(
-                personal_key_id="ZD5872XKNF",
-                personal_key_secret="SA0JJ2DTVT6LLO2S",
+                personal_key_id="<your-personal-key-id>",
+                personal_key_secret="<your-personal-key-secret>",
                 graphistry_server="hub.graphistry.com"
             )
 

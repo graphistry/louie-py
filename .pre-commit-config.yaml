@@ -1,12 +1,16 @@
+# Versions must match uv.lock, which is what CI installs via `uv sync --frozen`.
+# Skew here is the same failure mode CI just hit: ruff 0.16 formats Markdown code
+# fences and 0.12.5 does not, so a hook running a different version produces
+# diffs the CI gate rejects.
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
+    rev: v0.12.5
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.17.0
     hooks:
       - id: mypy
   - repo: https://github.com/pre-commit/pygrep-hooks
