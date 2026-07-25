@@ -261,6 +261,23 @@ class TestLouieClient:
         assert response.elements[0]["type"] == "TextElement"
         assert response.elements[0]["text"] == "Response text"
 
+    def test_add_cell_forwards_include_reasoning(self, client):
+        mock_stream_cm = mock_streaming_response(['{"dthread_id": "D_test001"}'])
+
+        with patch("louieai._client.httpx.Client") as mock_client_class:
+            mock_client_instance = Mock()
+            mock_client_instance.stream.return_value = mock_stream_cm
+            mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+            mock_client_instance.__exit__ = Mock(return_value=None)
+            mock_client_class.return_value = mock_client_instance
+
+            client.add_cell("D_test001", "Show your work", include_reasoning=True)
+
+        assert (
+            mock_client_instance.stream.call_args.kwargs["params"]["include_reasoning"]
+            == "true"
+        )
+
     def test_add_cell_creates_new_thread(self, client):
         """Test adding a cell without thread ID creates new thread."""
         mock_stream_cm = mock_streaming_response(

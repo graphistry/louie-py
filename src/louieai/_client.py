@@ -610,6 +610,7 @@ class LouieClient:
         *,
         agent: str = "LouieAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: ShareMode = "Private",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         **override_kwargs: Any,
@@ -622,6 +623,8 @@ class LouieClient:
             initial_prompt: Optional first message to initialize thread
             agent: Agent to use for initial prompt (default: LouieAgent)
             traces: Whether to include reasoning traces (default: False)
+            include_reasoning: Whether to include the agent's live draft text
+                (default: False).
             share_mode: Visibility mode for initial message
             table_ai_overrides: Structured Table AI overrides applied to initial prompt
             **override_kwargs: Legacy Table AI override keyword arguments forwarded to
@@ -646,6 +649,7 @@ class LouieClient:
                 name=name,
                 folder=folder,
                 traces=traces,
+                include_reasoning=include_reasoning,
                 share_mode=share_mode,
                 **add_kwargs,
             )
@@ -664,6 +668,7 @@ class LouieClient:
         name: str | None = None,
         folder: str | None = None,
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: ShareMode = "Private",
         user_agent: UserAgent = "API",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
@@ -680,6 +685,8 @@ class LouieClient:
             name: Optional thread name (applied only when creating a new thread)
             folder: Optional folder path (applied only when creating a new thread)
             traces: Whether to include reasoning traces in response (default: False)
+            include_reasoning: Include the agent's live draft text in addition to
+                final response elements (default: False).
             share_mode: Visibility mode - "Private", "Organization", or "Public"
             user_agent: DataThread creation_user_agent — "API" or "Louie"
             table_ai_overrides: Structured overrides via dataclass or mapping.
@@ -701,6 +708,7 @@ class LouieClient:
             "agent": agent,
             # Convert bool to string for HTTP params
             "ignore_traces": str(not traces).lower(),
+            "include_reasoning": str(include_reasoning).lower(),
             "share_mode": share_mode,
             "user_agent": user_agent,
         }
@@ -990,6 +998,7 @@ class LouieClient:
         format: str = "parquet",
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -1028,6 +1037,7 @@ class LouieClient:
             format=format,
             agent=agent,
             traces=traces,
+            include_reasoning=include_reasoning,
             share_mode=share_mode,
             name=name,
             folder=folder,
@@ -1043,6 +1053,7 @@ class LouieClient:
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -1076,6 +1087,7 @@ class LouieClient:
             thread_id=thread_id,
             agent=agent,
             traces=traces,
+            include_reasoning=include_reasoning,
             share_mode=share_mode,
             name=name,
             folder=folder,
@@ -1090,6 +1102,7 @@ class LouieClient:
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -1125,6 +1138,7 @@ class LouieClient:
             thread_id=thread_id,
             agent=agent,
             traces=traces,
+            include_reasoning=include_reasoning,
             share_mode=share_mode,
             name=name,
             folder=folder,

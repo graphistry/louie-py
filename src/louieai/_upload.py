@@ -45,6 +45,7 @@ class UploadClient:
         format: str = "parquet",
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -70,6 +71,8 @@ class UploadClient:
             agent: AI agent to use. "UploadPassthroughAgent" (default) automatically
                 parses data without LLM. "UploadAgent" uses LLM for parsing.
             traces: Whether to include reasoning traces in response (default: False)
+            include_reasoning: Include the agent's live draft text in addition to
+                final response elements (default: False).
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
             folder: Optional folder path for the thread (server support required)
@@ -120,6 +123,7 @@ class UploadClient:
             "query": prompt,
             "agent": agent,
             "ignore_traces": str(not traces).lower(),
+            "include_reasoning": str(include_reasoning).lower(),
             "share_mode": share_mode,
         }
 
@@ -332,6 +336,7 @@ class UploadClient:
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -390,6 +395,7 @@ class UploadClient:
             "query": prompt,
             "agent": agent,
             "ignore_traces": str(not traces).lower(),
+            "include_reasoning": str(include_reasoning).lower(),
             "share_mode": share_mode,
         }
 
@@ -599,6 +605,7 @@ class UploadClient:
         *,
         agent: str = "UploadPassthroughAgent",
         traces: bool = False,
+        include_reasoning: bool = False,
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
@@ -657,6 +664,7 @@ class UploadClient:
             "query": prompt,
             "agent": agent,
             "ignore_traces": str(not traces).lower(),
+            "include_reasoning": str(include_reasoning).lower(),
             "share_mode": share_mode,
         }
 
