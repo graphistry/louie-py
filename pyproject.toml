@@ -68,6 +68,13 @@ docs = [
 ]
 # We define a separate "docs" extra in case readthedocs needs to install just docs requirements.
 
+[tool.uv]
+# Pin the resolution cutoff declaratively. The lockfile already recorded
+# `exclude-newer`, but nothing declared it — it had been passed as a one-off CLI
+# flag, so every `uv lock --check` reported the option as "removed" and demanded
+# a re-resolve. That is what made `uv sync --locked` unusable in CI.
+exclude-newer = "2026-04-02T23:28:24Z"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["louieai*"]

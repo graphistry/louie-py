@@ -1,8 +1,24 @@
 """Test utilities for Louie.ai client."""
 
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
+
+
+def repo_root() -> Path:
+    """Repository root, resolved by walking up to the pyproject.toml.
+
+    Deliberately not `Path(__file__).parents[N]`: a hardcoded depth breaks
+    silently when a test file moves between directories, and several security
+    tests copy scripts out of the root — a wrong root there yields a fixture
+    that exercises nothing while still passing.
+    """
+    for candidate in [Path(__file__).resolve(), *Path(__file__).resolve().parents]:
+        if (candidate / "pyproject.toml").is_file():
+            return candidate
+    raise RuntimeError("could not locate repository root (no pyproject.toml found)")
+
 
 # Modes that are allowed to reach a real server, and therefore to read `.env`.
 INTEGRATION_MODES = frozenset({"integration", "all"})

@@ -34,7 +34,7 @@ class TestStreamingRealIntegration:
 
         # Create louie interface with real auth
         return louie(
-            graphistry_client=graphistry_client, server_url="https://louie-dev.grph.xyz"
+            graphistry_client=graphistry_client, server_url="https://louie.example.com"
         )
 
     def test_streaming_provides_faster_first_response(self, lui):

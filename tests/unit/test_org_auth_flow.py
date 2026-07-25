@@ -15,7 +15,7 @@ class TestOrgAuthFlow:
 
     def test_direct_client_org_name_flow(self):
         """Test that LouieClient correctly handles org_name parameter."""
-        target_org = "test-org-passthrough"
+        target_org = "example-org"
 
         # Mock PyGraphistry client
         mock_graphistry = MagicMock()
@@ -41,7 +41,7 @@ class TestOrgAuthFlow:
     def test_louie_factory_with_graphistry_client_confused_deputy(self):
         """Test the confused deputy problem: louie() factory loses org_name from
         pre-registered graphistry."""
-        target_org = "test-org-passthrough"
+        target_org = "example-org"
 
         # Mock a pre-registered PyGraphistry client (simulating user's scenario)
         mock_graphistry = MagicMock()
@@ -96,7 +96,7 @@ class TestOrgAuthFlow:
         """Test that org names are properly converted to slug format."""
         test_cases = [
             ("My Organization", "my-organization"),
-            ("test-org-passthrough", "test-org-passthrough"),
+            ("example-org", "example-org"),
             ("Test_Org-123", "test-org-123"),
             ("UPPERCASE ORG", "uppercase-org"),
             ("Org with Special@#$%", "org-with-special"),
@@ -173,7 +173,7 @@ class TestOrgAuthFlow:
             mock_registered_client.api_token.return_value = "user-jwt-token"
             mock_g_register.return_value = mock_registered_client
 
-            # Simulate: g = graphistry.register(org_name='test-org-passthrough', ...)
+            # Simulate: g = graphistry.register(org_name='example-org', ...)
             g = mock_registered_client
 
             # Step 2: User creates LouieAI interface with the registered client
@@ -188,9 +188,9 @@ class TestOrgAuthFlow:
             auth_manager = lui._client._auth_manager
             stored_org = auth_manager._credentials.get("org_name")
 
-            # This should be 'test-org-passthrough' but is likely None
-            assert stored_org == "test-org-passthrough", (
-                f"Confused deputy: Expected 'test-org-passthrough', got '{stored_org}'"
+            # This should be 'example-org' but is likely None
+            assert stored_org == "example-org", (
+                f"Confused deputy: Expected 'example-org', got '{stored_org}'"
             )
 
             # Check headers that would be sent to LouieAI API
@@ -199,6 +199,6 @@ class TestOrgAuthFlow:
                 "Missing org header - API calls will be made as 'personal'"
             )
 
-            assert headers["X-Graphistry-Org"] == "test-org-passthrough", (
+            assert headers["X-Graphistry-Org"] == "example-org", (
                 f"Wrong org in API headers: {headers.get('X-Graphistry-Org')}"
             )

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.utils import dotenv_enabled, load_test_credentials
+from tests.utils import dotenv_enabled, load_test_credentials, repo_root
 
 pytestmark = pytest.mark.unit
 
@@ -96,9 +96,7 @@ def test_conftest_and_utils_share_one_mode_source(
 
 def test_test_sh_only_loads_dotenv_for_integration_modes() -> None:
     """`scripts/test.sh` used to export .env in every mode, defeating this gate."""
-    script = (Path(__file__).parents[2] / "scripts" / "test.sh").read_text(
-        encoding="utf-8"
-    )
+    script = (repo_root() / "scripts" / "test.sh").read_text(encoding="utf-8")
     load_line = next(line for line in script.splitlines() if "-f .env" in line)
 
     assert "integration" in load_line and "all" in load_line, load_line

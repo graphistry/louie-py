@@ -34,9 +34,7 @@ class TestDocumentationIntegration:
         )
 
         # Create Louie client
-        louie_server = test_credentials.get(
-            "louie_server", "https://louie-dev.grph.xyz"
-        )
+        louie_server = test_credentials.get("louie_server", "https://louie.example.com")
         return LouieClient(server_url=louie_server)
 
     def _should_test_code(self, code: str) -> bool:

@@ -15,9 +15,11 @@ from pathlib import Path
 
 import pytest
 
+from tests.utils import repo_root
+
 pytestmark = pytest.mark.unit
 
-REPO_ROOT = Path(__file__).parents[2]
+REPO_ROOT = repo_root()
 CHECKER = REPO_ROOT / "scripts" / "ci" / "check_credential_literals.py"
 
 
@@ -43,6 +45,37 @@ KEY_SECRET = "personal_key_" + "secret"  # pragma: allowlist secret
 TOO_SHORT = "AB" + "1234567"
 LOW_DISTINCT = "ab" * 7
 ABOVE_FLOOR = "abcdef" + "123456"
+
+
+# Explicit parametrize ids. Without these, pytest -v composes the id from the
+# parameter *values*, printing credential-shaped fixtures into public CI logs —
+# harmless for these fakes, but the wrong habit for a security suite.
+CONTEXT_IDS = [
+    "bare",
+    "annotated",
+    "dict",
+    "kwarg",
+    "getenv",
+    "unrelated",
+    "single_quoted",
+    "dotenv",
+    "shell_export",
+    "yaml",
+    "markdown",
+    "md_fence",
+]
+OFFSHAPE_IDS = ["bare", "prefixed", "getenv", "dict", "yaml", "annotated"]
+PLACEHOLDER_IDS = [
+    "angle_id",
+    "angle_secret",
+    "env_var",
+    "pk_mock",
+    "test_mock",
+    "filler",
+    "empty",
+    "fake_substring",
+    "example_substring",
+]
 
 
 def run_checker(
@@ -97,6 +130,7 @@ def write(tmp_path: Path, name: str, body: str) -> Path:
         ("notes.md", f"Use {FAKE_SECRET} as the secret."),
         ("fence.md", f'```python\n{KEY_SECRET} = "{FAKE_SECRET}"\n```'),
     ],
+    ids=CONTEXT_IDS,
 )
 def test_rejects_credential_shape_in_any_context(
     tmp_path: Path, name: str, body: str
@@ -177,6 +211,7 @@ OFFSHAPE = "gk-live-" + "9f3a2b7c1d4e"  # pragma: allowlist secret
         ("conf.yml", f'{KEY_SECRET}: "{OFFSHAPE}"'),
         ("annotated.py", f'{KEY_SECRET}: str = "{OFFSHAPE}"'),
     ],
+    ids=OFFSHAPE_IDS,
 )
 def test_rejects_offshape_value_under_key_name(
     tmp_path: Path, name: str, body: str
@@ -284,6 +319,7 @@ def test_no_false_positives_on_real_base64(tmp_path: Path) -> None:
         f'{KEY_SECRET} = "my-fake-key-1234"',
         f'{KEY_SECRET} = "some-example-value-9"',
     ],
+    ids=PLACEHOLDER_IDS,
 )
 def test_accepts_placeholders_and_mocks(tmp_path: Path, body: str) -> None:
     assert_accepted(run_checker(str(write(tmp_path, "safe.py", body))))
@@ -370,3 +406,54 @@ def test_clean_repo_passes_both_modes(git_repo: Path) -> None:
 
     assert_accepted(run_checker(cwd=git_repo))
     assert_accepted(run_checker("--staged", cwd=git_repo))
+
+
+# --- internal-host rule -----------------------------------------------------
+#
+# The local .git/hooks/pre-commit enumerated two specific dev hostnames, but it
+# is untracked: no other contributor has it and CI never runs it. The rule here
+# is domain-level and tracked, so it is enforced for everyone and covers
+# subdomains nobody has thought of yet.
+
+
+# Assembled at runtime so this file carries no internal hostname of its own —
+# the rule under test would otherwise reject the file that tests it.
+_DEV_DOMAIN = "grph" + ".xyz"
+_INT_DOMAIN = "louie" + ".internal"
+
+
+@pytest.mark.parametrize(
+    ("name", "body"),
+    [
+        ("url.py", f'u = "https://louie-dev.{_DEV_DOMAIN}"'),
+        ("unknown_subdomain.py", f'u = "https://something-new.{_DEV_DOMAIN}"'),
+        ("bare.md", f"See graphistry-dev.{_DEV_DOMAIN} for the dev instance."),
+        ("env", f"LOUIE_SERVER=louie-dev.{_DEV_DOMAIN}"),
+        ("internal.py", f'u = "https://dev.k8s.{_INT_DOMAIN}"'),
+    ],
+    ids=["url", "unknown_subdomain", "markdown", "dotenv", "louie_internal"],
+)
+def test_rejects_internal_hostnames(tmp_path: Path, name: str, body: str) -> None:
+    result = run_checker(str(write(tmp_path, name, body)))
+
+    assert result.returncode == 1, result.stderr
+    assert "internal-host" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        'u = "https://louie.example.com"',  # RFC 2606
+        'u = "https://hub.graphistry.com"',  # public endpoint
+        'u = "https://den.louie.ai"',  # public endpoint
+        'u = "https://example.com/grph"',  # path, not a host
+    ],
+    ids=["example_com", "hub", "den", "path_only"],
+)
+def test_accepts_public_and_example_hosts(tmp_path: Path, body: str) -> None:
+    assert_accepted(run_checker(str(write(tmp_path, "ok.py", body))))
+
+
+def test_internal_host_respects_the_pragma(tmp_path: Path) -> None:
+    body = f'u = "https://louie-dev.{_DEV_DOMAIN}"  # pragma: allowlist secret'
+    assert_accepted(run_checker(str(write(tmp_path, "ok.py", body))))

@@ -63,7 +63,10 @@ if ! command -v detect-secrets &> /dev/null; then
     if ! uv run --frozen detect-secrets --version &> /dev/null 2>&1; then
         print_error "detect-secrets not found. Install with: uv pip install detect-secrets"
     fi
-    DETECT_SECRETS="uv run --frozen detect-secrets"
+    # --project is required: the pre-commit path scans a materialised copy of
+    # the index from a temp directory, and a bare `uv run` there cannot find the
+    # project and fails with "Failed to spawn: detect-secrets".
+    DETECT_SECRETS="uv run --frozen --project $PWD detect-secrets"  # pragma: allowlist secret
 else
     DETECT_SECRETS="detect-secrets"
 fi

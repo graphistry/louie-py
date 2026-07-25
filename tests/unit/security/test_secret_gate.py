@@ -21,14 +21,23 @@ from pathlib import Path
 
 import pytest
 
+from tests.utils import repo_root
+
 pytestmark = pytest.mark.unit
 
-REPO_ROOT = Path(__file__).parents[2]
+REPO_ROOT = repo_root()
 CHECK_NEW = REPO_ROOT / "scripts" / "ci" / "check_new_secrets.py"
 GATE = REPO_ROOT / "scripts" / "ci" / "secret-detection.sh"
 
-# 10-char id shape, matching the real key format. Assembled at runtime.
-GKEY = "A1B2C3" + "D4E5"
+# A 10-char Graphistry personal-key shape that `detect-secrets` does NOT flag.
+#
+# This must stay invisible to detect-secrets, otherwise the shell-level gate
+# tests below stop isolating the Graphistry rule: the detect-secrets half would
+# reject the fixture on its own and the tests would pass even with the
+# credential gate unwired. An earlier value here was itself flagged by
+# detect-secrets, which silently defeated exactly that. Assembled at runtime so
+# no scannable literal exists in this file.
+GKEY = "K3PQ7" + "RTX2M"
 
 # Fake digest for baseline fixtures; a constant so the formatter cannot move a
 # same-line pragma off it.
@@ -527,3 +536,71 @@ def test_gate_passes_on_clean_tree(gate_repo: Path) -> None:
 
     assert run_gate(gate_repo).returncode == 0
     assert run_gate(gate_repo, "--check-only").returncode == 0
+
+
+def test_verbose_test_ids_do_not_print_credential_shapes(tmp_path: Path) -> None:
+    """`pytest -v` must not echo fixture values into public CI logs.
+
+    Parametrize ids default to the parameter *values*, so the security suite's
+    own fake credentials were being printed into the CI log of every run. The
+    fakes are harmless; the habit is not — the day someone parametrizes with a
+    real value it lands in a public log.
+    """
+    log = tmp_path / "verbose.log"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            str(REPO_ROOT / "tests/unit/test_credential_literals.py"),
+            "-v",
+            "--no-header",
+            "-p",
+            "no:cacheprovider",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+    )
+    log.write_text(result.stdout + result.stderr, encoding="utf-8")
+
+    scan = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts/ci/check_credential_literals.py"),
+            str(log),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert scan.returncode == 0, scan.stderr
+
+
+def test_uv_fallback_pins_the_project_root() -> None:
+    """The uv fallback must pass --project.
+
+    The pre-commit path scans a materialised copy of the index from a temp
+    directory (`cd "$STAGE_DIR"`). A bare `uv run` there cannot locate the
+    project and dies with "Failed to spawn: detect-secrets", so the gate fails
+    for a reason unrelated to secrets.
+
+    CI never sees it: it activates the venv, which puts detect-secrets on PATH
+    and skips the fallback entirely. Only a developer's hook hits it, which is
+    why this is asserted on the script text rather than exercised end-to-end —
+    the scratch repo the other tests use has no uv project for the fallback to
+    resolve against.
+    """
+    script = GATE.read_text(encoding="utf-8")
+    fallback = [
+        line
+        for line in script.splitlines()
+        if "DETECT_SECRETS=" in line and "uv run" in line
+    ]
+
+    assert fallback, "expected a `uv run` fallback assignment"
+    for line in fallback:
+        assert "--project" in line, f"uv fallback must pin --project: {line.strip()}"
+        assert "--frozen" in line, f"uv fallback must pass --frozen: {line.strip()}"

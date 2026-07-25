@@ -278,7 +278,7 @@ class TestArrowDataFrameRealIntegration:
         from louieai._client import LouieClient
 
         return LouieClient(
-            server_url="https://louie-dev.grph.xyz", graphistry_client=graphistry_client
+            server_url="https://louie.example.com", graphistry_client=graphistry_client
         )
 
     def test_real_arrow_dataframe_fetch(self, real_client):

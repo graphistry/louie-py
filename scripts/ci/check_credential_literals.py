@@ -25,6 +25,17 @@ Two independent rules run over every tracked text file:
     is the forward-compatibility net for a future key format, so it accepts
     `GRAPHISTRY_`-prefixed names and `=`, `:`, and `,` separators.
 
+`internal-host`
+    An internal hostname. Test fixtures and docs should use RFC 2606 example
+    domains or the public endpoints, not real infrastructure names.
+
+    Only *generalizable* patterns live here. A public repository cannot carry a
+    denylist of the specific account or organisation names it is trying to keep
+    out, because the denylist publishes them; those belong in a local
+    `.git/hooks/pre-commit` (or a gitignored pattern file), not in tracked
+    source. A domain regex reveals nothing beyond public DNS and covers every
+    subdomain, including ones nobody has thought of yet.
+
 Suppress a genuine false positive with a trailing `# pragma: allowlist secret`
 (the same marker `detect-secrets` uses).
 
@@ -70,6 +81,14 @@ _KEY_CONTEXT = re.compile(
     (?P=quote)
     """,
     re.IGNORECASE | re.VERBOSE,
+)
+
+# Internal infrastructure domains. Deliberately a domain-level pattern, not a
+# list of known hosts: the local hook enumerated two specific ones, so any new
+# subdomain passed silently.
+_INTERNAL_HOSTS = re.compile(
+    r"(?<![A-Za-z0-9.-])[A-Za-z0-9][A-Za-z0-9.-]*\.(?:grph\.xyz|louie\.internal)\b",
+    re.IGNORECASE,
 )
 
 _ALLOWLIST_PRAGMA = "pragma: allowlist secret"
@@ -235,6 +254,14 @@ def _find(text: str) -> Iterable[tuple[int, str, str]]:
         if (line, label) not in seen:
             seen.add((line, label))
             yield line, "key-context", label
+
+    for match in _INTERNAL_HOSTS.finditer(text):
+        line = _line_of(text, match.start())
+        if _allowlisted(lines, line):
+            continue
+        if (line, "internal host") not in seen:
+            seen.add((line, "internal host"))
+            yield line, "internal-host", "internal host"
 
 
 def main(argv: Sequence[str] | None = None) -> int:
