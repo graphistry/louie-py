@@ -94,9 +94,15 @@ if lui.has_errors:
 ## Advanced Features
 
 ```python
-# Enable AI reasoning traces
-lui.traces = True
+# Opt in to provisional reasoning
+lui.include_reasoning = True
 lui("Complex analysis query")
+print(lui.reasoning_text)
+
+# Server trace events are a separate debugging channel
+lui.traces = True
+lui("Debug this analysis")
+print(lui.trace_events)
 
 # Access response history
 previous_df = lui[-1].df  # Previous response's dataframe

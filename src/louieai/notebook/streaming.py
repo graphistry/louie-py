@@ -1,6 +1,6 @@
 """Streaming display support for Jupyter notebooks."""
 
-import json
+import html
 import time
 from typing import Any
 
@@ -13,20 +13,37 @@ except ImportError:
 
 import httpx
 
+from .._client import LouieClient, Response
+from ._html import (
+    css_pixel_dimension,
+    graph_url,
+    resolve_http_url,
+    safe_image_src,
+)
+
 
 class StreamingDisplay:
     """Handle streaming display of Louie responses in Jupyter."""
 
-    def __init__(self, display_id: str | None = None, client=None):
+    def __init__(
+        self,
+        display_id: str | None = None,
+        client=None,
+        include_reasoning: bool | None = None,
+    ):
         """Initialize streaming display.
 
         Args:
             display_id: Optional display ID for updates
             client: Optional LouieClient instance for accessing Graphistry settings
+            include_reasoning: Whether structural reasoning was requested.
         """
         self.display_id = display_id
         self.client = client
+        self.include_reasoning = include_reasoning
         self.elements_by_id: dict[str, dict[str, Any]] = {}
+        self.position_keys: dict[int, str] = {}
+        self.stream_messages: list[dict[str, Any]] = []
         self.thread_id: str | None = None
         self.start_time = time.time()
         self.last_update_time = 0.0
@@ -39,12 +56,18 @@ class StreamingDisplay:
             # Handle both 'text' and 'value' fields
             text = elem.get("text", "") or elem.get("value", "")
             # Convert newlines to HTML breaks
-            return str(text).replace("\n", "<br>")
+            return html.escape(str(text)).replace("\n", "<br>")
 
         elif elem_type in ["DfElement", "df"]:
             # Try multiple possible field names for the dataframe ID
             df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
             shape = elem.get("metadata", {}).get("shape", ["?", "?"])
+            if not isinstance(shape, list | tuple) or len(shape) < 2:
+                shape = ["?", "?"]
+            safe_df_id = html.escape(str(df_id))
+            safe_rows = html.escape(str(shape[0]))
+            safe_columns = html.escape(str(shape[1]))
+            safe_shape = f"{safe_rows} x {safe_columns}"
 
             # If we have the actual dataframe, display it
             if "table" in elem and hasattr(elem["table"], "_repr_html_"):
@@ -54,7 +77,7 @@ class StreamingDisplay:
                         f"<div style='margin: 10px 0;'>"
                         f"<div style='background: #f0f0f0; padding: 5px; "
                         f"margin-bottom: 5px;'>"
-                        f"📊 DataFrame {df_id} (shape: {shape[0]} x {shape[1]})</div>"
+                        f"📊 DataFrame {safe_df_id} (shape: {safe_shape})</div>"
                         f"{df_html}"
                         f"</div>"
                     )
@@ -62,50 +85,51 @@ class StreamingDisplay:
             # Otherwise show placeholder
             return (
                 f"<div style='background: #f0f0f0; padding: 5px; margin: 5px 0;'>"
-                f"📊 DataFrame: {df_id} (shape: {shape[0]} x {shape[1]})</div>"
+                f"📊 DataFrame: {safe_df_id} (shape: {safe_shape})</div>"
             )
 
         elif elem_type in ["ExceptionElement", "exception", "error"]:
             msg = elem.get("message", "Unknown error")
             return (
                 f"<div style='color: red; background: #ffe0e0; padding: 10px; "
-                f"margin: 5px 0;'>⚠️ Error: {msg}</div>"
+                f"margin: 5px 0;'>⚠️ Error: {html.escape(str(msg))}</div>"
             )
 
         elif elem_type == "DebugLine":
             text = elem.get("text", "")
             return (
                 f"<div style='color: #666; font-family: monospace; "
-                f"font-size: 0.9em;'>🐛 {text}</div>"
+                f"font-size: 0.9em;'>🐛 {html.escape(str(text))}</div>"
             )
 
         elif elem_type == "InfoLine":
             text = elem.get("text", "")
             return (
                 f"<div style='color: #0066cc; font-family: monospace; "
-                f"font-size: 0.9em;'>i {text}</div>"
+                f"font-size: 0.9em;'>i {html.escape(str(text))}</div>"
             )
 
         elif elem_type == "WarningLine":
             text = elem.get("text", "")
             return (
                 f"<div style='color: #ff8800; font-family: monospace; "
-                f"font-size: 0.9em;'>⚠️ {text}</div>"
+                f"font-size: 0.9em;'>⚠️ {html.escape(str(text))}</div>"
             )
 
         elif elem_type == "ErrorLine":
             text = elem.get("text", "")
             return (
                 f"<div style='color: #cc0000; font-family: monospace; "
-                f"font-size: 0.9em;'>❌ {text}</div>"
+                f"font-size: 0.9em;'>❌ {html.escape(str(text))}</div>"
             )
 
         elif elem_type == "CodeElement":
             code = elem.get("code", "") or elem.get("text", "")
             elem.get("language", "")
+            escaped_code = html.escape(str(code), quote=False)
             return (
                 f"<pre style='background: #f5f5f5; padding: 10px; "
-                f"border-radius: 5px;'><code>{code}</code></pre>"
+                f"border-radius: 5px;'><code>{escaped_code}</code></pre>"
             )
 
         elif elem_type in ["GraphElement", "graph"]:
@@ -164,15 +188,22 @@ class StreamingDisplay:
 
             if dataset_id:
                 # Create iframe for Graphistry visualization
-                iframe_url = f"{server_url}/graph/graph.html?dataset={dataset_id}"
+                iframe_url = graph_url(server_url, dataset_id)
+                if iframe_url is None:
+                    return (
+                        "<div style='color: #888; padding: 10px;'>"
+                        "Graph visualization not available</div>"
+                    )
+                safe_iframe_url = html.escape(iframe_url, quote=True)
                 return (
                     f'<div style="margin: 10px 0;">'
-                    f'<iframe src="{iframe_url}" '
+                    f'<iframe src="{safe_iframe_url}" '
                     f'width="100%" height="600" '
                     f'style="border: 1px solid #ddd; border-radius: 5px;">'
                     f"</iframe>"
                     f'<div style="text-align: center; margin-top: 5px;">'
-                    f'<a href="{iframe_url}" target="_blank" '
+                    f'<a href="{safe_iframe_url}" target="_blank" '
+                    f'rel="noopener noreferrer" '
                     f'style="color: #0066cc; text-decoration: none;">'
                     f"🔗 Open graph in new tab</a>"
                     f"</div>"
@@ -188,20 +219,23 @@ class StreamingDisplay:
 
         elif elem_type == "Base64ImageElement":
             # Handle inline base64 images
-            src = elem.get("src", "")
-            width = elem.get("width", "auto")
-            height = elem.get("height", "auto")
+            src = safe_image_src(elem.get("src", ""))
+            if src is None:
+                return "<div style='color: #888;'>Image unavailable</div>"
+            safe_src = html.escape(src, quote=True)
+            width = css_pixel_dimension(elem.get("width"))
+            height = css_pixel_dimension(elem.get("height"))
 
-            # Build style string
+            # Build style string from validated numeric dimensions only.
             style_parts = ["max-width: 100%", "border-radius: 5px"]
-            if width != "auto":
+            if width is not None:
                 style_parts.append(f"width: {width}px")
-            if height != "auto":
+            if height is not None:
                 style_parts.append(f"height: {height}px")
 
             return (
                 f'<div style="margin: 10px 0; text-align: center;">'
-                f'<img src="{src}" style="{";".join(style_parts)}" />'
+                f'<img src="{safe_src}" style="{";".join(style_parts)}" />'
                 f"</div>"
             )
 
@@ -212,22 +246,31 @@ class StreamingDisplay:
             filename = elem.get("filename", "download")
             size = elem.get("size", 0)
 
-            # If URL is relative, prepend base URL from client
-            if url and not url.startswith(("http://", "https://")):
-                base_url = "https://api.louie.ai"  # default
-                if self.client and hasattr(self.client, "base_url"):
-                    base_url = self.client.base_url.rstrip("/")
-                url = f"{base_url}{url}"
+            base_url = "https://api.louie.ai"
+            if self.client:
+                base_url = getattr(
+                    self.client,
+                    "server_url",
+                    getattr(self.client, "base_url", base_url),
+                )
+            resolved_url = resolve_http_url(url, base_url)
+            safe_filename = html.escape(str(filename), quote=True)
+            if resolved_url is None:
+                return (
+                    f"<div style='color: #888;'>File unavailable: {safe_filename}</div>"
+                )
+            safe_url = html.escape(resolved_url, quote=True)
 
             # Check if it's an image
             if content_type and content_type.startswith("image/"):
                 return (
                     f'<div style="margin: 10px 0; text-align: center;">'
-                    f'<img src="{url}" style="max-width: 100%; border-radius: 5px;" />'
+                    f'<img src="{safe_url}" '
+                    f'style="max-width: 100%; border-radius: 5px;" />'
                     f'<div style="text-align: center; margin-top: 5px;">'
-                    f'<a href="{url}" download="{filename}" '
+                    f'<a href="{safe_url}" download="{safe_filename}" '
                     f'style="color: #0066cc; text-decoration: none; font-size: 0.9em;">'
-                    f"📥 Download {filename}</a>"
+                    f"📥 Download {safe_filename}</a>"
                     f"</div>"
                     f"</div>"
                 )
@@ -248,7 +291,7 @@ class StreamingDisplay:
                     f'<div style="display: flex; align-items: center; '
                     f'justify-content: space-between;">'
                     f"<div>"
-                    f'<span style="font-weight: bold;">📎 {filename}</span>'
+                    f'<span style="font-weight: bold;">📎 {safe_filename}</span>'
                     + (
                         f' <span style="color: #666; font-size: 0.9em;">'
                         f"({size_str})</span>"
@@ -256,7 +299,7 @@ class StreamingDisplay:
                         else ""
                     )
                     + f"</div>"
-                    f'<a href="{url}" download="{filename}" '
+                    f'<a href="{safe_url}" download="{safe_filename}" '
                     f'style="background: #0066cc; color: white; padding: 5px 15px; '
                     f'border-radius: 3px; text-decoration: none;">Download</a>'
                     f"</div>"
@@ -270,10 +313,11 @@ class StreamingDisplay:
                 or elem.get("content", "")
                 or str(elem.get("value", ""))
             )
+            safe_type = html.escape(str(elem_type))
             if text:
-                return f"<div style='color: gray;'>[{elem_type}] {text}</div>"
-            else:
-                return f"<div style='color: gray;'>[{elem_type}]</div>"
+                safe_text = html.escape(str(text))
+                return f"<div style='color: gray;'>[{safe_type}] {safe_text}</div>"
+            return f"<div style='color: gray;'>[{safe_type}]</div>"
 
     def _render_element(self, elem: dict[str, Any]) -> str:
         """Backwards-compatible alias for element rendering."""
@@ -291,17 +335,57 @@ class StreamingDisplay:
             elapsed = time.time() - self.start_time
             parts.append(
                 f"<div style='font-size: 0.8em; color: #666; margin-bottom: 10px;'>"
-                f"Thread: <code>{self.thread_id}</code> | "
+                f"Thread: <code>{html.escape(str(self.thread_id))}</code> | "
                 f"Time: {elapsed:.1f}s"
                 f"</div>"
             )
 
-        # Render elements
+        snapshot = Response(
+            thread_id=self.thread_id or "",
+            elements=list(self.elements_by_id.values()),
+            stream_messages=self.stream_messages,
+            include_reasoning=self.include_reasoning,
+        )
+        if snapshot.status != "unknown":
+            parts.append(
+                "<div style='font-size: 0.9em; margin-bottom: 8px;'>"
+                f"<b>Status:</b> {html.escape(snapshot.status)}</div>"
+            )
+        if snapshot.phases:
+            parts.append("<details><summary><b>Execution phases</b></summary><ul>")
+            for phase in snapshot.phases:
+                action = phase.get("action")
+                expression = (
+                    action.get("expression") if isinstance(action, dict) else None
+                )
+                label = (
+                    expression or phase.get("run_type") or phase.get("id") or "phase"
+                )
+                state = phase.get("state", "unknown")
+                parts.append(
+                    f"<li>{html.escape(str(label))}: {html.escape(str(state))}</li>"
+                )
+            parts.append("</ul></details>")
+
+        # Render elements, collapsing identifiable reasoning by default.
         if self.elements_by_id:
+            reasoning_ids = {
+                str(element.get("id"))
+                for element in snapshot.reasoning_elements
+                if element.get("id") is not None
+            }
             parts.append("<div style='margin-top: 10px;'>")
             for elem_id, elem in self.elements_by_id.items():
                 formatted = self._format_element(elem)
-                parts.append(f"<div id='{elem_id}'>{formatted}</div>")
+                safe_id = html.escape(str(elem_id), quote=True)
+                if str(elem.get("id")) in reasoning_ids:
+                    parts.append(
+                        "<details style='margin: 5px 0;'>"
+                        "<summary><b>Reasoning</b></summary>"
+                        f"<div id='{safe_id}'>{formatted}</div></details>"
+                    )
+                else:
+                    parts.append(f"<div id='{safe_id}'>{formatted}</div>")
             parts.append("</div>")
         else:
             parts.append("<div style='color: #999;'>Waiting for response...</div>")
@@ -315,6 +399,8 @@ class StreamingDisplay:
         Args:
             data: Parsed JSON data from stream
         """
+        self.stream_messages.append(data)
+
         # Handle thread ID
         if "dthread_id" in data:
             self.thread_id = data["dthread_id"]
@@ -326,9 +412,19 @@ class StreamingDisplay:
         if msg_type == "StreamingApiMessageOutputUpdate":
             elem = data.get("payload")
             if isinstance(elem, dict):
-                elem_id = elem.get("id")
-                if elem_id:
-                    self.elements_by_id[elem_id] = elem
+                position = data.get("position")
+                elem_key = str(
+                    elem.get("id")
+                    or (f"position:{position}" if isinstance(position, int) else "")
+                )
+                if elem_key:
+                    if isinstance(position, int):
+                        previous_key = self.position_keys.get(position)
+                        if previous_key and previous_key != elem_key:
+                            self.elements_by_id.pop(previous_key, None)
+                        self.position_keys[position] = elem_key
+                    existing = self.elements_by_id.get(elem_key, {})
+                    self.elements_by_id[elem_key] = {**existing, **elem}
 
         elif msg_type in (
             "StreamingApiMessageRunUpdate",
@@ -373,38 +469,25 @@ class StreamingDisplay:
 
 
 def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, Any]:
-    """Stream a response with real-time display in Jupyter.
-
-    Args:
-        client: LouieClient instance
-        thread_id: Thread ID (empty string for new thread)
-        prompt: Query prompt
-        **kwargs: Additional parameters (agent, traces, share_mode, etc.)
-
-    Returns:
-        Dict with thread_id and elements
-    """
-    # Extract parameters
+    """Stream a response with display and the shared lossless accumulator."""
     agent = kwargs.get("agent", "LouieAgent")
     traces = kwargs.get("traces", False)
+    include_reasoning = kwargs.get("include_reasoning", False)
     share_mode = kwargs.get("share_mode", "Private")
     user_agent = kwargs.get("user_agent", "API")
     name = kwargs.get("name")
     folder = kwargs.get("folder")
     session_trace_id = kwargs.get("session_trace_id")
 
-    # Get headers with tracing
     headers = client._get_headers(session_trace_id=session_trace_id)
-
-    # Build parameters
     params = {
         "query": prompt,
         "agent": agent,
         "ignore_traces": str(not traces).lower(),
+        "include_reasoning": str(include_reasoning).lower(),
         "user_agent": user_agent,
         "share_mode": share_mode,
     }
-
     if thread_id:
         params["dthread_id"] = thread_id
     else:
@@ -413,18 +496,14 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
         if folder:
             params["folder"] = folder
 
-    # Create display handler with client for Graphistry URL
-    display_handler = StreamingDisplay(client=client)
-
-    # Result to return
-    result: dict[str, Any] = {"dthread_id": None, "elements": []}
-    elements_by_id = {}
-
+    display_handler = StreamingDisplay(
+        client=client, include_reasoning=include_reasoning
+    )
     overall_timeout = client._timeout
     read_timeout = client._streaming_timeout
-
-    # Make streaming request
     lines_received = 0
+    response_chunks: list[str] = []
+
     try:
         with (
             httpx.Client(
@@ -438,50 +517,13 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
             ) as response,
         ):
             response.raise_for_status()
-
-            # Process streaming lines
             for line in response.iter_lines():
                 if not line:
                     continue
-
                 lines_received += 1
-
-                try:
-                    data = json.loads(line)
-
-                    # Update display
+                response_chunks.append(f"{line}\n")
+                for data in LouieClient._decode_json_objects(line):
                     display_handler.update(data)
-
-                    # Track data for result
-                    if "dthread_id" in data:
-                        result["dthread_id"] = data["dthread_id"]
-
-                    msg_type = data.get("type")
-
-                    if msg_type == "StreamingApiMessageOutputUpdate":
-                        elem = data.get("payload")
-                        if isinstance(elem, dict):
-                            elem_id = elem.get("id")
-                            if elem_id:
-                                elements_by_id[elem_id] = elem
-
-                    elif msg_type in (
-                        "StreamingApiMessageRunUpdate",
-                        "StreamingApiMessageTrace",
-                        "StreamingApiMessageStart",
-                        "StreamingApiMessageTerminal",
-                    ):
-                        pass  # Non-element messages, skip
-
-                    elif msg_type is None and "payload" in data:
-                        elem = data["payload"]
-                        if isinstance(elem, dict):
-                            elem_id = elem.get("id")
-                            if elem_id:
-                                elements_by_id[elem_id] = elem
-
-                except json.JSONDecodeError:
-                    continue
 
     except httpx.ReadTimeout:
         import warnings
@@ -492,39 +534,41 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
             f"Increase streaming_timeout when creating LouieClient."
         )
         warnings.warn(timeout_msg, RuntimeWarning, stacklevel=2)
-    except Exception as e:
-        # Show error in display
-        error_elem = {"id": "error", "type": "ExceptionElement", "message": str(e)}
+    except Exception as exc:
+        error_elem = {
+            "id": "error",
+            "type": "ExceptionElement",
+            "message": str(exc),
+        }
         display_handler.elements_by_id["error"] = error_elem
         display_handler.finalize()
         raise
 
-    # Final update
-    display_handler.finalize()
+    objects = LouieClient._decode_json_objects("".join(response_chunks))
+    result = LouieClient._parse_stream_objects(objects)
+    result["dthread_id"] = result.get("dthread_id") or thread_id
 
-    # Convert to list for result
-    result["elements"] = list(elements_by_id.values())
-
-    # Fetch dataframes if needed
     actual_thread_id = result["dthread_id"]
     if actual_thread_id and result["elements"]:
         for elem in result["elements"]:
             if elem.get("type") in ["DfElement", "df"]:
                 shape = (elem.get("metadata") or {}).get("shape", [])
                 if shape and shape[0] == 0:
-                    # Workaround: server GCs empty DFs before fetch (#40)
                     import pandas as pd
 
                     elem["table"] = pd.DataFrame()
                     continue
-
-                # Try multiple possible field names for the dataframe ID
                 df_id = elem.get("df_id") or elem.get("block_id") or elem.get("id")
-
                 if df_id:
-                    # Fetch the actual dataframe via Arrow
                     df = client._fetch_dataframe_arrow(actual_thread_id, df_id)
                     if df is not None:
                         elem["table"] = df
 
+    display_handler.thread_id = actual_thread_id or None
+    display_handler.stream_messages = result["stream_messages"]
+    display_handler.elements_by_id = {
+        str(elem.get("id") or f"position:{index}"): elem
+        for index, elem in enumerate(result["elements"])
+    }
+    display_handler.finalize()
     return result

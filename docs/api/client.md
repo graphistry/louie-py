@@ -111,6 +111,46 @@ for element in lui.elements:
     print(f"Element type: {element['type']}")
 ```
 
+### Final answers, reasoning, and execution progress
+
+Reasoning is opt-in and remains separate from the final answer. The default is
+final-only, so existing code keeps the same response shape.
+
+```python
+response = client.add_cell(
+    "",
+    "Investigate the anomaly and explain the evidence",
+    include_reasoning=True,
+    traces=True,
+)
+
+# Final-oriented compatibility surface
+print(response.text)
+print(response.final_text)
+
+# Provisional reasoning is explicit and may contain multiple durable parts
+print(response.reasoning_text)
+for part in response.reasoning_elements:
+    print(part["text"], part.get("complete"))
+
+# Execution progress and observability
+print(response.status)          # succeeded, failed, cancelled, interrupted, ...
+print(response.phases)          # latest MethodRun snapshots
+print(response.token_flow)      # optional token counters
+print(response.trace_events)    # returned server trace payloads
+print(response.terminal_error)  # final stream plumbing error, if any
+```
+
+The current server does not put a `draft` flag on text elements. It identifies
+the final answer through the root run's `final_answer` element ID; the client
+uses that pointer to keep `.text` final-oriented. `complete` describes whether
+an element is still streaming, not whether it is reasoning.
+
+For protocol-level debugging, `response.stream_messages` preserves every typed
+stream envelope in order, including unknown future message types. Uploads may
+emit multiple terminal envelopes, so `response.terminal` is the last one and
+`response.terminals` retains the full history.
+
 ## Error Handling
 
 ```python
@@ -180,19 +220,26 @@ lui = louie(server_url="http://localhost:8513", anonymous=True)
 
 Anonymous auth is optional on the server and cannot be combined with Graphistry credentials.
 
-### Trace Control
+### Reasoning and trace controls
 
 ```python
 from louieai import louie
 lui = louie()
 
-# Enable traces for debugging
-lui.traces = True
+# Provisional model reasoning is a separate, default-off stream
+lui.include_reasoning = True
 lui("Complex analysis query")
+print(lui.reasoning_text)
 
-# Or per-query
-lui("Another query", traces=True)
+# Server trace events are an independent debugging channel
+lui.traces = True
+lui("Another query")
+print(lui.trace_events)
 ```
+
+`include_reasoning` controls provisional text. `traces` requests server log
+trace events, returned as `trace_events`. W3C `traceparent` propagation is a
+third concern used to correlate the HTTP request with distributed telemetry.
 
 ### Timeout Configuration
 
@@ -271,7 +318,7 @@ If you have code using the old `LouieClient` directly:
 from louieai import louie
 lui = louie()
 lui("Query")
-response = lui._response  # If you need the raw response
+response = lui.response  # If you need the raw response
 ```
 
 ## See Also

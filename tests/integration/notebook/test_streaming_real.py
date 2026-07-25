@@ -1,15 +1,10 @@
 """Real integration tests for streaming display functionality."""
 
-import os
-import sys
 import time
 
 import pytest
 
-from louieai import louie
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
-from utils import load_test_credentials
+from louieai.notebook.cursor import Cursor
 
 
 @pytest.mark.integration
@@ -17,25 +12,9 @@ class TestStreamingRealIntegration:
     """Test streaming functionality with real API calls."""
 
     @pytest.fixture
-    def lui(self):
-        """Create louie interface with real credentials."""
-        creds = load_test_credentials()
-        if not creds:
-            pytest.skip("Test credentials not available")
-
-        import graphistry
-
-        graphistry_client = graphistry.register(
-            api=creds["api_version"],
-            server=creds["server"],
-            username=creds["username"],
-            password=creds["password"],
-        )
-
-        # Create louie interface with real auth
-        return louie(
-            graphistry_client=graphistry_client, server_url="https://louie.example.com"
-        )
+    def lui(self, real_client):
+        """Use a Cursor backed by the shared fail-closed client."""
+        return Cursor(client=real_client)
 
     def test_streaming_provides_faster_first_response(self, lui):
         """Test that streaming shows content before the full response is ready."""

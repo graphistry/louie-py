@@ -46,12 +46,20 @@ class TestStreamingDisplayCoverage:
         assert "<code>" in result
         assert "def hello():" in result
         assert "return 'world'" in result
+        assert "style='background: #f5f5f5" in result
+        assert "style=.background" not in result
 
         # Test with 'text' field fallback
         elem2 = {"type": "CodeElement", "text": "print('hello')"}
 
         result2 = display._format_element(elem2)
         assert "print('hello')" in result2
+
+        unsafe_result = display._format_element(
+            {"type": "CodeElement", "code": "<script>alert(1)</script>"}
+        )
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in unsafe_result
+        assert "<script>" not in unsafe_result
 
     def test_format_graph_element_with_graphistry(self):
         """Test formatting of GraphElement with Graphistry integration."""
@@ -61,6 +69,9 @@ class TestStreamingDisplayCoverage:
                 _repr_html_=Mock(return_value="<iframe>Graph visualization</iframe>")
             )
         )
+        graphistry_client = mock_client._auth_manager._graphistry_client
+        graphistry_client.client_protocol_hostname.return_value = "hub.graphistry.com"
+        graphistry_client.protocol.return_value = "https"
 
         display = StreamingDisplay(client=mock_client)
 
@@ -298,3 +309,47 @@ class TestStreamingDisplayCoverage:
         elem3 = {"type": "graph", "id": "fallback_id"}
         result3 = display._format_element(elem3)
         assert "fallback_id" in result3 or "Graph" in result3
+
+    def test_untrusted_element_attributes_are_sanitized(self):
+        """Server-controlled attributes and fallback text cannot inject HTML."""
+        display = StreamingDisplay()
+
+        graph = display._format_element(
+            {"type": "GraphElement", "dataset_id": 'x" onload="alert(1)'}
+        )
+        assert ' onload="' not in graph
+        assert "%22+onload%3D%22alert%281%29" in graph
+
+        binary = display._format_element(
+            {
+                "type": "BinaryElement",
+                "url": "javascript:alert(1)",
+                "content_type": "application/pdf",
+                "filename": '"><img src=x onerror=alert(1)>',
+            }
+        )
+        assert "File unavailable" in binary
+        assert "<img src=x" not in binary
+        assert "&lt;img src=x" in binary
+
+        image = display._format_element(
+            {
+                "type": "Base64ImageElement",
+                "src": "data:image/svg+xml,<svg onload=alert(1)>",
+                "width": '1; background: url("javascript:alert(1)")',
+            }
+        )
+        assert "Image unavailable" in image
+        assert "<img" not in image
+
+        unknown = display._format_element(
+            {"type": "<img src=x onerror=alert(1)>", "text": "<script>x</script>"}
+        )
+        assert "<script>" not in unknown
+        assert "<img src=x" not in unknown
+        assert "&lt;script&gt;x&lt;/script&gt;" in unknown
+
+        display.thread_id = "<script>thread</script>"
+        rendered = display._render_html()
+        assert "<script>thread</script>" not in rendered
+        assert "&lt;script&gt;thread&lt;/script&gt;" in rendered

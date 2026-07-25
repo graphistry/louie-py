@@ -60,8 +60,8 @@ The `lui` object is a singleton that manages your LouieAI session with implicit 
 result = lui("What are the key metrics in this dataset?")
 # result is lui, so you can chain: lui("query").df
 
-# Query with traces enabled for this call only
-lui("Complex analysis task", traces=True)
+# Include provisional reasoning for this call only
+lui("Complex analysis task", include_reasoning=True)
 
 # Query without auto-display in Jupyter
 lui("Generate report", display=False)
@@ -80,9 +80,46 @@ lui("Generate report", display=False)
 # Get the primary text response
 text = lui.text  # Returns str or None
 
-# Get all text elements
+# Get all non-reasoning text outputs
 texts = lui.texts  # Returns list[str]
 ```
+
+#### Reasoning, phases, and status
+
+Reasoning is excluded by default. Opt in per call or for the Cursor session:
+
+```python
+# Per-query opt in
+lui("Investigate this alert", include_reasoning=True)
+
+# Or set a session default (per-query False still overrides it)
+lui.include_reasoning = True
+lui("Investigate the next alert")
+
+print(lui.text)            # Final answer only
+print(lui.final_text)      # Explicit final-answer accessor
+print(lui.reasoning_text)  # Joined provisional reasoning, or None
+print(lui.reasoning_texts) # Durable reasoning parts
+print(lui.status)          # Normalized execution status
+print(lui.phases)          # Latest execution phase snapshots
+print(lui.token_flow)      # Optional live token counters
+```
+
+The same properties work on history (`lui[-1].reasoning_text`) and on the raw
+latest `Response` (`lui.response`). Reasoning parts are collapsed and labeled in
+the notebook display once the server identifies the final answer.
+
+#### Server trace events
+
+```python
+lui.traces = True              # Request trace events for the session
+lui("Debug this data source")
+for event in lui.trace_events: # Often [level, timestamp_ms, message]
+    print(event)
+```
+
+Trace events are not model reasoning. They are also separate from the W3C
+`traceparent` used for distributed request correlation.
 
 #### DataFrame Access
 
@@ -131,18 +168,17 @@ for i in range(-5, 0):
 
 ### Configuration
 
-#### Trace Control
+#### Session controls
 
 ```python
-# Enable traces for all queries
+# Request server trace events for all queries
 lui.traces = True
 
-# Check current trace setting
-if lui.traces:
-    print("Traces are enabled")
+# Include provisional reasoning for all queries
+lui.include_reasoning = True
 
-# Disable traces
-lui.traces = False
+# Either setting can be overridden on an individual call
+lui("Final-only query", traces=False, include_reasoning=False)
 ```
 
 ## Environment Variables
@@ -182,8 +218,16 @@ export LOUIE_URL=https://custom-louie.ai  # Custom Louie server
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `lui.text` | `str \| None` | Primary text from latest response |
-| `lui.texts` | `list[str]` | All text elements from latest response |
+| `lui.text` | `str \| None` | Final-oriented primary text from latest response |
+| `lui.texts` | `list[str]` | Non-reasoning text outputs from latest response |
+| `lui.final_text` | `str \| None` | Explicit final answer, with legacy fallback |
+| `lui.reasoning_text` | `str \| None` | Joined opt-in reasoning parts |
+| `lui.reasoning_texts` | `list[str]` | Opt-in reasoning parts |
+| `lui.status` | `str` | Normalized execution status |
+| `lui.terminal_error` | `str \| None` | Final stream plumbing error, if any |
+| `lui.phases` | `list[dict]` | Latest method-run phase snapshots |
+| `lui.trace_events` | `list` | Returned server trace payloads |
+| `lui.response` | `Response \| None` | Latest raw response and protocol metadata |
 | `lui.df` | `pd.DataFrame \| None` | First dataframe from latest response |
 | `lui.dfs` | `list[pd.DataFrame]` | All dataframes from latest response |
 | `lui.elements` | `list[dict]` | All elements with type tags |
@@ -201,7 +245,8 @@ export LOUIE_URL=https://custom-louie.ai  # Custom Louie server
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `lui.traces` | `bool` | Get/set trace setting for session |
+| `lui.traces` | `bool` | Get/set server trace-event request setting |
+| `lui.include_reasoning` | `bool` | Get/set provisional reasoning opt-in |
 
 ### History Access
 

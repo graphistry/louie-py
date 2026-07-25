@@ -6,45 +6,19 @@ They will be skipped if credentials are not available.
 
 import pytest
 
-from louieai._client import LouieClient
-
-from ..utils import load_test_credentials
-
 
 class TestRealLouieIntegration:
     """Integration tests that connect to a real Louie instance."""
 
     @pytest.fixture
-    def client(self):
-        """Create a Louie client with test credentials."""
-        creds = load_test_credentials()
-        if not creds:
-            pytest.skip("Test credentials not available")
-
-        # Create GraphistryClient and register credentials
-        import graphistry
-
-        graphistry_client = graphistry.register(
-            api=creds["api_version"],
-            server=creds["server"],
-            username=creds["username"],
-            password=creds["password"],
-        )
-
-        # Create Louie client with graphistry client
-        return LouieClient(
-            server_url="https://louie.example.com", graphistry_client=graphistry_client
-        )
+    def client(self, real_client):
+        """Use the shared fail-closed authenticated client."""
+        return real_client
 
     def test_basic_query(self, client):
         """Test a simple query to verify connection."""
         # Test with new thread-based API
         import time
-
-        print("\n=== Starting basic query test ===")
-        print(f"Server URL: {client.server_url}")
-        print(f"Auth token available: {bool(client._auth_manager.get_token())}")
-        print(f"Token preview: {client._auth_manager.get_token()[:30]}...")
 
         # Create thread first
         print("\nCreating thread...")
