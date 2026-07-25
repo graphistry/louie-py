@@ -53,8 +53,8 @@ LouieAI uses PyGraphistry for authentication. You'll need a free account:
 
 ```bash
 # Option 1: Environment variables (recommended for notebooks/scripts)
-export GRAPHISTRY_USERNAME="sarah@analytics.com"
-export GRAPHISTRY_PASSWORD="Analytics2024!"
+export GRAPHISTRY_USERNAME="<your-username>"
+export GRAPHISTRY_PASSWORD="<your-password>"
 export GRAPHISTRY_SERVER="hub.graphistry.com"  # or "my-company.graphistry.com"
 
 # Optional: Custom Louie endpoint (defaults to https://louie.ai)

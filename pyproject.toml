@@ -113,7 +113,11 @@ disallow_any_decorated = false  # Would be too restrictive
 exclude = [
     "templates/",
     "tests/",
-    "docs/"
+    "docs/",
+    # Gitignored local working memory (see .gitignore). Absent in CI, but a
+    # developer's copy holds standalone code fragments with intentionally
+    # unresolvable relative imports, so `mypy .` fails locally without this.
+    "plans/",
 ]
 disallow_any_explicit = false  # Would be too restrictive
 disallow_any_generics = true

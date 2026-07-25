@@ -32,13 +32,13 @@
 # DO NOT COMMIT - Keep in .gitignore
 g = graphistry.register(
     api=3,
-    server='graphistry-dev.grph.xyz',
-    personal_key_id='CU5V6VZJB7', 
-    personal_key_secret='32RBP6PUCSUVAIYJ',
-    org_name='databricks-pat-botsv3'
+    server='<your-graphistry-server>',
+    personal_key_id='<your-personal-key-id>',
+    personal_key_secret='<your-personal-key-secret>',
+    org_name='<your-org-name>'
 )
 
-lui = louieai.louie(g, server_url='https://louie-dev.grph.xyz', share_mode='Private')
+lui = louieai.louie(g, server_url='<your-louie-server>', share_mode='Private')
 ```
 
 ## Verification
