@@ -173,8 +173,13 @@ def check_generic_secrets(archive: Path, baseline: Path, comparer: Path) -> str:
     Covers the classes the deterministic gate does not: AWS keys, private keys,
     high-entropy strings, keyword-adjacent values.
     """
-    if not baseline.is_file() or not comparer.is_file():
-        return ""
+    # Every unavailable prerequisite is an error, never a quiet pass. A gate
+    # that reports success when it could not run is the exact defect this
+    # module was written to close.
+    if not baseline.is_file():
+        return f"baseline not found: {baseline}; cannot sweep the archive\n"
+    if not comparer.is_file():
+        return f"comparer not found: {comparer}; cannot sweep the archive\n"
     if shutil.which("detect-secrets") is None:
         return "detect-secrets not found; cannot sweep the archive\n"
 
@@ -212,6 +217,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--baseline",
         default=str(Path(__file__).resolve().parents[2] / ".secrets.baseline"),
     )
+    parser.add_argument(
+        "--no-sweep",
+        action="store_true",
+        help=(
+            "skip the detect-secrets sweep. For gate-attribution tests only: "
+            "it exists so a test can prove which gate catches a given leak. "
+            "Never pass it in CI or when publishing."
+        ),
+    )
     args = parser.parse_args(argv)
 
     checker = Path(args.credential_checker)
@@ -233,16 +247,23 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(f"  ... and {len(forbidden) - 20} more", file=sys.stderr)
             print("  Fix by excluding it in MANIFEST.in.", file=sys.stderr)
 
-        report = check_credentials(archive, checker) if checker.is_file() else ""
+        if not checker.is_file():
+            print(f"error: credential checker not found: {checker}", file=sys.stderr)
+            return 1
+        report = check_credentials(archive, checker)
         if report:
             failed = True
             print(f"{archive.name}: credential-shaped content:", file=sys.stderr)
             print(report, file=sys.stderr)
 
-        generic = check_generic_secrets(
-            archive,
-            Path(args.baseline),
-            Path(__file__).with_name("check_new_secrets.py"),
+        generic = (
+            ""
+            if args.no_sweep
+            else check_generic_secrets(
+                archive,
+                Path(args.baseline),
+                Path(__file__).with_name("check_new_secrets.py"),
+            )
         )
         if generic:
             failed = True

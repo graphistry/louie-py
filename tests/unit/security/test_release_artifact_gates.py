@@ -174,11 +174,13 @@ def build_artifact(kind: str, files: dict[str, str], destination: Path) -> Path:
     raise AssertionError(f"unknown artifact kind: {kind}")
 
 
-def run_screen(archive: Path, *, baseline: Path | None = BASELINE) -> tuple[int, str]:
+def run_screen(
+    archive: Path, *, baseline: Path = BASELINE, sweep: bool = True
+) -> tuple[int, str]:
     """Run the release screen. Returns (exit code, combined output)."""
-    command = [sys.executable, str(SCREEN), str(archive)]
-    if baseline is not None:
-        command += ["--baseline", str(baseline)]
+    command = [sys.executable, str(SCREEN), str(archive), "--baseline", str(baseline)]
+    if not sweep:
+        command.append("--no-sweep")
     result = subprocess.run(command, capture_output=True, text=True, check=False)
     return result.returncode, result.stdout + result.stderr
 
@@ -249,13 +251,13 @@ def test_sweep_leaks_are_attributable_to_the_sweep(
 
     Attribution, not redundancy. If an AWS key were only ever caught by the
     literal gate's incidental shape matching, the sweep could rot away silently
-    and the matrix above would stay green. Pointing `--baseline` at a
-    nonexistent file turns the sweep off; these leaks must then survive.
+    and the matrix above would stay green. `--no-sweep` turns it off; these
+    leaks must then survive.
     """
     files = _planted(_clean_tree(), path, body)
     archive = build_artifact("sdist", files, tmp_path)
 
-    code, output = run_screen(archive, baseline=tmp_path / "no-such-baseline.json")
+    code, output = run_screen(archive, sweep=False)
 
     assert code == 0, (
         f"{leak} was still rejected with the sweep disabled, so this row does "
@@ -337,3 +339,16 @@ def test_every_build_is_screened(workflow: str) -> None:
         f"{workflow} runs `python -m build` {builds}x but only screens {screens}x; "
         "every built artifact must be screened before it is published or installed"
     )
+
+
+def test_a_missing_baseline_is_an_error_not_a_pass(tmp_path: Path) -> None:
+    """The screen must never report success when it could not run.
+
+    The original incident was a gate that passed because its check was
+    unreachable. A sweep that silently degrades to "clean" when its baseline is
+    absent is the same bug with a different trigger.
+    """
+    archive = build_artifact("sdist", _clean_tree(), tmp_path)
+    code, output = run_screen(archive, baseline=tmp_path / "no-such-baseline.json")
+    assert code == 1, f"a missing baseline was treated as clean:\n{output}"
+    assert "baseline not found" in output
