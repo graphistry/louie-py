@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/unit/test_packaging_hygiene.py` fails if internal material becomes tracked again
   or if `MANIFEST.in` loses its exclusions. Written after the fact — nothing had been
   checking, which is why this shipped for a year.
+- `scripts/ci/check_sdist.py` opens the built archives and rejects internal paths or
+  credential-shaped content. Rules can be right while the artifact is wrong, so this runs
+  in CI's `install-test` (which already builds) and again in `publish.yml` before each
+  upload — the last point at which a mistake is still recallable.
 
 ## [0.9.0] - 2026-07-26
 

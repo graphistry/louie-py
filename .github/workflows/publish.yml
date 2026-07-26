@@ -28,6 +28,11 @@ jobs:
       - name: Build package
         run: python -m build
       
+      - name: Screen distributions
+        # Last gate before an immutable upload: inspect the built archives, not
+        # just the MANIFEST.in rules.
+        run: python scripts/ci/check_sdist.py dist/*.tar.gz dist/*.whl
+
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
@@ -58,6 +63,11 @@ jobs:
       - name: Build package
         run: python -m build
       
+      - name: Screen distributions
+        # Last gate before an immutable upload: inspect the built archives, not
+        # just the MANIFEST.in rules.
+        run: python scripts/ci/check_sdist.py dist/*.tar.gz dist/*.whl
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

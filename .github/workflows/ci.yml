@@ -239,6 +239,11 @@ jobs:
           pip install build
       - name: Build package
         run: python -m build
+      - name: Screen distributions
+        # Inspect the built archives, not just the MANIFEST.in rules. Internal
+        # notes and the test tree shipped in every release through 0.9.0, and a
+        # PyPI upload cannot be recalled.
+        run: python scripts/ci/check_sdist.py dist/*.tar.gz dist/*.whl
       - name: Install uv (if needed)
         if: matrix.installer == 'uv'
         run: |
