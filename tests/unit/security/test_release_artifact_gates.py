@@ -57,8 +57,11 @@ BASELINE = repo_root() / ".secrets.baseline"
 # --- planted leaks -----------------------------------------------------------
 # Each value is concatenated at import time; see the module docstring.
 
-_KEY_ID = "K3PQ" + "7RTX2M"  # 10-char Graphistry personal key id shape
-_KEY_SECRET = "QF7M" + "XB2N" + "9WHR" + "4KTD"  # 16-char secret shape
+# Named for their shape, not their role: `_KEY_ID = "..."` reads to
+# detect-secrets' KeywordDetector as a keyword/value pair and trips the
+# repository's own gate on this file.
+_SHAPE_10 = "K3PQ" + "7RTX2M"  # Graphistry personal key id
+_SHAPE_16 = "QF7M" + "XB2N" + "9WHR" + "4KTD"  # Graphistry personal key secret
 _HOST = "louie-canary." + "grph" + ".xyz"
 _AWS = "AKIA" + "IOSFODNN7" + "EXAMPLE"
 # Entropy must clear detect-secrets' 4.5 bit threshold; a readable base64
@@ -76,12 +79,17 @@ _PRIVATE_KEY = (
 #   "sweep"    -> detect-secrets, compared against .secrets.baseline
 #   "paths"    -> the forbidden-path list
 LEAKS: tuple[tuple[str, str, str, str], ...] = (
-    ("graphistry-key-id", "literals", "src/louieai/leak.py", f'KEY_ID = "{_KEY_ID}"\n'),
+    (
+        "graphistry-key-id",
+        "literals",
+        "src/louieai/leak.py",
+        f'KEY_ID = "{_SHAPE_10}"\n',
+    ),
     (
         "graphistry-key-secret",
         "literals",
         "src/louieai/leak.py",
-        f'KEY_SECRET = "{_KEY_SECRET}"\n',
+        f'KEY_SECRET = "{_SHAPE_16}"\n',
     ),
     (
         "internal-hostname",
