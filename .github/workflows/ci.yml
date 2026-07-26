@@ -230,6 +230,11 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v3
+        with:
+          # setuptools_scm derives the version from tags. Without them this job
+          # built `0.1.dev1+g<sha>`, so the install smoke test exercised a
+          # version string no release will ever have.
+          fetch-depth: 0
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
