@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Stop shipping internal material in the sdist. `plan.md`, `weekly_report.md`, `tests/`,
+  and `.env.example` were published in every release through 0.9.0 because setuptools'
+  default sdist sweeps in top-level files and the test tree. Added `MANIFEST.in`; the
+  sdist is 23% smaller. Wheels were never affected.
+- Untrack `plan.md` and `weekly_report.md`. Both were internal working notes tracked since
+  2025-08-02. `.gitignore` now covers them, anchored as `/plan.md` so the plan skill's
+  `plans/<task>/plan.md` convention still works.
+
+### Internal
+- `tests/unit/test_packaging_hygiene.py` fails if internal material becomes tracked again
+  or if `MANIFEST.in` loses its exclusions. Written after the fact — nothing had been
+  checking, which is why this shipped for a year.
+
 ## [0.9.0] - 2026-07-26
 
 ### Added

@@ -1,0 +1,15 @@
+# Keep internal material out of the published sdist.
+#
+# setuptools' default sdist sweeps in top-level files and the test tree, so
+# plan.md, weekly_report.md and tests/ shipped in every release through 0.9.0.
+# Wheels were never affected; this is about the source archive.
+prune tests
+prune plans
+prune templates
+prune test-env-310
+exclude plan.md
+exclude weekly_report.md
+exclude .env.example
+exclude .secrets.baseline
+exclude .secret-patterns.md
+exclude CLAUDE.md

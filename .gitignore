@@ -153,4 +153,9 @@ src/louieai/_version.py
 # Planning and temporary files
 AI_PROGRESS/
 plans/
+# Root-level scratch plan. Was tracked from 2025-08-02 and shipped in every
+# sdist through 0.9.0. Anchored with a leading slash so the plan skill's
+# plans/<task>/plan.md convention is unaffected.
+/plan.md
+/weekly_report.md
 tmp/
