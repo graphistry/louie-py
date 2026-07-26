@@ -44,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - `docs/api/response-types.md` groups the 30 `Response` members into everyday, opt-in
   reasoning, and power/debug tiers.
+- Point the advertised documentation URL at `louie-py.readthedocs.io`. `pyproject.toml`
+  and `CONTRIBUTING.md` linked `louieai.readthedocs.io`, which 404s, so the PyPI
+  "Documentation" link was broken on every release. The CONTRIBUTING troubleshooting
+  link pointed at a page that does not exist on either host and now points at the
+  authentication guide.
 
 ## [0.8.1] - 2026-04-14
 
