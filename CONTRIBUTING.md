@@ -101,13 +101,13 @@ We follow our [Code of Conduct](CODE_OF_CONDUCT.md). Please read it.
 ## Where to Get Help
 
 ### 🤔 Questions?
-- Check our [documentation](https://louieai.readthedocs.io)
+- Check our [documentation](https://louie-py.readthedocs.io)
 - Search existing [issues](https://github.com/graphistry/louie-py/issues)
 - Open a [discussion](https://github.com/graphistry/louie-py/discussions)
 
 ### 🔧 Technical Setup?
 - See [DEVELOP.md](DEVELOP.md) for detailed instructions
-- Check [troubleshooting guide](https://louieai.readthedocs.io/en/latest/troubleshooting/)
+- Check the [authentication guide](https://louie-py.readthedocs.io/en/latest/guides/authentication/)
 - Ask in discussions - we're here to help!
 
 ### 🔒 Security Issues?

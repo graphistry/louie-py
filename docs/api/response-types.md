@@ -48,6 +48,48 @@ for element in response.elements:
     print(f"Element type: {element_type}")
 ```
 
+## Response accessors: start here
+
+`Response` exposes a lot of surface. Almost all use falls in the first tier.
+
+### Everyday
+
+| Accessor | Type | Meaning |
+| --- | --- | --- |
+| `text` | `str \| None` | The answer |
+| `df` / `dfs` | DataFrame | First / all dataframes |
+| `status` | `str` | `"succeeded"`, `"failed"`, `"running"`, `"unknown"` |
+| `has_errors` / `errors` | `bool` / `list` | Element-level errors |
+| `terminal_error` | `str \| None` | Stream-level failure, distinct from `errors` |
+
+### Reasoning — opt-in
+
+Only populated when the request set `include_reasoning=True`; otherwise empty.
+
+| Accessor | Type | Meaning |
+| --- | --- | --- |
+| `reasoning_text` | `str \| None` | Provisional draft the agent produced while working |
+| `phases` | `list[dict]` | Progress steps |
+
+`text` never returns reasoning, whether or not you opt in — so enabling it
+cannot change what your existing code reads.
+
+### Power and debugging
+
+`final_text`, `final_texts`, `final_text_element`, `final_text_elements`,
+`final_answer_id`, `reasoning_texts`, `reasoning_elements`, `text_elements`,
+`run_nodes`, `root_run`, `run_updates`, `phase_updates`, `token_flow`,
+`terminals`, `terminal`, `succeeded`, `trace_events`, `stream_messages`,
+`dataframe_elements`, `graph_elements`.
+
+Two notes that catch people out:
+
+- **`text_elements` is the plural of `text`** — it excludes reasoning, exactly as
+  `text` does. For the unfiltered union use `elements`; for reasoning
+  specifically use `reasoning_elements`.
+- **`trace_events`** are server-emitted trace payloads requested via `traces=True`.
+  They are unrelated to W3C request tracing.
+
 ## Streaming envelopes and final-answer semantics
 
 Current streaming and singleshot routes return typed envelopes:

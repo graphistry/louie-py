@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - 2026-07-26
 
 ### Added
 - Default-off `include_reasoning` support across client, Cursor, Jupyter, and all upload paths.
@@ -13,12 +13,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lossless `stream_messages`, run/phase/status/token, terminal, and returned `trace_events` accessors.
 
 ### Changed
+- **Breaking:** `Response.text` now honours the server's explicit `final_answer` pointer
+  whether or not `include_reasoning` was set. It previously did so only when reasoning was
+  requested, and otherwise returned the first text element. Affects responses where the
+  server names a final answer that is not the first text element. `final_text` was already
+  correct and is unchanged.
+- **Breaking:** `Response.text_elements` now excludes reasoning, matching `Response.text` —
+  the singular and plural of the same accessor disagreed. Use `elements` for the unfiltered
+  union or `reasoning_elements` for reasoning. No effect unless `include_reasoning=True`.
 - Streaming, singleshot, upload, and notebook paths now share typed/legacy/concatenated JSON accumulation with position-aware replacement.
 - Notebook displays label and collapse identifiable reasoning, show execution phase/status, and escape untrusted streamed HTML.
 - `traces` documentation now describes server trace events; provisional model reasoning uses `include_reasoning`.
 
+### Fixed
+- `ResponseProxy.elements` (`lui.elements`, `lui[-n].elements`, `Cursor.elements`) read a
+  `message` key for error text, but the server sends `ExceptionElement.text`, so every error
+  surfaced the literal `"Unknown error"` while the real message was dropped. Reads `text`
+  first, with `message` retained as a legacy fallback.
+- `ResponseProxy.elements` entries now carry the source element `id`, so they can be
+  correlated with `Response.final_answer_id`, and are emitted in server position order
+  instead of being regrouped by type (an error raised midway is no longer hoisted first).
+
 ### Compatibility
-- Reasoning stays off by default. `Response.text` keeps its historical first-text fallback and Cursor keeps its latest-text fallback when the server has no explicit final-answer pointer.
+- Reasoning stays off by default. `Response.text` keeps its historical first-text behaviour
+  when the server sends no explicit final-answer pointer, and Cursor keeps its latest-text
+  fallback.
+
+### Security
+- Both secret-detection gate modes were structurally unable to fail: they branched on the
+  exit code of `detect-secrets scan --baseline`, which is an update command that always
+  exits 0. Replaced with an explicit baseline comparison, and added a deterministic gate for
+  Graphistry personal keys that entropy heuristics do not reach.
+- Pre-commit now scans the git index rather than the working tree, honours renames, and
+  fails closed on a missing or corrupt baseline.
+- Development credentials referenced by tests have been rotated; test fixtures, docs, and
+  `.env.example` now use RFC 2606 example domains and public endpoints.
+
+### Internal
+- CI installs from `uv.lock` (`uv sync --locked`), so lint, format, and type results are
+  reproducible. Previously it resolved unpinned floors and silently drifted.
+- `.env` is opt-in for tests via `LOUIE_TEST_MODE=integration`, so a run with no credentials
+  stays offline instead of dialling a real service.
+
+### Documentation
+- `docs/api/response-types.md` groups the 30 `Response` members into everyday, opt-in
+  reasoning, and power/debug tiers.
+- Point the advertised documentation URL at `louie-py.readthedocs.io`. `pyproject.toml`
+  and `CONTRIBUTING.md` linked `louieai.readthedocs.io`, which 404s, so the PyPI
+  "Documentation" link was broken on every release. The CONTRIBUTING troubleshooting
+  link pointed at a page that does not exist on either host and now points at the
+  authentication guide.
 
 ## [0.8.1] - 2026-04-14
 

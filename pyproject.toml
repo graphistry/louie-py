@@ -35,7 +35,7 @@ dependencies = [
 # Note: graphistry on PyPI is named 'graphistry'. We ensure a minimal version that likely includes Louie support.
 
 [project.urls]
-Documentation = "https://louieai.readthedocs.io"
+Documentation = "https://louie-py.readthedocs.io"
 Repository = "https://github.com/graphistry/louie-py"
 "Issue Tracker" = "https://github.com/graphistry/louie-py/issues"
 Changelog = "https://github.com/graphistry/louie-py/blob/main/CHANGELOG.md"
