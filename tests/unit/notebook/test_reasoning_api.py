@@ -82,10 +82,14 @@ def test_response_cursor_and_history_have_reasoning_metadata_parity() -> None:
     assert cursor.status == "succeeded"
     assert cursor.traces is False
     assert cursor.trace_events == [[20, 1, "done"]]
+    # Server position order: B_reason precedes B_final on the wire. The previous
+    # expectation ("text", "reasoning") encoded a defect — entries were grouped
+    # by type, hoisting the final answer ahead of reasoning that arrived first.
     assert [element["type"] for element in cursor.elements] == [
-        "text",
         "reasoning",
+        "text",
     ]
+    assert [element["id"] for element in cursor.elements] == ["B_reason", "B_final"]
 
 
 def test_cursor_texts_keep_tool_output_but_follow_explicit_final_pointer() -> None:

@@ -242,7 +242,7 @@ def test_legacy_draft_flag_remains_supported() -> None:
     assert response.reasoning_text == "draft"
 
 
-def test_default_off_preserves_legacy_multi_root_text_semantics() -> None:
+def test_explicit_final_answer_pointer_wins_even_when_reasoning_is_off() -> None:
     response = Response(
         "D_legacy",
         [
@@ -273,7 +273,11 @@ def test_default_off_preserves_legacy_multi_root_text_semantics() -> None:
         include_reasoning=False,
     )
 
-    assert response.text == "first legitimate output"
+    # BREAKING (unreleased): `.text` previously returned the first text element
+    # here, ignoring the server's explicit final_answer pointer unless
+    # include_reasoning was set. A pointer is the server stating which element
+    # is the answer, so honouring it conditionally was indefensible.
+    assert response.text == "second legitimate output"
     assert response.final_text == "second legitimate output"
     assert response.final_texts == [
         "first legitimate output",
@@ -360,3 +364,47 @@ def test_singleshot_uses_same_typed_accumulator() -> None:
     assert response.text == "final answer"
     assert response.status == "succeeded"
     assert response.reasoning_text == "checking the evidence"
+
+
+def test_text_elements_matches_text_semantics() -> None:
+    """`text_elements` is the plural of `text`, not the raw union.
+
+    Previously `.text` excluded reasoning while `.text_elements` included it, so
+    the singular and plural of the same word disagreed. The unfiltered view is
+    `.elements`; reasoning specifically is `.reasoning_elements`.
+    """
+    response = Response(
+        "D_split",
+        [
+            {
+                "id": "B_draft",
+                "type": "TextElement",
+                "text": "thinking",
+                "during_run_id": "R_root",
+            },
+            {
+                "id": "B_final",
+                "type": "TextElement",
+                "text": "answer",
+                "during_run_id": "R_root",
+            },
+        ],
+        stream_messages=[
+            {
+                "type": "StreamingApiMessageRunUpdate",
+                "run_node": {
+                    "node_type": "Run",
+                    "id": "R_root",
+                    "state": "Done",
+                    "final_answer": "B_final",
+                },
+            }
+        ],
+        include_reasoning=True,
+    )
+
+    assert [e["id"] for e in response.text_elements] == ["B_final"]
+    assert response.text_elements == response.final_text_elements
+    assert [e["id"] for e in response.reasoning_elements] == ["B_draft"]
+    # The raw union remains reachable.
+    assert len(response.elements) == 2

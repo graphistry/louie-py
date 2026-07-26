@@ -71,7 +71,17 @@ class Response:
 
     @property
     def text_elements(self) -> list[dict[str, Any]]:
-        """Get all text elements, including opt-in reasoning elements."""
+        """Text outputs, excluding opt-in reasoning.
+
+        Matches :attr:`text`: singular and plural mean the same thing. For the
+        unfiltered view use :attr:`elements`; for reasoning specifically use
+        :attr:`reasoning_elements`.
+        """
+        return self.final_text_elements
+
+    @property
+    def _all_text_elements(self) -> list[dict[str, Any]]:
+        """Every text element, reasoning included. Basis for classification."""
         return [e for e in self.elements if e.get("type") in ["TextElement", "text"]]
 
     @property
@@ -243,7 +253,7 @@ class Response:
     @property
     def reasoning_elements(self) -> list[dict[str, Any]]:
         """Latest text snapshots classified as opt-in reasoning."""
-        return [e for e in self.text_elements if self._is_reasoning_element(e)]
+        return [e for e in self._all_text_elements if self._is_reasoning_element(e)]
 
     @property
     def reasoning_texts(self) -> list[str]:
@@ -259,7 +269,7 @@ class Response:
     @property
     def final_text_elements(self) -> list[dict[str, Any]]:
         """Text outputs excluding elements classified as reasoning."""
-        return [e for e in self.text_elements if not self._is_reasoning_element(e)]
+        return [e for e in self._all_text_elements if not self._is_reasoning_element(e)]
 
     @property
     def final_texts(self) -> list[str]:
@@ -287,12 +297,14 @@ class Response:
     def text(self) -> str | None:
         """Get the primary final-oriented text response.
 
-        An explicit server final-answer pointer wins. Without one, preserve the
+        An explicit server final-answer pointer always wins, whether or not
+        reasoning was requested: if the server names the final answer, returning
+        a different element is never right. Without a pointer, preserve the
         historical SDK behavior of returning the first text element, excluding
         only an old wire-format element explicitly marked ``draft=true``.
         """
         final_id = self.final_answer_id
-        if final_id and self.include_reasoning is True:
+        if final_id:
             element = self.final_text_element
             return self._element_text(element) if element is not None else None
         elements = self.final_text_elements

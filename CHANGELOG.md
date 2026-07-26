@@ -20,6 +20,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Compatibility
 - Reasoning stays off by default. `Response.text` keeps its historical first-text fallback and Cursor keeps its latest-text fallback when the server has no explicit final-answer pointer.
 
+## [Unreleased]
+
+### Fixed
+- `ResponseProxy.elements` (`lui.elements`, `lui[-n].elements`, `Cursor.elements`) read a
+  `message` key for error text, but the server sends `ExceptionElement.text`, so every error
+  surfaced the literal `"Unknown error"` while the real message was dropped. Reads `text`
+  first, with `message` retained as a legacy fallback.
+- `ResponseProxy.elements` entries now carry the source element `id`, so they can be
+  correlated with `Response.final_answer_id`, and are emitted in server position order
+  instead of being regrouped by type (an error raised midway is no longer hoisted first).
+
+### Changed
+- **Breaking:** `Response.text` now honours the server's explicit `final_answer` pointer
+  whether or not `include_reasoning` was set. It previously did so only when reasoning was
+  requested, and otherwise returned the first text element. Affects responses where the
+  server names a final answer that is not the first text element. `final_text` was already
+  correct and is unchanged.
+- `Response.text_elements` now excludes reasoning, matching `Response.text` — the singular
+  and plural of the same accessor disagreed. Use `elements` for the unfiltered union or
+  `reasoning_elements` for reasoning. No effect unless `include_reasoning=True`.
+
+### Documentation
+- `docs/api/response-types.md` groups the 30 `Response` members into everyday, opt-in
+  reasoning, and power/debug tiers.
+
 ## [0.8.1] - 2026-04-14
 
 ### Fixed

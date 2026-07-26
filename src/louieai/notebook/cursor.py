@@ -494,31 +494,54 @@ class ResponseProxy:
 
     @property
     def elements(self) -> list[dict[str, Any]]:
-        """All elements with type tags."""
+        """All elements with type tags, in server position order.
+
+        Each entry carries the source element's ``id`` where the server supplied
+        one, so entries can be correlated with ``Response.final_answer_id``.
+        Entries are emitted in the order the server produced them rather than
+        grouped by type, so an error raised midway stays in position.
+        """
         if not self._response:
             return []
 
-        result = []
+        # Sub-views are filters over the same dict objects, so identity maps
+        # each entry back to its position in the server's output.
+        source = getattr(self._response, "elements", []) or []
+        positions = {id(elem): index for index, elem in enumerate(source)}
+        unplaced = len(positions)
+        ordered: list[tuple[int, dict[str, Any]]] = []
+
+        def tag(elem: Any, entry: dict[str, Any]) -> None:
+            if isinstance(elem, dict) and elem.get("id") is not None:
+                entry.setdefault("id", elem["id"])
+            ordered.append((positions.get(id(elem), unplaced), entry))
 
         for elem in self.errors:
-            result.append(
+            # Current servers send ExceptionElement.text; `message` is legacy.
+            value = (
+                elem.get("text")
+                or elem.get("message")
+                or elem.get("value")
+                or "Unknown error"
+            )
+            tag(
+                elem,
                 {
                     "type": "error",
-                    "value": elem.get("message", "Unknown error"),
+                    "value": value,
                     "error_type": elem.get("error_type"),
                     "traceback": elem.get("traceback"),
-                }
+                },
             )
 
         for elem in self.final_text_elements:
             value = elem.get("content") or elem.get("text", "") or elem.get("value", "")
-            result.append({"type": "text", "value": value})
+            tag(elem, {"type": "text", "value": value})
 
         for elem in self.reasoning_elements:
             value = elem.get("content") or elem.get("text", "") or elem.get("value", "")
-            result.append({"type": "reasoning", "value": value})
+            tag(elem, {"type": "reasoning", "value": value})
 
-        # Add dataframe elements
         if (
             hasattr(self._response, "dataframe_elements")
             and self._response.dataframe_elements
@@ -530,18 +553,17 @@ class ResponseProxy:
                         "value": elem["table"],  # Backward compatibility
                         "df": elem["table"],  # Convenient access as 'df'
                     }
-                    # Include metadata from the original element
                     for key in ["id", "df_id", "block_id"]:
                         if key in elem:
                             df_element[key] = elem[key]
-                    result.append(df_element)
+                    tag(elem, df_element)
 
-        # Add graph elements
         if hasattr(self._response, "graph_elements") and self._response.graph_elements:
             for elem in self._response.graph_elements:
-                result.append({"type": "graph", "value": elem})
+                tag(elem, {"type": "graph", "value": elem})
 
-        return result
+        ordered.sort(key=lambda pair: pair[0])
+        return [entry for _, entry in ordered]
 
     @property
     def errors(self) -> list[dict[str, Any]]:
