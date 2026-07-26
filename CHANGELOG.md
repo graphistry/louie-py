@@ -24,6 +24,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   credential-shaped content. Rules can be right while the artifact is wrong, so this runs
   in CI's `install-test` (which already builds) and again in `publish.yml` before each
   upload — the last point at which a mistake is still recallable.
+- The artifact screen also sweeps the extracted archive with `detect-secrets`, compared
+  against `.secrets.baseline`, covering the classes the deterministic gate misses: AWS
+  keys, private key blocks, keyword-adjacent values, high-entropy strings. Archive paths
+  are normalized back to repository paths first — a wheel ships `louieai/` where the repo
+  has `src/louieai/`, and `PKG-INFO`/`METADATA` are generated from `README.md`.
+  `detect-secrets scan` enumerates files through git, so in an extracted archive a bare
+  scan reports zero findings regardless of contents; `--all-files` is required and a test
+  pins it.
+- Every unavailable prerequisite now fails the screen instead of passing it. A missing
+  baseline, comparer, or `detect-secrets` binary previously returned "clean" — the same
+  defect as a gate whose failure branch is unreachable.
+- `tests/unit/security/test_release_artifact_gates.py` proves the gates *reject*: 9 leak
+  types x 2 artifact types, planted into real `.tar.gz` and `.whl` archives. Controls: a
+  clean archive of each type must pass, each sweep-caught leak must survive with the sweep
+  disabled (so a rotted sweep cannot hide behind the literal gate), and a missing
+  `detect-secrets` fails the module rather than skipping it.
 
 ## [0.9.0] - 2026-07-26
 
