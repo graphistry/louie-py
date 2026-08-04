@@ -18,17 +18,21 @@ port `10013` on the loopback interface and nothing else will reach it.
 ## Louie Web
 
 ```python
+import os
+
 import graphistry
 import louieai
 
 # Louie Cloud (free tier)
 graphistry.register(api=3, server="hub.graphistry.com",
-                    username="your_user", password="your_pass")
+                    username=os.environ["GRAPHISTRY_USERNAME"],
+                    password=os.environ["GRAPHISTRY_PASSWORD"])
 lui = louieai(server_url="https://den.louie.ai")  # default, can be omitted
 
 # Enterprise deployment — both servers must come from the same deployment
 graphistry.register(api=3, server="your-company.graphistry.com",
-                    username="your_user", password="your_pass")
+                    username=os.environ["GRAPHISTRY_USERNAME"],
+                    password=os.environ["GRAPHISTRY_PASSWORD"])
 lui = louieai(server_url="https://louie.your-company.com")
 ```
 
