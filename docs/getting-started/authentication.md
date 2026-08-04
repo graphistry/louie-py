@@ -49,12 +49,23 @@ That's it! LouieAI will automatically use your PyGraphistry credentials.
 
 LouieAI requires both a Graphistry server (for authentication) and a Louie server (for AI queries):
 
-| Setup | Graphistry Server | Louie Server |
+| Setup | Graphistry Server | Louie Server (`server_url`) |
 |-------|------------------|--------------|
-| **Graphistry Hub (Free)** | `hub.graphistry.com` | `https://den.louie.ai` |
-| **Enterprise** | `your-company.graphistry.com` | `https://louie.your-company.com` |
+| **Louie Web — Graphistry Hub (Free)** | `hub.graphistry.com` | `https://den.louie.ai` |
+| **Louie Web — Enterprise** | `your-company.graphistry.com` | `https://louie.your-company.com` |
+| **Louie Desktop (local app)** | whatever the desktop app is paired with | `http://127.0.0.1:10013` |
 
 **Important**: The servers must match - use Hub servers together or enterprise servers together.
+
+**Web vs Desktop**: The examples above target Louie Web, which is the default. If you are
+running the Louie Desktop app, point `server_url` at its local port instead:
+
+```python
+lui = louieai(server_url="http://127.0.0.1:10013")
+```
+
+See [Connecting: Web vs Desktop](connecting.md) for anonymous desktop sessions, thread
+deep links, and troubleshooting.
 
 ## How It Works
 

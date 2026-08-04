@@ -6,6 +6,7 @@ nav:
   - Getting Started:
     - Installation: getting-started/installation.md
     - Authentication: getting-started/authentication.md
+    - Connecting - Web vs Desktop: getting-started/connecting.md
     - Quick Start: getting-started/quick-start.md
     - Example Notebooks:
       - Getting Started: getting-started/notebooks/01-getting-started.ipynb

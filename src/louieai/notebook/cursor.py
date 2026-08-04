@@ -1189,8 +1189,9 @@ class Cursor:
         """Get the URL for the current thread.
 
         Returns a link that opens the current conversation thread.
-        Desktop servers (localhost) produce ``louie://`` deep links;
-        team servers produce web URLs. Override with ``frontend_url``.
+        Louie Desktop (``127.0.0.1``/``localhost``, e.g. port 10013) produces
+        ``louie://`` deep links; Louie Web servers produce https URLs.
+        Override with ``frontend_url``.
 
         Returns:
             str | None: The thread URL if a thread exists, None otherwise.

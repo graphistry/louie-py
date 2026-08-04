@@ -209,8 +209,12 @@ export GRAPHISTRY_PASSWORD=your_password
 ### Custom Server URL
 
 ```bash
-export LOUIE_URL=https://custom-louie.ai  # Custom Louie server
+export LOUIE_URL=https://louie.your-company.com  # Louie Web (enterprise)
+export LOUIE_URL=http://127.0.0.1:10013          # Louie Desktop (local app)
 ```
+
+Defaults to `https://den.louie.ai` (Louie Web cloud) when unset. See
+[Connecting: Web vs Desktop](../getting-started/connecting.md).
 
 ## Properties Reference
 

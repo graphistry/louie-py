@@ -190,7 +190,13 @@ lui = louie(
     server_url="https://louie.your-company.com",
     graphistry_server="your-company.graphistry.com",
 )
+
+# Louie Desktop runs locally on port 10013, not the web default
+lui = louie(server_url="http://127.0.0.1:10013")
 ```
+
+See [Connecting: Web vs Desktop](../getting-started/connecting.md) for the full list of
+deployments and their URLs.
 
 ### Authentication Methods
 
@@ -213,9 +219,9 @@ lui = louie(api_key="your_api_key")
 # Direct bearer token (Graphistry or anonymous)
 lui = louie(token="<token>")
 
-# Anonymous auth (desktop/local, if enabled)
-# Use the Tornado/UI port so /auth/anonymous is available
-lui = louie(server_url="http://localhost:8513", anonymous=True)
+# Anonymous auth (Louie Desktop, if enabled)
+# Desktop serves /auth/anonymous on its local port
+lui = louie(server_url="http://127.0.0.1:10013", anonymous=True)
 ```
 
 Anonymous auth is optional on the server and cannot be combined with Graphistry credentials.
