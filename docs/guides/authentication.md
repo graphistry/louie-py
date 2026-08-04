@@ -6,13 +6,18 @@ This guide covers all authentication options for LouieAI, from basic setup to ad
 
 LouieAI uses PyGraphistry authentication - no separate credentials needed. Servers must be paired:
 
-| Graphistry Server | Louie Server | Usage |
+| Graphistry Server | Louie Server (`server_url`) | Usage |
 |------------------|--------------|-------|
-| `hub.graphistry.com` | `https://den.louie.ai` | Public cloud (free tier) |
-| `your-company.graphistry.com` | `https://louie.your-company.com` | Enterprise deployment |
+| `hub.graphistry.com` | `https://den.louie.ai` | Louie Web — public cloud (free tier) |
+| `your-company.graphistry.com` | `https://louie.your-company.com` | Louie Web — enterprise deployment |
+| whatever the desktop app is paired with | `http://127.0.0.1:10013` | Louie Desktop — app running on your machine |
 
 LouieAI automatically extracts JWT tokens from PyGraphistry and refreshes them as needed.
 Use `server_url` for the Louie API base and `graphistry_server` for Graphistry auth.
+
+**Web vs Desktop:** `server_url` defaults to `https://den.louie.ai`, so web users can
+usually omit it. Louie Desktop listens on `http://127.0.0.1:10013` and must always be set
+explicitly — see [Connecting: Web vs Desktop](../getting-started/connecting.md).
 
 **Resources:**
 - [PyGraphistry Authentication](https://pygraphistry.readthedocs.io/en/latest/server/register.html) - All authentication methods
@@ -134,15 +139,16 @@ client = lui.LouieClient()  # Uses env vars automatically
 
 ### Method 7: Anonymous Desktop Authentication (Optional)
 
-Some local/desktop servers expose `/auth/anonymous` for anonymous sessions.
-This endpoint may be disabled; if so, the client will raise a clear error.
+Louie Desktop can expose `/auth/anonymous` for local sessions with no Graphistry login.
+This is a desktop-only feature and may be disabled; if so, the client raises a clear
+error and you should authenticate with the credentials your desktop app is paired with.
 
 ```python
 from louieai import louie
 
-# Use the desktop/Tornado port (it proxies /api and hosts /auth/anonymous)
+# Louie Desktop's local port — it proxies /api and hosts /auth/anonymous
 lui = louie(
-    server_url="http://localhost:8513",
+    server_url="http://127.0.0.1:10013",
     anonymous=True
 )
 ```
@@ -156,7 +162,7 @@ directly:
 from louieai import louie
 
 lui = louie(
-    server_url="http://localhost:8513",
+    server_url="http://127.0.0.1:10013",
     anonymous=True,
     token="<anon-token>"
 )
@@ -207,7 +213,8 @@ print(f"Bob's thread: {bob_response.thread_id}")
 | `graphistry_server` | str | Graphistry server URL | `"hub.graphistry.com"` |
 | `api` | int | API version (usually 3) | `3` |
 | `graphistry_client` | Any | Existing PyGraphistry client or plottable | `graphistry.client()` |
-| `anonymous` | bool | Use `/auth/anonymous` (desktop only, optional) | `True` |
+| `server_url` | str | Louie API base — web URL or Desktop's `http://127.0.0.1:10013` | `"https://den.louie.ai"` |
+| `anonymous` | bool | Use `/auth/anonymous` (Louie Desktop only, optional) | `True` |
 | `token` | str | Pre-fetched bearer token (anonymous or Graphistry) | `"<token>"` |
 | `anonymous_timeout` | int | Timeout for `/auth/anonymous` request (seconds) | `20` |
 

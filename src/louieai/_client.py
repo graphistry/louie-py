@@ -361,7 +361,9 @@ class LouieClient:
         """Initialize the Louie client.
 
         Args:
-            server_url: Base URL for the Louie.ai service (default: den)
+            server_url: Base URL for the Louie service. Louie Web:
+                "https://den.louie.ai" (default) or your enterprise URL.
+                Louie Desktop: "http://127.0.0.1:10013".
             graphistry_client: Existing Graphistry client to use for auth
             username: Username for direct authentication
             password: Password for direct authentication
@@ -370,7 +372,7 @@ class LouieClient:
             personal_key_secret: Personal key secret for service account authentication
             org_name: Organization name - use username for personal orgs (optional)
             api: API version (default: 3)
-            anonymous: Use anonymous auth via /auth/anonymous (local desktop only)
+            anonymous: Use anonymous auth via /auth/anonymous (Louie Desktop only)
             anonymous_timeout: Timeout for /auth/anonymous in seconds
             timeout: Overall timeout in seconds for requests (default: 300s/5min)
             streaming_timeout: Timeout for streaming chunks (default: 120s/2min)
@@ -407,9 +409,9 @@ class LouieClient:
             g = graphistry.nodes(df)
             client = LouieClient(graphistry_client=g)
 
-            # Anonymous auth for local desktop (if enabled)
+            # Anonymous auth for Louie Desktop (if enabled)
             client = LouieClient(
-                server_url="http://localhost:8513",
+                server_url="http://127.0.0.1:10013",
                 anonymous=True
             )
 

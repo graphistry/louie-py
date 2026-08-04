@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- New [Connecting: Web vs Desktop](docs/getting-started/connecting.md) page. Louie Desktop
+  serves its API on `http://127.0.0.1:10013`, which nothing in the docs said — every
+  `server_url` example targeted Louie Web, so desktop users had no address to point at.
+  The page covers each deployment's URL, anonymous desktop sessions, `louie://` thread
+  deep links, `LOUIE_URL`, and the failure modes of getting it wrong.
+- Server tables in both authentication guides now name Louie Web vs Louie Desktop and list
+  the desktop port. `server_url` is documented in the auth options reference; it was
+  missing from the table despite being the setting that decides which server you reach.
+- Anonymous-auth examples moved off `http://localhost:8513` to `http://127.0.0.1:10013`.
+  `/auth/anonymous` is a Louie Desktop feature, so the example now uses the desktop port.
+  Same change in the `LouieClient` and `louie()` docstrings, which feed the API reference.
+
 ### Fixed
+- README's custom-server example called `LouieClient(server_url=..., server=...)`. Neither
+  half worked: `LouieClient` is not exported from `louieai`, and `server=` has been
+  rejected with "use graphistry_server instead" since it was renamed. Replaced with the
+  public `louie()` API. The README also claimed `LOUIE_URL` defaults to
+  `https://louie.ai`; the default is `https://den.louie.ai`.
 - Stop shipping internal material in the sdist. `plan.md`, `weekly_report.md`, `tests/`,
   and `.env.example` were published in every release through 0.9.0 because setuptools'
   default sdist sweeps in top-level files and the test tree. Added `MANIFEST.in`; the

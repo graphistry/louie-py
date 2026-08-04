@@ -59,6 +59,9 @@ g = graphistry.register(
 )
 lui = louieai(g, server_url="https://den.louie.ai")  # or your enterprise URL
 
+# Option 3: Louie Desktop — the app runs locally on port 10013
+lui = louieai(server_url="http://127.0.0.1:10013")
+
 # Control data visibility
 lui = louieai(share_mode="Organization")  # Share within your org
 lui("Analyze sales trends", share_mode="Private")  # Override per query
@@ -80,6 +83,7 @@ older_df = lui[-2].df      # DataFrame from 2 queries ago
 
 **Need more options?** See our guides:
 
+- [Connecting: Web vs Desktop](getting-started/connecting.md) - Which `server_url` to use for Louie Cloud, enterprise, and the Desktop app
 - [Authentication Guide](guides/authentication.md) - All authentication methods including API keys, multi-tenant usage
 - [Getting Started](getting-started/quick-start.md) - Complete walkthrough with examples
 - [Agent Selection](guides/agent-selection.md) - Use specialized agents for databases and visualizations

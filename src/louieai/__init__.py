@@ -131,9 +131,11 @@ def louie(
             - personal_key_id: Personal key ID for service accounts
             - personal_key_secret: Personal key secret
             - org_name: Organization name (optional)
-            - server_url: Louie server URL (default: "https://den.louie.ai")
+            - server_url: Louie server URL. Louie Web: "https://den.louie.ai"
+              (default) or your enterprise URL. Louie Desktop:
+              "http://127.0.0.1:10013"
             - graphistry_server: PyGraphistry server (default: "hub.graphistry.com")
-            - anonymous: Use anonymous auth via /auth/anonymous (local desktop only)
+            - anonymous: Use anonymous auth via /auth/anonymous (Louie Desktop only)
             - token: Optional pre-fetched bearer token (anonymous or Graphistry)
             - anonymous_timeout: Timeout for /auth/anonymous in seconds
             - timeout: Overall timeout in seconds (default: 300s/5min)
@@ -174,9 +176,12 @@ def louie(
         ... )
         >>> lui("Run comprehensive data analysis with multiple steps")
 
-        >>> # Anonymous auth (desktop/local, if enabled)
+        >>> # Louie Desktop — the app serves the API on port 10013
+        >>> lui = louie(server_url="http://127.0.0.1:10013")
+
+        >>> # Anonymous auth (Louie Desktop, if enabled)
         >>> lui = louie(
-        ...     server_url="http://localhost:8513",
+        ...     server_url="http://127.0.0.1:10013",
         ...     anonymous=True
         ... )
     """

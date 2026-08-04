@@ -57,8 +57,9 @@ export GRAPHISTRY_USERNAME="<your-username>"
 export GRAPHISTRY_PASSWORD="<your-password>"
 export GRAPHISTRY_SERVER="hub.graphistry.com"  # or "my-company.graphistry.com"
 
-# Optional: Custom Louie endpoint (defaults to https://louie.ai)
-export LOUIE_URL="https://louie-enterprise.company.com"
+# Optional: Custom Louie endpoint (defaults to https://den.louie.ai)
+export LOUIE_URL="https://louie-enterprise.company.com"  # Louie Web (enterprise)
+export LOUIE_URL="http://127.0.0.1:10013"                # Louie Desktop (local app)
 ```
 
 ```python
@@ -71,13 +72,21 @@ graphistry.register(
     password="password123"  # example password
 )
 
-# Optional: Use custom Louie server
-from louieai import LouieClient
-client = LouieClient(
-    server_url="https://louie.ai",  # Louie service endpoint (default)
-    server="hub.graphistry.com"      # PyGraphistry server (default)
+# Optional: Use a specific Louie server
+from louieai import louie
+
+# Louie Web
+lui = louie(
+    server_url="https://den.louie.ai",          # Louie service endpoint (default)
+    graphistry_server="hub.graphistry.com",     # PyGraphistry server (default)
 )
+
+# Louie Desktop — the app serves the API locally on port 10013
+lui = louie(server_url="http://127.0.0.1:10013")
 ```
+
+See [Connecting: Web vs Desktop](https://louie-py.readthedocs.io/en/latest/getting-started/connecting/)
+for choosing the right `server_url`.
 
 ### Quick Start
 
