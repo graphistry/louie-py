@@ -93,12 +93,30 @@ class TestLouieFactory:
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
-        result = louie(anonymous=True, server_url="http://localhost:8513")
+        result = louie(anonymous=True, server_url="http://127.0.0.1:10013")
 
         assert isinstance(result, Cursor)
         mock_client_class.assert_called_once_with(
-            anonymous=True, server_url="http://localhost:8513"
+            anonymous=True, server_url="http://127.0.0.1:10013"
         )
+
+    def test_louie_desktop_thread_link_is_deep_link(self):
+        """Louie Desktop's local server yields louie:// deep links."""
+        cursor = louie(server_url="http://127.0.0.1:10013", token="test-token")
+        cursor._current_thread = "D_test"
+
+        assert cursor.url == "louie://n/D_test"
+
+    def test_louie_frontend_url_overrides_deep_link(self):
+        """frontend_url reaches the Cursor rather than the client kwargs."""
+        cursor = louie(
+            server_url="http://127.0.0.1:10013",
+            frontend_url="http://localhost:5173",
+            token="test-token",
+        )
+        cursor._current_thread = "D_test"
+
+        assert cursor.url == "http://localhost:5173/?dthread=D_test"
 
     @patch("louieai._client.LouieClient")
     def test_louie_with_custom_server(self, mock_client_class):

@@ -1,7 +1,7 @@
 # Connecting: Web vs Desktop
 
-Every entry point — `louieai()`, `louie()`, and `LouieClient` — takes a `server_url`
-that points at the Louie server you want to talk to. Louie Web and Louie Desktop are
+Both entry points — `louieai()` and `louie()` — take a `server_url` that points at the
+Louie server you want to talk to. Louie Web and Louie Desktop are
 different servers on different addresses, so this is the one setting you must get right
 before anything else works.
 
@@ -74,14 +74,13 @@ print(lui.url)
 ```
 
 To override the deep link — for example when you run a team server on localhost and want
-browser links — construct a `Cursor` with an explicit `frontend_url`:
+browser links — pass `frontend_url`:
 
 ```python
-from louieai import Cursor
-from louieai._client import LouieClient
+import louieai
 
-client = LouieClient(server_url="http://127.0.0.1:10013")
-lui = Cursor(client=client, frontend_url="http://localhost:5173")
+lui = louieai(server_url="http://127.0.0.1:10013",
+              frontend_url="http://localhost:5173")
 lui("Analyze customer churn")
 print(lui.url)  # http://localhost:5173/?dthread=<thread-id>
 ```

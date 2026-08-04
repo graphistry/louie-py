@@ -89,6 +89,7 @@ def louie(
     *,
     include_reasoning: bool = False,
     traces: bool = False,
+    frontend_url: str | None = None,
     **kwargs: Any,
 ) -> Cursor:
     """Create a callable Louie interface.
@@ -122,6 +123,9 @@ def louie(
         share_mode: Default visibility mode - "Private", "Organization", or "Public"
         name: Optional thread name (auto-generated from first message if not provided)
         folder: Optional folder path for new threads (server support required)
+        frontend_url: Base URL for ``lui.url`` thread links. Auto-detected if not
+            set: a local server (Louie Desktop) yields ``louie://n/`` deep links,
+            a web server yields ``server_url`` links.
         include_reasoning: Include provisional reasoning by default for this session.
         traces: Request server trace events by default for this session.
         **kwargs: Authentication parameters passed to LouieClient
@@ -193,6 +197,7 @@ def louie(
             share_mode=share_mode,
             name=name,
             folder=folder,
+            frontend_url=frontend_url,
             include_reasoning=include_reasoning,
         )
         cursor.traces = traces

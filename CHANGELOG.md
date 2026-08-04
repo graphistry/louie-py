@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `louie()` accepts `frontend_url`, forwarded to the `Cursor` that controls `lui.url`.
+  It was reachable only by constructing a `Cursor` around `louieai._client.LouieClient`,
+  so documenting the desktop link override meant publishing a private import. Passing it
+  previously raised `TypeError` from `LouieClient`, so nothing that worked before changes.
+
 ### Documentation
 - New [Connecting: Web vs Desktop](docs/getting-started/connecting.md) page. Louie Desktop
   serves its API on `http://127.0.0.1:10013`, which nothing in the docs said — every
