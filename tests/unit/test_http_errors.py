@@ -329,3 +329,47 @@ def test_upload_retry_resends_identical_payload(louie_client, method, make_input
     for request in requests:
         assert payload in request.content
         assert b"SKIPPED-PREFIX" not in request.content
+
+
+@pytest.mark.parametrize(
+    "call",
+    [lambda c: c.add_cell("", "hi"), _upload_dataframe, _upload_image, _upload_binary],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_non_jwt_401_is_not_retried(louie_client, call):
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(401, {"detail": "Could not validate credentials"})
+
+    graphistry_client = louie_client._auth_manager._graphistry_client
+    with (
+        patch("httpx.Client", _client_factory(httpx.MockTransport(handler))),
+        pytest.raises(httpx.HTTPStatusError, match="Could not validate credentials"),
+    ):
+        call(louie_client)
+    assert len(requests) == 1
+    graphistry_client.refresh.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "call",
+    [lambda c: c.add_cell("", "hi"), _upload_dataframe, _upload_image, _upload_binary],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_token_auth_cannot_refresh_so_401_propagates(call):
+    """With ``token=`` there is nothing to refresh: one request, original 401."""
+    client = LouieClient(server_url="https://louie.test", token="fixed-token")
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(401, {"detail": "JWT token expired"})
+
+    with (
+        patch("httpx.Client", _client_factory(httpx.MockTransport(handler))),
+        pytest.raises(httpx.HTTPStatusError, match="JWT token expired"),
+    ):
+        call(client)
+    assert len(requests) == 1
