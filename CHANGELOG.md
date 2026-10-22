@@ -49,7 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   refresh-and-retry check reads the 401 body for a JWT error, which was unreadable on
   these streamed calls; the upload calls also never reached the check, because their
   `UploadClient` had no `auth_manager`. They failed instead of refreshing once and
-  resending. (The Jupyter live-streaming display has no retry and is unchanged.)
+  resending. Image and binary uploads read your file object once and resend those same
+  bytes on retry, so inputs that can't rewind are safe. (The Jupyter live-streaming
+  display has no retry and is unchanged.)
 - README's custom-server example called `LouieClient(server_url=..., server=...)`. Neither
   half worked: `LouieClient` is not exported from `louieai`, and `server=` has been
   rejected with "use graphistry_server instead" since it was renamed. Replaced with the

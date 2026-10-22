@@ -338,7 +338,6 @@ class UploadClient:
                         f"{thread_id} for DfElement. Element: {elem}"
                     )
 
-    @auto_retry_auth
     def upload_image(
         self,
         prompt: str,
@@ -393,11 +392,44 @@ class UploadClient:
             ...     img_bytes = f.read()
             >>> response = client.upload_image("Extract text", img_bytes)
         """
-        # Get headers with auth and tracing
-        headers = self._client._get_headers(session_trace_id=session_trace_id)
-
-        # Serialize image
+        # Serialize once: the retry in _send_file resends these bytes rather
+        # than re-reading the caller's file object, which may not rewind
         file_data, filename, content_type = self._serialize_image(image)
+        return self._send_file(
+            prompt,
+            file_data,
+            filename,
+            content_type,
+            thread_id,
+            agent=agent,
+            traces=traces,
+            include_reasoning=include_reasoning,
+            share_mode=share_mode,
+            name=name,
+            folder=folder,
+            session_trace_id=session_trace_id,
+        )
+
+    @auto_retry_auth
+    def _send_file(
+        self,
+        prompt: str,
+        file_data: bytes,
+        filename: str,
+        content_type: str,
+        thread_id: str,
+        *,
+        agent: str,
+        traces: bool,
+        include_reasoning: bool,
+        share_mode: str,
+        name: str | None,
+        folder: str | None,
+        session_trace_id: str | None,
+    ) -> Response:
+        """POST serialized file bytes to the upload API and parse the stream."""
+        # Get headers with auth and tracing (fresh on each retry)
+        headers = self._client._get_headers(session_trace_id=session_trace_id)
 
         # Prepare form data
         files = [("files", (filename, file_data, content_type))]
@@ -610,7 +642,6 @@ class UploadClient:
                 "Expected file path, bytes, file-like object, or PIL Image"
             )
 
-    @auto_retry_auth
     def upload_binary(
         self,
         prompt: str,
@@ -665,105 +696,22 @@ class UploadClient:
             ...     file_bytes = f.read()
             >>> response = client.upload_binary("Key points from this doc", file_bytes)
         """
-        # Get headers with auth and tracing
-        headers = self._client._get_headers(session_trace_id=session_trace_id)
-
-        # Serialize binary file
-        file_data, file_name, content_type = self._serialize_binary(file, filename)
-
-        # Prepare form data
-        files = [("files", (file_name, file_data, content_type))]
-
-        data = {
-            "query": prompt,
-            "agent": agent,
-            "ignore_traces": str(not traces).lower(),
-            "include_reasoning": str(include_reasoning).lower(),
-            "share_mode": share_mode,
-        }
-
-        # Add optional fields
-        if thread_id:
-            data["dthread_id"] = thread_id
-        else:
-            if name:
-                data["name"] = name
-            if folder:
-                data["folder"] = folder
-
-        # Make upload request with streaming response
-        response_text = ""
-        lines_received = 0
-        start_time = time.time()
-
-        # Use configured timeouts
-        stream_client = httpx.Client(
-            timeout=httpx.Timeout(
-                self._client._timeout,  # Overall timeout
-                read=self._client._streaming_timeout,  # Per-chunk timeout
-            )
-        )
-
-        with (
-            stream_client,
-            stream_client.stream(
-                "POST",
-                f"{self._client.server_url}/api/chat_upload/",
-                headers=headers,
-                data=data,
-                files=files,
-            ) as response,
-        ):
-            raise_for_status(response)
-
-            # Collect streaming lines
-            last_activity = start_time
-            try:
-                for line in response.iter_lines():
-                    if line:
-                        response_text += line + "\n"
-                        lines_received += 1
-                        last_activity = time.time()
-
-                    # Check for timeout
-                    time_since_activity = time.time() - last_activity
-                    if time_since_activity > self._client._streaming_timeout:
-                        logger.warning(
-                            f"Streaming timeout after {time_since_activity:.1f}s "
-                            f"of inactivity. Received {lines_received} lines."
-                        )
-                        break
-
-            except httpx.ReadTimeout:
-                elapsed = time.time() - start_time
-                if lines_received > 0:
-                    logger.info(
-                        f"Stream ended after {elapsed:.1f}s with {lines_received} lines"
-                    )
-                else:
-                    raise
-
-        # Parse response and create Response object
-        parsed = self._client._parse_jsonl_response(response_text)
-
-        # Fetch any dataframes that were returned
-        if parsed.get("dthread_id"):
-            for elem in parsed.get("elements", []):
-                if elem.get("type") in ["DfElement", "df"] and elem.get("id"):
-                    # Fetch the actual dataframe
-                    fetched_df = self._client._fetch_dataframe_arrow(
-                        parsed["dthread_id"], elem["id"]
-                    )
-                    if fetched_df is not None:
-                        elem["table"] = fetched_df
-
-        from ._client import Response
-
-        return Response(
-            thread_id=parsed.get("dthread_id", ""),
-            elements=parsed.get("elements", []),
-            stream_messages=parsed.get("stream_messages", []),
+        # Serialize once: the retry in _send_file resends these bytes rather
+        # than re-reading the caller's file object, which may not rewind
+        file_data, filename, content_type = self._serialize_binary(file, filename)
+        return self._send_file(
+            prompt,
+            file_data,
+            filename,
+            content_type,
+            thread_id,
+            agent=agent,
+            traces=traces,
             include_reasoning=include_reasoning,
+            share_mode=share_mode,
+            name=name,
+            folder=folder,
+            session_trace_id=session_trace_id,
         )
 
     def _serialize_binary(
