@@ -7,7 +7,7 @@ Access Snowflake cloud data warehouse with natural language or direct SQL.
 - **SnowflakeAgent** - AI-powered natural language to SQL
 - **SnowflakePassthroughAgent** - Direct SQL execution
 
-> **Availability:** current Louie servers accept the `SnowflakeAgent` name but do not enable the agent. A call returns no output and `lui.status` is `'failed'`. Check with your Louie administrator before relying on it.
+> **Availability:** current Louie servers accept the `SnowflakeAgent` and `SnowflakePassthroughAgent` names but do not enable either agent. A call returns no output and `lui.status` is `'failed'`.
 
 ## Usage Examples
 

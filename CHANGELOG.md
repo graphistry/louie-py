@@ -24,8 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   read, and copy between Louie notebooks, and search run history. Creating and editing
   cells needs server-side enablement. The Web Scraping guide drops screenshots, raw HTML,
   and page interaction, which the web tools don't support, and caps crawls at 50 pages.
-- Snowflake and Athena guides warn that current servers accept these agent names but do
-  not enable the agents: a call returns no output and `lui.status` is `'failed'`.
+- Snowflake and Athena guides warn that current servers accept these agent names (and their
+  Passthrough variants) but do not enable the agents: a call returns no output and `lui.status` is `'failed'`.
 - New [Connecting: Web vs Desktop](docs/getting-started/connecting.md) page. Louie Desktop
   serves its API on `http://127.0.0.1:10013`, which nothing in the docs said — every
   `server_url` example targeted Louie Web, so desktop users had no address to point at.
@@ -46,8 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Server detail: ...` (at most 500 characters), and `e.response` stays readable.
 - Expired login tokens are now refreshed on `add_cell` and the upload calls (#52). Their
   refresh-and-retry check reads the 401 body for a JWT error, which was unreadable on
-  these streamed calls, so they failed instead of refreshing once and retrying. (The
-  Jupyter live-streaming display has no retry and is unchanged.)
+  these streamed calls; the upload calls also never reached the check, because their
+  `UploadClient` had no `auth_manager`. They failed instead of refreshing once and
+  resending. (The Jupyter live-streaming display has no retry and is unchanged.)
 - README's custom-server example called `LouieClient(server_url=..., server=...)`. Neither
   half worked: `LouieClient` is not exported from `louieai`, and `server=` has been
   rejected with "use graphistry_server instead" since it was renamed. Replaced with the

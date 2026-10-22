@@ -68,9 +68,9 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 |---|---|---|---|
 | **Cloud Data Warehouses** |
 | BigQuery | `BigQueryAgent` | Petabyte analytics, ML, geospatial | SQL |
-| Snowflake | `SnowflakeAgent` (not enabled on current servers) | Enterprise analytics, time travel | SQL |
+| Snowflake | `SnowflakeAgent` (not enabled on current servers, nor its Passthrough) | Enterprise analytics, time travel | SQL |
 | Databricks | `DatabricksAgent` | Unity Catalog, Delta Lake | SQL |
-| Athena | `AthenaAgent` (not enabled on current servers) | Serverless S3 queries | SQL |
+| Athena | `AthenaAgent` (not enabled on current servers, nor its Passthrough) | Serverless S3 queries | SQL |
 | **Traditional Databases** |
 | PostgreSQL | `PostgresAgent` | OLTP/Analytics, JSON, advanced features | SQL |
 | MySQL | `MySQLAgent` | Web applications, performance optimization | SQL |

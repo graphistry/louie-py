@@ -1,6 +1,6 @@
 # Web Scraping Guide (Firecrawl)
 
-When web search is enabled on your Louie server (it is off by default), Louie can search the web and extract content from pages, turning unstructured web content into structured data for analysis. Firecrawl is one of the providers behind this, when your server has it configured. Pages are fetched as text and links: there are no screenshots, raw HTML captures, or clicking through interactive page elements.
+When web search is enabled on your Louie server (it is off by default), Louie can search the web and extract content from pages, turning unstructured web content into structured data for analysis. Firecrawl is one of the providers behind this, when your server has it configured. Pages are fetched as text and links, so page metadata and form fields are not available, and there are no screenshots, raw HTML captures, or clicking through interactive page elements.
 
 ## Overview
 
@@ -81,7 +81,7 @@ lui("""
 Starting from the homepage, crawl:
 - All product categories
 - Extract products from each category
-- Limit to 50 pages total (the crawl maximum)
+- Limit to 50 pages total
 """)
 
 # Documentation sites
@@ -104,24 +104,6 @@ Extract all tables from this page and convert to:
 - Include headers
 - Handle merged cells
 - Clean formatting
-""")
-
-# Form data
-lui("""
-Extract form fields and options:
-- Input field names and types
-- Dropdown options
-- Default values
-- Validation rules
-""")
-
-# Metadata extraction
-lui("""
-Extract page metadata:
-- Meta tags
-- Open Graph data
-- Schema.org markup
-- JSON-LD data
 """)
 ```
 
@@ -213,7 +195,6 @@ Extract and clean:
 lui("""
 Extract content and convert to:
 - Markdown format
-- Clean HTML
 - Structured JSON
 - CSV for tables
 """)
@@ -246,13 +227,11 @@ Find and extract all:
 ### Respectful Scraping
 
 ```python
-# Rate limiting
+# Polite crawling
 lui("""
 Scrape this site respectfully:
-- Maximum 1 request per second
+- Only the pages needed for the question
 - Respect robots.txt
-- Use appropriate user agent
-- Handle rate limit responses
 """)
 ```
 

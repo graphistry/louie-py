@@ -151,6 +151,12 @@ class TestErrorDetail:
             "bad Server detail: forged [31m line"
         )
 
+    @pytest.mark.parametrize("depth", [1_000, 5_000])
+    def test_deeply_nested_detail_never_raises(self, depth):
+        body = '{"detail": ' + "[" * depth + "]" * depth + "}"
+        # Shallow enough: serialized detail; too deep to walk: raw text. No raise.
+        assert error_detail(httpx.Response(400, text=body))
+
     def test_deeply_nested_json_falls_back_to_text(self):
         body = "[" * 100_000
         assert error_detail(httpx.Response(400, text=body)).startswith("[[[")
@@ -219,26 +225,50 @@ class TestCallSitesSurfaceDetail:
             louie_client.upload_binary("hi", pdf, agent="UploadAgent")
 
 
-def test_streamed_expired_jwt_refreshes_and_retries(louie_client):
+def _upload_dataframe(client):
+    return client.upload_dataframe("hi", pd.DataFrame({"a": [1]}))
+
+
+def _upload_image(client):
+    return client.upload_image("hi", io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16))
+
+
+def _upload_binary(client):
+    return client.upload_binary("hi", io.BytesIO(b"%PDF-1.4\n%%EOF\n"))
+
+
+@pytest.mark.parametrize(
+    ("call", "payload_marker"),
+    [
+        (lambda client: client.add_cell("", "hi"), None),
+        (_upload_dataframe, b"PAR1"),
+        (_upload_image, b"\x89PNG"),
+        (_upload_binary, b"%PDF-1.4"),
+    ],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_streamed_expired_jwt_refreshes_and_retries(louie_client, call, payload_marker):
     """A readable 401 body lets ``auto_retry_auth`` see the JWT error.
 
     Before #52 the streamed body was closed, so the expired-token refresh
-    never triggered for ``add_cell``.
+    never triggered; uploads also lacked the ``auth_manager`` it looks up.
     """
-    replies = [
-        _reply(401, {"detail": "JWT token expired"}),
-        _reply(200, '{"type": "StreamingApiMessageStart", "dthread_id": "D_1"}\n'),
-    ]
     requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
-        return replies[len(requests) - 1]
+        if len(requests) == 1:
+            return _reply(401, {"detail": "JWT token expired"})
+        return _reply(
+            200, '{"type": "StreamingApiMessageStart", "dthread_id": "D_1"}\n'
+        )
 
     graphistry_client = louie_client._auth_manager._graphistry_client
     with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
-        response = louie_client.add_cell("", "hi")
+        response = call(louie_client)
 
     assert len(requests) == 2
+    if payload_marker:  # rewound and resent (multipart boundaries differ)
+        assert all(payload_marker in r.content for r in requests)
     graphistry_client.refresh.assert_called_once()
     assert response.thread_id == "D_1"

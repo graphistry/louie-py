@@ -36,6 +36,11 @@ class UploadClient:
         """Initialize with parent client for auth and settings."""
         self._client = client
 
+    @property
+    def auth_manager(self) -> Any:
+        """Parent client's auth manager, which ``@auto_retry_auth`` refreshes."""
+        return self._client.auth_manager
+
     @auto_retry_auth
     def upload_dataframe(
         self,

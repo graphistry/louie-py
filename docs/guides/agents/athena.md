@@ -7,7 +7,7 @@ Serverless SQL queries on data stored in Amazon S3.
 - **AthenaAgent** - AI-powered natural language to Athena SQL
 - **AthenaPassthroughAgent** - Direct SQL execution
 
-> **Availability:** current Louie servers accept the `AthenaAgent` name but do not enable the agent. A call returns no output and `lui.status` is `'failed'`. Check with your Louie administrator before relying on it.
+> **Availability:** current Louie servers accept the `AthenaAgent` and `AthenaPassthroughAgent` names but do not enable either agent. A call returns no output and `lui.status` is `'failed'`.
 
 ## Usage Examples
 

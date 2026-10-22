@@ -37,13 +37,13 @@ def error_detail(response: httpx.Response) -> str:
         return ""
     try:
         data = json.loads(text)
+        if isinstance(data, dict) and "detail" in data:
+            detail = _without_request_echo(data["detail"])
+            if detail is None:
+                return ""
+            text = detail if isinstance(detail, str) else json.dumps(detail)
     except (ValueError, RecursionError):
-        data = None
-    if isinstance(data, dict) and "detail" in data:
-        detail = _without_request_echo(data["detail"])
-        if detail is None:
-            return ""
-        text = detail if isinstance(detail, str) else json.dumps(detail)
+        pass  # not JSON, or too deeply nested to walk: use the raw text
     text = " ".join(_CONTROL_CHARS.sub(" ", text).split())
     if len(text) > _MAX_DETAIL_CHARS:
         text = text[: _MAX_DETAIL_CHARS - 1] + "…"

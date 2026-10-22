@@ -33,7 +33,7 @@ def _sources():
 
 
 def _code(path: Path) -> str:
-    """File text; for notebooks, only code cell sources (not recorded outputs)."""
+    """File text; for notebooks, cell sources only (not recorded outputs)."""
     text = path.read_text(encoding="utf-8")
     if path.suffix != ".ipynb":
         return text
@@ -41,7 +41,7 @@ def _code(path: Path) -> str:
     return "\n".join(
         "".join(cell.get("source", []))
         for cell in cells
-        if cell.get("cell_type") == "code"
+        if cell.get("cell_type") in ("code", "markdown")
     )
 
 

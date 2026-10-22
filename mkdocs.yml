@@ -43,7 +43,7 @@ nav:
         - Diagrams: guides/agents/mermaid.md
       - Code & Development:
         - Python Code: guides/agents/code.md
-        - Jupyter Notebooks: guides/agents/notebook.md
+        - Louie Notebooks: guides/agents/notebook.md
       - Data Processing:
         - Table Analysis: guides/agents/tableai.md
         - Web Scraping: guides/agents/firecrawl.md
