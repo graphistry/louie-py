@@ -2,6 +2,8 @@
 
 Access Microsoft SQL Server databases with T-SQL.
 
+> **Availability:** not included in Louie Desktop; use a Louie server (Louie Web or self-hosted).
+
 ## Overview
 
 - **MSSQLAgent** - AI-powered natural language to T-SQL

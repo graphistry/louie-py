@@ -6,9 +6,7 @@ LouieAI automatically selects the appropriate agents based on your query, but un
 
 ### Database Agents
 For querying structured data in various database systems:
-- **Athena**: AWS Athena queries on S3 data
 - **BigQuery**: Google BigQuery analytics
-- **Snowflake**: Snowflake data warehouse queries
 - **PostgreSQL/MySQL**: Traditional relational databases
 - **Splunk**: Log analysis and security investigations
 
@@ -20,14 +18,14 @@ For creating visual representations of your data:
 - **Mermaid**: Flowcharts and diagrams
 
 ### Code & Development Agents
-For executing code and creating notebooks:
+For executing code and reusing earlier work:
 - **Code**: Python code generation and execution
-- **Notebook**: Jupyter notebook creation and modification
+- **Notebook** (`NotebookTool`): List, read, and copy between your Louie notebooks
 
 ### Data Processing Agents
 For specialized data operations:
 - **TableAI**: Advanced table analysis and transformations
-- **Firecrawl**: Web scraping and data extraction
+- **Web scraping** (Firecrawl and other providers): no agent to pick; the default `LouieAgent` routes to web search when it is enabled. See [Web Scraping](agents/firecrawl.md)
 
 ## Automatic Selection
 

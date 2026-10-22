@@ -5,6 +5,16 @@ LouieAI provides 40+ specialized agents for different data sources and tasks. Ea
 - **AI-Assisted** (e.g., `PostgresAgent`) - Natural language to query language with semantic understanding
 - **Passthrough** (e.g., `PostgresPassthroughAgent`) - Direct query execution without AI interpretation
 
+Agent names are exact and checked by the server: an unknown name fails with `400 Bad Request` and the detail `Invalid agent '<name>'`. Most names end in `Agent`; the exceptions are `Splunk` / `SplunkPassthrough`, `Kusto` / `KustoPassthrough`, and `NotebookTool`.
+
+## Availability
+
+Which agents you can use depends on your Louie deployment:
+
+- **Data source agents** (databases, Splunk, Kusto, OpenSearch, ...) query the connections configured for your Louie organization or server.
+- **Louie Desktop** does not include the SQL agents (Postgres, MySQL, MSSQL, BigQuery, CockroachDB), Spanner, Neptune, or TableAI. Use a Louie server (Louie Web or self-hosted) for those.
+- **Server features** such as web search, notebook editing, and maps (`KeplerAgent` needs a map tile source configured on the server) are turned on by the server's administrator.
+
 ## Agent Types
 
 ### General Purpose Agents
@@ -29,7 +39,7 @@ from louieai.notebook import lui
 lui("Analyze customer behavior patterns")
 
 # Specify database agent
-lui("Show failed login attempts from last hour", agent="SplunkAgent")
+lui("Show failed login attempts from last hour", agent="Splunk")
 
 # Use passthrough for exact SQL
 lui("SELECT * FROM logs LIMIT 10", agent="PostgresPassthroughAgent")
@@ -48,7 +58,7 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 ### Code & Notebook Agents
 - **CodeAgent** - AI-powered Python code generation with explanations
 - **CodePassthroughAgent** - Direct Python code execution without AI interpretation
-- **NotebookAgent** - Jupyter notebook cell operations and management
+- **NotebookTool** - List, read, and copy between your Louie notebooks; edits and runs cells when the server enables notebook editing
 
 ### Data Visualization Agents
 - **GraphAgent** / **GraphPassthroughAgent** - Network graphs with Graphistry
@@ -58,7 +68,7 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 
 ### Specialized Agents
 - **TableAIAgent** - AI-powered table analysis and insights  
-- **FirecrawlAgent** - Web scraping and data extraction
+- **Web search & scraping** - No `agent=` needed: when web search is enabled on your Louie server, the default `LouieAgent` routes to it (Firecrawl is one of its providers)
 
 ## Quick Reference Table
 
@@ -66,9 +76,7 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 |---|---|---|---|
 | **Cloud Data Warehouses** |
 | BigQuery | `BigQueryAgent` | Petabyte analytics, ML, geospatial | SQL |
-| Snowflake | `SnowflakeAgent` | Enterprise analytics, time travel | SQL |
 | Databricks | `DatabricksAgent` | Unity Catalog, Delta Lake | SQL |
-| Athena | `AthenaAgent` | Serverless S3 queries | SQL |
 | **Traditional Databases** |
 | PostgreSQL | `PostgresAgent` | OLTP/Analytics, JSON, advanced features | SQL |
 | MySQL | `MySQLAgent` | Web applications, performance optimization | SQL |
@@ -78,8 +86,8 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 | Spanner | `SpannerAgent` | Global scale, strong consistency | SQL |
 | **Search & Logs** |
 | OpenSearch | `OpenSearchAgent` | Log analytics, security monitoring | Query DSL |
-| Splunk | `SplunkAgent` | Security operations, correlations | SPL |
-| Kusto | `KustoAgent` | Azure telemetry, time series | KQL |
+| Splunk | `Splunk` | Security operations, correlations | SPL |
+| Kusto | `Kusto` | Azure telemetry, time series | KQL |
 | **Graph Databases** |
 | Neptune | `NeptuneAgent` | Relationship analysis | Cypher |
 | **Visualization** |
@@ -89,10 +97,10 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 | Mermaid | `MermaidAgent` | Diagrams and flowcharts | Mermaid |
 | **Development** |
 | Code | `CodeAgent` | Python data processing | Python |
-| Notebook | `NotebookAgent` | Jupyter automation | Python |
+| Notebook | `NotebookTool` | Reuse earlier Louie notebooks; edit cells when enabled | Natural Language |
 | TableAI | `TableAIAgent` | Intelligent data insights | Natural Language |
 | **Data Collection** |
-| Firecrawl | `FirecrawlAgent` | Web scraping | Natural Language |
+| Web pages | `LouieAgent` (default; needs web search enabled) | Web search, scraping | Natural Language |
 
 ## Semantic Understanding Example
 
@@ -144,7 +152,7 @@ lui("Create a network of customer interactions", agent="GraphAgent")
 lui("Write code to predict customer churn", agent="CodeAgent")
 
 # 4. Monitor in production
-lui("Create Splunk queries to track model performance", agent="SplunkAgent")
+lui("Create Splunk queries to track model performance", agent="Splunk")
 ```
 
 ## Individual Agent Guides
@@ -154,10 +162,9 @@ lui("Create Splunk queries to track model performance", agent="SplunkAgent")
 - [PostgreSQL](postgresql.md) - Advanced SQL features, JSON support
 - [Splunk](splunk.md) - Security operations, log analysis
 - [BigQuery](bigquery.md) - Petabyte analytics, ML integration
-- [Snowflake](snowflake.md) - Enterprise data warehouse
 - [MySQL](mysql.md) - Web application databases
 - [OpenSearch](opensearch.md) - Search and log analytics
-- [Athena](athena.md), [CockroachDB](cockroachdb.md), [Kusto](kusto.md), [MSSQL](mssql.md), [Neptune](neptune.md), [Spanner](spanner.md)
+- [CockroachDB](cockroachdb.md), [Kusto](kusto.md), [MSSQL](mssql.md), [Neptune](neptune.md), [Spanner](spanner.md)
 
 **Visualization Agents:**
 - [Graph](graph.md) - Network visualization with Graphistry
@@ -167,6 +174,6 @@ lui("Create Splunk queries to track model performance", agent="SplunkAgent")
 
 **Development Agents:**
 - [Code](code.md) - Python code generation
-- [Notebook](notebook.md) - Jupyter automation
+- [Notebook](notebook.md) - Reuse earlier Louie notebooks; edit cells when enabled
 - [TableAI](tableai.md) - Intelligent data insights
-- [Firecrawl](firecrawl.md) - Web scraping
+- [Web Scraping](firecrawl.md) - Via the default `LouieAgent` (Firecrawl and other providers)

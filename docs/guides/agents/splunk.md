@@ -4,25 +4,25 @@ Access Splunk for log analysis with natural language or SPL queries.
 
 ## Overview
 
-- **SplunkAgent** - AI-powered natural language to SPL
-- **SplunkPassthroughAgent** - Direct SPL execution
+- **Splunk** - AI-powered natural language to SPL
+- **SplunkPassthrough** - Direct SPL execution
 
 ## Usage Examples
 
 ```python
 # AI-assisted security analysis
-lui("Show me failed login attempts in the last hour", agent="SplunkAgent")
+lui("Show me failed login attempts in the last hour", agent="Splunk")
 
 # Performance monitoring
-lui("Find the slowest API endpoints today", agent="SplunkAgent")
+lui("Find the slowest API endpoints today", agent="Splunk")
 
 # Direct SPL execution
 lui("index=web_logs status=404 | stats count by uri | sort -count | head 20", 
-    agent="SplunkPassthroughAgent")
+    agent="SplunkPassthrough")
 
 # Event correlation
 lui("index=security event_type=\"failed_login\" | timechart span=5m count by src_ip", 
-    agent="SplunkPassthroughAgent")
+    agent="SplunkPassthrough")
 ```
 
 ## Common Patterns
@@ -34,4 +34,4 @@ lui("index=security event_type=\"failed_login\" | timechart span=5m count by src
 
 ## Integration
 
-Analyze logs with SplunkAgent, then create visualizations with GraphAgent or generate reports with CodeAgent.
+Analyze logs with Splunk, then create visualizations with GraphAgent or generate reports with CodeAgent.

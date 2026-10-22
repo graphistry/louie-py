@@ -14,6 +14,7 @@ except ImportError:
 import httpx
 
 from .._client import LouieClient, Response
+from .._http import raise_for_status
 from ._html import (
     css_pixel_dimension,
     graph_url,
@@ -516,7 +517,7 @@ def stream_response(client, thread_id: str, prompt: str, **kwargs) -> dict[str, 
                 params=params,
             ) as response,
         ):
-            response.raise_for_status()
+            raise_for_status(response)
             for line in response.iter_lines():
                 if not line:
                     continue

@@ -1,17 +1,18 @@
-# Firecrawl Agent Guide
+# Firecrawl Web Scraping Guide
 
-The Firecrawl agent enables web scraping and data extraction from websites, turning unstructured web content into structured data for analysis.
+Louie's web search tool searches the web and extracts content from pages, turning unstructured web content into structured data for analysis. Firecrawl is its premium provider, with free search and fetch providers as fallbacks.
 
 ## Overview
 
-- **FirecrawlAgent** - AI-powered web scraping and content extraction
+- **WebSearchTool** - Web search, page scraping, and site crawling, used by `LouieAgent`
 
-## FirecrawlAgent
+Web search must be enabled on your Louie server; Firecrawl is used when the server has a Firecrawl API key configured. There is no separate agent to pass as `agent=`: ask `LouieAgent` (the default) and it calls the web search tool.
 
-The FirecrawlAgent understands:
+## What it understands
+
 - Web page structure and content
 - Data extraction patterns
-- Multi-page crawling
+- Multi-page crawling (Firecrawl crawls up to 50 pages, 3 levels deep)
 - Content cleaning and formatting
 
 ### Basic Usage
@@ -20,13 +21,13 @@ The FirecrawlAgent understands:
 from louieai.notebook import lui
 
 # Simple page scraping
-lui("Extract the main content from https://example.com/article", agent="FirecrawlAgent")
+lui("Extract the main content from https://example.com/article")
 
 # Product information
-lui("Scrape product details from this e-commerce page", agent="FirecrawlAgent")
+lui("Scrape product details from this e-commerce page")
 
 # News aggregation
-lui("Collect headlines from this news website", agent="FirecrawlAgent")
+lui("Collect headlines from this news website")
 ```
 
 ### Content Extraction
@@ -40,7 +41,7 @@ Extract from this blog post:
 - Publication date
 - Main content
 - Tags/categories
-""", agent="FirecrawlAgent")
+""")
 
 # Product catalog
 lui("""
@@ -51,7 +52,7 @@ Scrape product information including:
 - Images
 - Reviews
 - Availability
-""", agent="FirecrawlAgent")
+""")
 
 # Contact information
 lui("""
@@ -61,7 +62,7 @@ Find and extract:
 - Phone numbers
 - Email addresses
 - Social media links
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Multi-page Crawling
@@ -74,15 +75,15 @@ Crawl all pages of search results and extract:
 - Prices
 - Links
 - Follow pagination automatically
-""", agent="FirecrawlAgent")
+""")
 
 # Site navigation
 lui("""
 Starting from the homepage, crawl:
 - All product categories
 - Extract products from each category
-- Limit to 100 pages total
-""", agent="FirecrawlAgent")
+- Limit to 50 pages total
+""")
 
 # Documentation sites
 lui("""
@@ -91,7 +92,7 @@ Scrape entire documentation site:
 - All documentation pages
 - Code examples
 - Maintain hierarchy
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Structured Data Extraction
@@ -104,7 +105,7 @@ Extract all tables from this page and convert to:
 - Include headers
 - Handle merged cells
 - Clean formatting
-""", agent="FirecrawlAgent")
+""")
 
 # Form data
 lui("""
@@ -113,7 +114,7 @@ Extract form fields and options:
 - Dropdown options
 - Default values
 - Validation rules
-""", agent="FirecrawlAgent")
+""")
 
 # Metadata extraction
 lui("""
@@ -122,7 +123,7 @@ Extract page metadata:
 - Open Graph data
 - Schema.org markup
 - JSON-LD data
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ## Common Use Cases
@@ -137,7 +138,7 @@ Analyze competitor website:
 - Pricing information
 - Feature comparisons
 - Customer reviews
-""", agent="FirecrawlAgent")
+""")
 
 # Price monitoring
 lui("""
@@ -146,7 +147,7 @@ Track prices across multiple sites:
 - Current price
 - Historical price if available
 - Stock status
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Content Aggregation
@@ -159,7 +160,7 @@ Aggregate news from multiple sources about:
 - Company mentions
 - Industry updates
 - Publication dates
-""", agent="FirecrawlAgent")
+""")
 
 # Job listings
 lui("""
@@ -169,7 +170,7 @@ Collect job postings matching:
 - Location
 - Salary range
 - Requirements
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Data Collection
@@ -182,7 +183,7 @@ Extract research data:
 - Chart data
 - Citations
 - Methodology sections
-""", agent="FirecrawlAgent")
+""")
 
 # Directory scraping
 lui("""
@@ -192,7 +193,7 @@ Extract business listings:
 - Contact details
 - Hours of operation
 - Reviews/ratings
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ## Advanced Features
@@ -202,19 +203,10 @@ Extract business listings:
 ```python
 # JavaScript-rendered content
 lui("""
-Extract content from this React/Vue/Angular app:
-- Wait for dynamic loading
+Extract content from this React/Vue/Angular app (Firecrawl renders JavaScript):
 - Capture AJAX-loaded data
-- Handle infinite scroll
-""", agent="FirecrawlAgent")
+""")
 
-# Interactive elements
-lui("""
-Extract data that requires interaction:
-- Click tabs to reveal content
-- Expand accordions
-- Load more buttons
-""", agent="FirecrawlAgent")
 ```
 
 ### Data Cleaning
@@ -227,7 +219,7 @@ Extract and clean:
 - Strip formatting tags
 - Normalize whitespace
 - Convert to plain text
-""", agent="FirecrawlAgent")
+""")
 
 # Format conversion
 lui("""
@@ -236,7 +228,7 @@ Extract content and convert to:
 - Clean HTML
 - Structured JSON
 - CSV for tables
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Filtering and Selection
@@ -249,7 +241,7 @@ Extract only:
 - Skip navigation and sidebars
 - Ignore advertisements
 - Focus on relevant sections
-""", agent="FirecrawlAgent")
+""")
 
 # Pattern matching
 lui("""
@@ -258,7 +250,7 @@ Find and extract all:
 - Phone numbers
 - Prices with currency
 - Dates in any format
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ## Best Practices
@@ -269,11 +261,9 @@ Find and extract all:
 # Rate limiting
 lui("""
 Scrape this site respectfully:
-- Maximum 1 request per second
-- Respect robots.txt
-- Use appropriate user agent
+- Only the pages needed for the question
 - Handle rate limit responses
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Error Handling
@@ -286,7 +276,7 @@ Extract data with fallbacks:
 - Alternative selectors
 - Default values for missing data
 - Error reporting
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Data Quality
@@ -299,14 +289,14 @@ Extract and validate:
 - Verify expected formats
 - Flag anomalies
 - Report extraction confidence
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ## Integration with Other Agents
 
 ```python
 # Scrape data
-lui("Extract product catalog from competitor site", agent="FirecrawlAgent")
+lui("Extract product catalog from competitor site")
 scraped_data = lui.df
 
 # Analyze with SQL
@@ -331,7 +321,7 @@ Extract as DataFrame:
 - Consistent data types
 - Handle missing values
 - Index by unique identifier
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Nested Data
@@ -345,7 +335,7 @@ Extract nested structure:
     - Products
       - Attributes
 Maintain relationships
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ### Raw Content
@@ -357,8 +347,7 @@ Capture entire page:
 - HTML source
 - Rendered content
 - Resources (images, CSS)
-- Screenshot
-""", agent="FirecrawlAgent")
+""")
 ```
 
 ## Legal and Ethical Considerations

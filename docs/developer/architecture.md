@@ -24,9 +24,9 @@ lui("Follow-up question")     # Continues same thread
 
 **40+ specialized agents** handle different data sources and tasks:
 
-- **Database Agents**: PostgresAgent, MySQLAgent, SnowflakeAgent, etc.
+- **Database Agents**: PostgresAgent, MySQLAgent, BigQueryAgent, etc.
 - **Visualization Agents**: GraphAgent, PerspectiveAgent, KeplerAgent
-- **Development Agents**: CodeAgent, NotebookAgent, TableAIAgent
+- **Development Agents**: CodeAgent, NotebookTool, TableAIAgent
 - **Passthrough Agents**: Direct query execution without AI interpretation
 
 ### 3. Response Elements
@@ -46,7 +46,7 @@ response.elements = [
 
 ### Thread Management
 
-When you call `client.add_cell(thread_id, prompt, agent="SomeAgent")`:
+When you call `client.add_cell(thread_id, prompt, agent="PostgresAgent")`:
 
 1. **Authentication**: Retrieves JWT from PyGraphistry via `graphistry.api_token()`
 2. **Thread Resolution**: Creates new thread if `thread_id=""`, otherwise uses existing

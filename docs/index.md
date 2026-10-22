@@ -104,12 +104,12 @@ older_df = lui[-2].df      # DataFrame from 2 queries ago
 LouieAI provides specialized agents that learn and understand your data:
 
 - General Purpose: LouieAgent (default), TextAgent, CodeAgent
-- Databases with Semantic Layer: DatabricksAgent, PostgresAgent, MySQLAgent, SnowflakeAgent, BigQueryAgent
+- Databases with Semantic Layer: DatabricksAgent, PostgresAgent, MySQLAgent, BigQueryAgent
   - Agents learn your schema, relationships, and business context
   - Generate complex queries from natural language using semantic understanding
-- Search & Analytics: SplunkAgent, OpenSearchAgent, KustoAgent
+- Search & Analytics: Splunk, OpenSearchAgent, Kusto
 - Visualizations: GraphAgent, PerspectiveAgent, KeplerAgent, MermaidAgent
-- Direct Execution: PassthroughAgent variants for each database (no AI interpretation)
+- Direct Execution: Passthrough variants for each database (no AI interpretation), usually `<Name>PassthroughAgent`; Splunk and Kusto use `SplunkPassthrough` / `KustoPassthrough`
 
 ```python
 # Use the default conversational agent
