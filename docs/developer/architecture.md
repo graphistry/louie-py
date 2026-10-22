@@ -24,7 +24,7 @@ lui("Follow-up question")     # Continues same thread
 
 **40+ specialized agents** handle different data sources and tasks:
 
-- **Database Agents**: PostgresAgent, MySQLAgent, SnowflakeAgent, etc.
+- **Database Agents**: PostgresAgent, MySQLAgent, BigQueryAgent, etc.
 - **Visualization Agents**: GraphAgent, PerspectiveAgent, KeplerAgent
 - **Development Agents**: CodeAgent, NotebookTool, TableAIAgent
 - **Passthrough Agents**: Direct query execution without AI interpretation

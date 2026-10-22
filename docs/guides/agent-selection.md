@@ -27,7 +27,7 @@ For executing code and creating notebooks:
 ### Data Processing Agents
 For specialized data operations:
 - **TableAI**: Advanced table analysis and transformations
-- **Firecrawl**: Web scraping and data extraction
+- **Web scraping** (Firecrawl and other providers): no agent to pick; the default `LouieAgent` routes to web search when it is enabled. See [Web Scraping](agents/firecrawl.md)
 
 ## Automatic Selection
 

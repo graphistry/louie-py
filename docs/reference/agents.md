@@ -94,13 +94,12 @@ This reference provides technical details about all available LouieAI agents.
 - **Output**: Code output, variables, plots
 
 ### Notebook
-- **Purpose**: Create Jupyter notebooks
+- **Purpose**: List, read, and copy between your Louie notebooks (`NotebookTool`); creating and editing cells needs server-side enablement
 - **Capabilities**:
-  - Multi-cell workflows
-  - Markdown documentation
-  - Interactive widgets
-  - Persistent state
-- **Output**: Executable notebook file
+  - List and read notebooks
+  - Copy results between notebooks
+  - Search run history
+- **Output**: Notebook contents, tables, and summaries
 
 ## Data Processing Agents
 
@@ -113,12 +112,11 @@ This reference provides technical details about all available LouieAI agents.
   - Anomaly detection
 - **Output**: Transformed datasets
 
-### Firecrawl
-- **Purpose**: Web scraping and extraction
+### Web Scraping (Firecrawl)
+- **Purpose**: Web search and page extraction, through the default `LouieAgent` (no `agent=`), when web search is enabled on the server
 - **Capabilities**:
-  - HTML parsing
-  - Dynamic content
-  - Rate limiting
+  - Search and fetch pages as text and links
+  - Multi-page crawls (up to 50 pages)
   - Data extraction
 - **Output**: Structured web data
 

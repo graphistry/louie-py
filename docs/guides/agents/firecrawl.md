@@ -1,10 +1,10 @@
 # Web Scraping Guide (Firecrawl)
 
-Louie can search the web and extract content from pages, turning unstructured web content into structured data for analysis. Firecrawl is one of the providers behind this, when your Louie server has it configured.
+When web search is enabled on your Louie server (it is off by default), Louie can search the web and extract content from pages, turning unstructured web content into structured data for analysis. Firecrawl is one of the providers behind this, when your server has it configured. Pages are fetched as text and links: there are no screenshots, raw HTML captures, or clicking through interactive page elements.
 
 ## Overview
 
-There is no separate scraping agent to select: ask the default `LouieAgent` (no `agent=` argument), and it routes the request to its web search and fetch tools.
+There is no separate scraping agent to select: ask the default `LouieAgent` (no `agent=` argument), and it routes the request to its web search and fetch tools. Passing `agent="WebSearchTool"` does not work: that is a tool `LouieAgent` uses, not an agent you can call directly.
 
 > Older docs selected a `FirecrawlAgent` agent. Current servers reject that name with `400 Invalid agent 'FirecrawlAgent'`; drop the argument instead.
 
@@ -81,7 +81,7 @@ lui("""
 Starting from the homepage, crawl:
 - All product categories
 - Extract products from each category
-- Limit to 100 pages total
+- Limit to 50 pages total (the crawl maximum)
 """)
 
 # Documentation sites
@@ -196,26 +196,6 @@ Extract business listings:
 ```
 
 ## Advanced Features
-
-### Dynamic Content
-
-```python
-# JavaScript-rendered content
-lui("""
-Extract content from this React/Vue/Angular app:
-- Wait for dynamic loading
-- Capture AJAX-loaded data
-- Handle infinite scroll
-""")
-
-# Interactive elements
-lui("""
-Extract data that requires interaction:
-- Click tabs to reveal content
-- Expand accordions
-- Load more buttons
-""")
-```
 
 ### Data Cleaning
 
@@ -345,19 +325,6 @@ Extract nested structure:
     - Products
       - Attributes
 Maintain relationships
-""")
-```
-
-### Raw Content
-
-```python
-# Full page capture
-lui("""
-Capture entire page:
-- HTML source
-- Rendered content
-- Resources (images, CSS)
-- Screenshot
 """)
 ```
 

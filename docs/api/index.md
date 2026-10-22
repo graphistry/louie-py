@@ -67,7 +67,7 @@ The traditional client class for interacting with Louie.ai. Provides full contro
 LouieAI provides 40+ specialized agents with semantic understanding:
 - **General AI**: LouieAgent (default), TextAgent, CodeAgent
 - **Databases with Semantic Layer**: 
-  - PostgresAgent, MySQLAgent, DatabricksAgent, SnowflakeAgent, and more
+  - PostgresAgent, MySQLAgent, DatabricksAgent, BigQueryAgent, and more
   - Agents learn your schema and build semantic models for intelligent query generation
   - Natural language queries leverage understanding of your business context
 - **Visualizations**: GraphAgent, KeplerAgent, PerspectiveAgent, MermaidAgent
