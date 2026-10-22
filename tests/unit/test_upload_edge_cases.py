@@ -262,6 +262,7 @@ class TestLouieClientMethods:
                 share_mode="Private",
                 name=None,
                 folder=None,
+                filename=None,
                 session_trace_id=None,
             )
 
