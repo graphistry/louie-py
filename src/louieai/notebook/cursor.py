@@ -839,7 +839,7 @@ class Cursor:
                 - "Public": Publicly accessible
             **kwargs: Additional arguments for upload_dataframe() when df is provided:
                 - format: "parquet" (default), "csv", "json", "jsonl", or "arrow"
-                - agent: "UploadPassthroughAgent" (default) or "UploadAgent"
+                - agent: "UploadPassthroughAgent" (default)
                 - parsing_options: Dict of format-specific parsing configuration
 
         Returns:

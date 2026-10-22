@@ -26,7 +26,7 @@ lui("Follow-up question")     # Continues same thread
 
 - **Database Agents**: PostgresAgent, MySQLAgent, SnowflakeAgent, etc.
 - **Visualization Agents**: GraphAgent, PerspectiveAgent, KeplerAgent
-- **Development Agents**: CodeAgent, NotebookAgent, TableAIAgent
+- **Development Agents**: CodeAgent, NotebookTool, TableAIAgent
 - **Passthrough Agents**: Direct query execution without AI interpretation
 
 ### 3. Response Elements

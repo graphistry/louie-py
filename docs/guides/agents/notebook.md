@@ -4,11 +4,11 @@ The Notebook agent manages Jupyter notebook operations, enabling programmatic cr
 
 ## Overview
 
-- **NotebookAgent** - AI-powered Jupyter notebook manipulation and execution
+- **NotebookTool** - AI-powered Jupyter notebook manipulation and execution
 
-## NotebookAgent
+## NotebookTool
 
-The NotebookAgent understands:
+The NotebookTool understands:
 - Notebook structure and cells
 - Code execution order
 - Markdown documentation
@@ -20,13 +20,13 @@ The NotebookAgent understands:
 from louieai.notebook import lui
 
 # Create new notebook
-lui("Create a new notebook for data analysis", agent="NotebookAgent")
+lui("Create a new notebook for data analysis", agent="NotebookTool")
 
 # Add cells
-lui("Add a code cell that imports pandas and numpy", agent="NotebookAgent")
+lui("Add a code cell that imports pandas and numpy", agent="NotebookTool")
 
 # Execute notebook
-lui("Run all cells in the current notebook", agent="NotebookAgent")
+lui("Run all cells in the current notebook", agent="NotebookTool")
 ```
 
 ### Notebook Creation
@@ -40,7 +40,7 @@ Create a data science notebook with:
 - Data loading cell
 - Analysis cells
 - Visualization cells
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Tutorial notebook
 lui("""
@@ -49,7 +49,7 @@ Create a tutorial notebook explaining:
 - Code example
 - Exercise for the reader
 - Solution (hidden initially)
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Report notebook
 lui("""
@@ -58,7 +58,7 @@ Generate a report notebook containing:
 - Data analysis with code
 - Visualizations
 - Conclusions and recommendations
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Cell Management
@@ -70,7 +70,7 @@ Add a new cell after the current one that:
 - Loads data from CSV
 - Shows first 5 rows
 - Displays basic statistics
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Edit cells
 lui("""
@@ -78,7 +78,7 @@ Update the visualization cell to:
 - Use seaborn instead of matplotlib
 - Add proper labels and title
 - Save the figure
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Organize cells
 lui("""
@@ -86,7 +86,7 @@ Reorganize notebook:
 - Group import cells at top
 - Move utility functions together
 - Place visualizations at end
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Code Execution
@@ -98,7 +98,7 @@ Execute:
 - All data loading cells
 - Skip visualization cells
 - Clear previous outputs first
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Parameterized execution
 lui("""
@@ -106,7 +106,7 @@ Run notebook with parameters:
 - date_range = "2024-01-01 to 2024-12-31"
 - output_format = "pdf"
 - include_details = True
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Error handling
 lui("""
@@ -114,7 +114,7 @@ Run notebook and:
 - Continue on errors
 - Log failed cells
 - Mark problematic cells
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Documentation
@@ -127,7 +127,7 @@ Document this notebook:
 - Explain each code section
 - Include example outputs
 - Add references
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Convert to documentation
 lui("""
@@ -136,7 +136,7 @@ Convert notebook to:
 - Remove debug code
 - Format for publication
 - Include only key outputs
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Add interactivity
 lui("""
@@ -145,7 +145,7 @@ Make notebook interactive:
 - Create dropdown for options
 - Add sliders for thresholds
 - Include run button
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ## Common Patterns
@@ -162,7 +162,7 @@ Create a complete analysis notebook:
 4. Statistical analysis
 5. Visualizations
 6. Export results
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Reproducible research
 lui("""
@@ -171,7 +171,7 @@ Set up reproducible notebook:
 - Random seed setting
 - Data versioning
 - Results checksums
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Machine Learning Pipeline
@@ -186,7 +186,7 @@ Create ML pipeline notebook:
 4. Evaluation metrics
 5. Hyperparameter tuning
 6. Final predictions
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Experiment tracking
 lui("""
@@ -195,7 +195,7 @@ Add experiment tracking:
 - Track metrics
 - Save model artifacts
 - Compare runs
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Reporting and Dashboards
@@ -208,7 +208,7 @@ Generate weekly report notebook:
 - Run standard analyses
 - Create visualizations
 - Format for email
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Interactive dashboards
 lui("""
@@ -217,7 +217,7 @@ Create dashboard notebook with:
 - Dynamic queries
 - Interactive plots
 - Real-time updates
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ## Advanced Features
@@ -232,7 +232,7 @@ Save this notebook as template for:
 - Remove specific values
 - Keep structure and code
 - Mark customizable sections
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Apply templates
 lui("""
@@ -241,7 +241,7 @@ Create new notebook from template:
 - Fill in project parameters
 - Update data sources
 - Customize visualizations
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Notebook Conversion
@@ -254,7 +254,7 @@ Convert notebook to:
 - Markdown document
 - HTML presentation
 - PDF report
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Clean outputs
 lui("""
@@ -263,7 +263,7 @@ Prepare notebook for sharing:
 - Remove sensitive data
 - Check for credentials
 - Add license header
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Collaboration Features
@@ -276,7 +276,7 @@ Prepare notebook for git:
 - Consistent cell IDs
 - Add cell tags
 - Include requirements
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Review preparation
 lui("""
@@ -285,7 +285,7 @@ Prepare for code review:
 - Include type hints
 - Add unit tests cells
 - Document assumptions
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ## Integration with Other Agents
@@ -301,7 +301,7 @@ Create a notebook from this analysis:
 - Add markdown explanations
 - Include visualizations
 - Make it runnable
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # Query data
 lui("Get customer data for analysis", agent="PostgresAgent")
@@ -324,7 +324,7 @@ Organize notebook with:
 - Helper functions grouped
 - Main analysis flow
 - Results at the end
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Performance
@@ -337,7 +337,7 @@ Optimize notebook performance:
 - Use efficient data structures
 - Limit output size
 - Add progress indicators
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ### Maintainability
@@ -351,7 +351,7 @@ Make notebook maintainable:
 - Parameterize paths
 - Add error handling
 - Include tests
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ## Notebook Automation
@@ -364,7 +364,7 @@ Set up notebook to run:
 - With latest data
 - Email results
 - Archive outputs
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 
 # CI/CD integration
 lui("""
@@ -373,7 +373,7 @@ Integrate notebook with CI/CD:
 - Check for errors
 - Validate outputs
 - Generate artifacts
-""", agent="NotebookAgent")
+""", agent="NotebookTool")
 ```
 
 ## Next Steps

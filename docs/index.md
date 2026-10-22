@@ -107,7 +107,7 @@ LouieAI provides specialized agents that learn and understand your data:
 - Databases with Semantic Layer: DatabricksAgent, PostgresAgent, MySQLAgent, SnowflakeAgent, BigQueryAgent
   - Agents learn your schema, relationships, and business context
   - Generate complex queries from natural language using semantic understanding
-- Search & Analytics: SplunkAgent, OpenSearchAgent, KustoAgent
+- Search & Analytics: Splunk, OpenSearchAgent, Kusto
 - Visualizations: GraphAgent, PerspectiveAgent, KeplerAgent, MermaidAgent
 - Direct Execution: PassthroughAgent variants for each database (no AI interpretation)
 

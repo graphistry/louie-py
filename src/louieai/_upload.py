@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 import httpx
 import pandas as pd
 
+from ._http import raise_for_status
 from ._table_ai import (
     TableAIOverrides,
     collect_table_ai_kwargs,
@@ -69,7 +70,7 @@ class UploadClient:
             format: Serialization format - "parquet" (recommended), "csv", "json",
                 "jsonl", or "arrow". Parquet is fastest and preserves data types best.
             agent: AI agent to use. "UploadPassthroughAgent" (default) automatically
-                parses data without LLM. "UploadAgent" uses LLM for parsing.
+                parses data without LLM.
             traces: Whether to request server trace events (default: False)
             include_reasoning: Include the agent's provisional reasoning
                 text in addition to final response elements (default: False).
@@ -179,7 +180,7 @@ class UploadClient:
                 files=files,
             ) as response,
         ):
-            response.raise_for_status()
+            raise_for_status(response)
 
             # Collect streaming lines
             last_activity = start_time
@@ -436,7 +437,7 @@ class UploadClient:
                 files=files,
             ) as response,
         ):
-            response.raise_for_status()
+            raise_for_status(response)
 
             # Collect streaming lines
             last_activity = start_time
@@ -708,7 +709,7 @@ class UploadClient:
                 files=files,
             ) as response,
         ):
-            response.raise_for_status()
+            raise_for_status(response)
 
             # Collect streaming lines
             last_activity = start_time

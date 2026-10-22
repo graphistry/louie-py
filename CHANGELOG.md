@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   previously raised `TypeError` from `LouieClient`, so nothing that worked before changes.
 
 ### Documentation
+- Agent guides passed names current servers reject with `400 Invalid agent` (#52): Splunk
+  and Kusto agents are `Splunk` / `SplunkPassthrough` and `Kusto` / `KustoPassthrough` (no
+  `Agent` suffix), `NotebookAgent` is `NotebookTool`, and there is no `FirecrawlAgent`, so
+  web scraping now uses the default `LouieAgent`, which routes to web search. The upload
+  docstrings no longer offer the removed `UploadAgent`. A unit test fails if docs or
+  docstrings pass any of these removed names as `agent=`.
 - New [Connecting: Web vs Desktop](docs/getting-started/connecting.md) page. Louie Desktop
   serves its API on `http://127.0.0.1:10013`, which nothing in the docs said — every
   `server_url` example targeted Louie Web, so desktop users had no address to point at.
@@ -27,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Same change in the `LouieClient` and `louie()` docstrings, which feed the API reference.
 
 ### Fixed
+- Server error details were dropped from streamed requests (#52). `lui(..., agent="X")`,
+  `add_cell`, and the upload calls raised a bare `400 Bad Request`; the body naming the
+  problem (`Invalid agent 'X'`) was already closed, so `e.response.text` raised
+  `StreamClosed` too. The `httpx.HTTPStatusError` message now carries a
+  `Server detail: ...` line, and `e.response` stays readable.
 - README's custom-server example called `LouieClient(server_url=..., server=...)`. Neither
   half worked: `LouieClient` is not exported from `louieai`, and `server=` has been
   rejected with "use graphistry_server instead" since it was renamed. Replaced with the

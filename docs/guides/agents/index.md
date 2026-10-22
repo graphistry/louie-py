@@ -5,6 +5,8 @@ LouieAI provides 40+ specialized agents for different data sources and tasks. Ea
 - **AI-Assisted** (e.g., `PostgresAgent`) - Natural language to query language with semantic understanding
 - **Passthrough** (e.g., `PostgresPassthroughAgent`) - Direct query execution without AI interpretation
 
+The server validates agent names: an unknown name fails with `400 Bad Request` and the detail `Invalid agent '<name>'`. Most names end in `Agent`, but Splunk and Kusto do not: use `Splunk` / `SplunkPassthrough` and `Kusto` / `KustoPassthrough`. (Older Louie servers used `SplunkAgent` / `KustoAgent`; if your server rejects the short name, try the older one.)
+
 ## Agent Types
 
 ### General Purpose Agents
@@ -29,7 +31,7 @@ from louieai.notebook import lui
 lui("Analyze customer behavior patterns")
 
 # Specify database agent
-lui("Show failed login attempts from last hour", agent="SplunkAgent")
+lui("Show failed login attempts from last hour", agent="Splunk")
 
 # Use passthrough for exact SQL
 lui("SELECT * FROM logs LIMIT 10", agent="PostgresPassthroughAgent")
@@ -48,7 +50,7 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 ### Code & Notebook Agents
 - **CodeAgent** - AI-powered Python code generation with explanations
 - **CodePassthroughAgent** - Direct Python code execution without AI interpretation
-- **NotebookAgent** - Jupyter notebook cell operations and management
+- **NotebookTool** - Jupyter notebook cell operations and management
 
 ### Data Visualization Agents
 - **GraphAgent** / **GraphPassthroughAgent** - Network graphs with Graphistry
@@ -58,7 +60,7 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 
 ### Specialized Agents
 - **TableAIAgent** - AI-powered table analysis and insights  
-- **FirecrawlAgent** - Web scraping and data extraction
+- **Web search & scraping** - No `agent=` needed: the default `LouieAgent` routes web search and page fetching (Firecrawl is one provider, when your server has it configured)
 
 ## Quick Reference Table
 
@@ -78,8 +80,8 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 | Spanner | `SpannerAgent` | Global scale, strong consistency | SQL |
 | **Search & Logs** |
 | OpenSearch | `OpenSearchAgent` | Log analytics, security monitoring | Query DSL |
-| Splunk | `SplunkAgent` | Security operations, correlations | SPL |
-| Kusto | `KustoAgent` | Azure telemetry, time series | KQL |
+| Splunk | `Splunk` | Security operations, correlations | SPL |
+| Kusto | `Kusto` | Azure telemetry, time series | KQL |
 | **Graph Databases** |
 | Neptune | `NeptuneAgent` | Relationship analysis | Cypher |
 | **Visualization** |
@@ -89,10 +91,10 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 | Mermaid | `MermaidAgent` | Diagrams and flowcharts | Mermaid |
 | **Development** |
 | Code | `CodeAgent` | Python data processing | Python |
-| Notebook | `NotebookAgent` | Jupyter automation | Python |
+| Notebook | `NotebookTool` | Jupyter automation | Python |
 | TableAI | `TableAIAgent` | Intelligent data insights | Natural Language |
 | **Data Collection** |
-| Firecrawl | `FirecrawlAgent` | Web scraping | Natural Language |
+| Web pages | `LouieAgent` (default) | Web search, scraping | Natural Language |
 
 ## Semantic Understanding Example
 
@@ -144,7 +146,7 @@ lui("Create a network of customer interactions", agent="GraphAgent")
 lui("Write code to predict customer churn", agent="CodeAgent")
 
 # 4. Monitor in production
-lui("Create Splunk queries to track model performance", agent="SplunkAgent")
+lui("Create Splunk queries to track model performance", agent="Splunk")
 ```
 
 ## Individual Agent Guides

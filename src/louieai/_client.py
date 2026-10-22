@@ -13,6 +13,7 @@ import httpx
 import pandas as pd
 import pyarrow as pa
 
+from ._http import raise_for_status
 from ._table_ai import (
     TableAIOverrides,
     collect_table_ai_kwargs,
@@ -794,7 +795,7 @@ class LouieClient:
             params=params,
             timeout=self._timeout,
         )
-        response.raise_for_status()
+        raise_for_status(response)
 
         payload = response.json()
         objects = payload if isinstance(payload, list) else [payload]
@@ -959,7 +960,7 @@ class LouieClient:
             with stream_client.stream(
                 "POST", f"{self.server_url}/api/chat/", headers=headers, params=params
             ) as response:
-                response.raise_for_status()
+                raise_for_status(response)
 
                 # Collect streaming lines
                 last_activity = start_time
