@@ -134,7 +134,11 @@ def louie(
             - api_key: API key (alternative to username/password)
             - personal_key_id: Personal key ID for service accounts
             - personal_key_secret: Personal key secret
-            - org_name: Organization name (optional)
+            - org_name: Organization slug, as in Graphistry's ``/o/<slug>/``
+              URLs (optional). With ``graphistry_client`` or no arguments,
+              defaults to GRAPHISTRY_ORG_NAME, then the client's active org.
+              See ``LouieClient`` for how display names and usernames are
+              converted.
             - server_url: Louie server URL. Louie Web: "https://den.louie.ai"
               (default) or your enterprise URL. Louie Desktop:
               "http://127.0.0.1:10013"

@@ -209,7 +209,7 @@ print(f"Bob's thread: {bob_response.thread_id}")
 | `api_key` | str | API key (alternative to username/password) | `"api_key_123..."` |
 | `personal_key_id` | str | Personal key ID for service accounts | `"pk_123..."` |
 | `personal_key_secret` | str | Personal key secret for service accounts | `"sk_123..."` |
-| `org_name` | str | Organization name (optional) | `"my-org"` |
+| `org_name` | str | Organization slug, as in Graphistry's `/o/<slug>/` URLs (optional) | `"my_org"` |
 | `graphistry_server` | str | Graphistry server URL | `"hub.graphistry.com"` |
 | `api` | int | API version (usually 3) | `3` |
 | `graphistry_client` | Any | Existing PyGraphistry client or plottable | `graphistry.client()` |
