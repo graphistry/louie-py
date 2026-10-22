@@ -57,10 +57,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Image and binary uploads read your file object once and resend those same bytes on retry,
   so a reader without `seek()` or a stream not at position 0 is resent unchanged.
 - `upload_image` sent a file object without a name (such as `io.BytesIO`) as `image.bin`,
-  so the server kept it as opaque binary instead of an image (#59). The format is now read
-  from the file signature whenever the name has no image extension, for paths, bytes, and
-  file objects alike. `upload_image` also accepts `filename=`, like `upload_binary`, and
-  sends it as given.
+  so the server kept it as opaque binary instead of an image (#59). The server routes
+  uploads by filename extension, so the client now corrects the extension from the file
+  signature whenever the name has no image extension, for paths, bytes, and file objects
+  alike: `screenshot.bin` holding a PNG is sent as `screenshot.png`, and a nameless stream
+  as `image.png`. Bytes with no known image signature are sent as
+  `application/octet-stream` under their original name. `upload_image` and
+  `lui(..., image=...)` also accept `filename=`, like `upload_binary`, sent as given.
 - Orgs whose slug contains `_` got `401 Could not validate credentials` on every request
   (#53). The `X-Graphistry-Org` header rewrote `my_org` to `my-org`, naming an org that
   doesn't exist. This includes the default `louie(graphistry_client=g)` flow, which

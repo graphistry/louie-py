@@ -1041,6 +1041,7 @@ class Cursor:
                     share_mode=use_share_mode,
                     name=self._name,
                     folder=self._folder,
+                    filename=kwargs.get("filename"),
                     session_trace_id=self._trace_id,
                 )
             elif actual_binary is not None:

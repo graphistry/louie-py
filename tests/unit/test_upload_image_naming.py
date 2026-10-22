@@ -73,19 +73,34 @@ class TestDerivedName:
         _, filename, content_type = upload_client._serialize_image(stream)
         assert (filename, content_type) == ("shot.png", "image/png")
 
-    @pytest.mark.parametrize("name", ["upload", "blob.bin", "data.dat", "x.txt"])
-    def test_non_image_extension_is_replaced(self, upload_client, name):
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            ("upload", "upload.jpg"),
+            ("blob.bin", "blob.jpg"),
+            ("data.dat", "data.jpg"),
+            ("shot.txt", "shot.jpg"),
+            ("/tmp/screenshot-2026-10-22.bin", "screenshot-2026-10-22.jpg"),
+        ],
+    )
+    def test_non_image_extension_is_corrected_keeping_stem(
+        self, upload_client, name, expected
+    ):
+        """The stem stays so a thread of uploads keeps distinct names."""
         stream = io.BytesIO(JPEG)
         stream.name = name
         _, filename, content_type = upload_client._serialize_image(stream)
-        assert (filename, content_type) == ("image.jpg", "image/jpeg")
+        assert (filename, content_type) == (expected, "image/jpeg")
 
-    def test_non_image_extension_unknown_signature_keeps_name(self, upload_client):
+    @pytest.mark.parametrize("name", ["blob.dat", "notes.txt", "doc.pdf"])
+    def test_non_image_extension_unknown_signature_keeps_name(
+        self, upload_client, name
+    ):
+        """Not an image we recognize: keep the name, but don't claim a type."""
         stream = io.BytesIO(UNKNOWN)
-        stream.name = "blob.dat"
+        stream.name = name
         _, filename, content_type = upload_client._serialize_image(stream)
-        assert filename == "blob.dat"
-        assert content_type == "application/octet-stream"
+        assert (filename, content_type) == (name, "application/octet-stream")
 
     def test_integer_name_is_ignored(self, upload_client):
         """``open(fd).name`` can be an int."""
@@ -98,7 +113,13 @@ class TestDerivedName:
         p = tmp_path / "capture.bin"
         p.write_bytes(PNG)
         _, filename, content_type = upload_client._serialize_image(str(p))
-        assert (filename, content_type) == ("image.png", "image/png")
+        assert (filename, content_type) == ("capture.png", "image/png")
+
+    def test_path_object_unknown_signature(self, upload_client, tmp_path):
+        p = tmp_path / "junk.txt"
+        p.write_bytes(UNKNOWN)
+        _, filename, content_type = upload_client._serialize_image(p)
+        assert (filename, content_type) == ("junk.txt", "application/octet-stream")
 
     def test_path_with_image_extension(self, upload_client, tmp_path):
         p = tmp_path / "capture.png"
@@ -119,9 +140,18 @@ class TestExplicitFilename:
         assert (filename, content_type) == ("chart-q3.png", "image/png")
 
     def test_kept_even_without_image_extension(self, upload_client):
+        """Verbatim, like upload_binary; the docstring says to include an extension."""
         _, filename, content_type = upload_client._serialize_image(PNG, "capture")
         assert filename == "capture"
         assert content_type == "image/png"  # type still from the signature
+
+    def test_pil_image_honors_filename(self, upload_client):
+        Image = pytest.importorskip("PIL.Image")
+        img = Image.new("RGB", (2, 2))
+        _, filename, content_type = upload_client._serialize_image(img, "tiny.png")
+        assert (filename, content_type) == ("tiny.png", "image/png")
+        _, filename, _ = upload_client._serialize_image(img)
+        assert filename == "image.png"
 
     def test_kept_when_signature_unknown(self, upload_client):
         _, filename, content_type = upload_client._serialize_image(UNKNOWN, "x.dat")
@@ -132,6 +162,16 @@ class TestExplicitFilename:
         upload_client.upload_image("hi", io.BytesIO(PNG), filename="named.png")
         args = upload_client._send_file.call_args.args
         assert args[2:4] == ("named.png", "image/png")
+
+    def test_cursor_forwards_filename(self):
+        from louieai.notebook.cursor import Cursor
+
+        client = Mock()
+        client.upload_image.return_value = Mock(thread_id="D_1", elements=[])
+        cursor = Cursor(client=client)
+        cursor(PNG, "describe", filename="shot.png")  # lui(image, prompt) form
+        client.upload_image.assert_called_once()
+        assert client.upload_image.call_args.kwargs["filename"] == "shot.png"
 
     def test_client_wrapper_accepts_filename(self):
         from louieai._client import LouieClient

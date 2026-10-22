@@ -376,8 +376,10 @@ class UploadClient:
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
             folder: Optional folder path for the thread (server support required)
-            filename: Optional filename to send. By default it comes from the path
-                or file object, or is made up from the image's file signature.
+            filename: Optional filename to send, as given. The server routes
+                uploads by extension, so include one (`.png`, `.jpg`, ...). By
+                default the name comes from the path or file object, with the
+                extension corrected from the image's file signature.
 
         Returns:
             Response object containing AI analysis of the image
@@ -557,9 +559,11 @@ class UploadClient:
 
         The server routes uploads by filename extension and never inspects the
         bytes, so a wrong or missing extension leaves the image as opaque binary.
-        ``given`` (the caller's ``filename=``) is sent verbatim; ``derived`` (from a
-        path or a file object's ``.name``) is replaced when the signature says
-        otherwise; with neither, the name is made up from the signature.
+        ``given`` (the caller's ``filename=``) is sent verbatim. ``derived`` (from
+        a path or a file object's ``.name``) keeps its stem but gets the
+        signature's extension when its own is not an image type. With neither,
+        the name is made up from the signature. Bytes with no known image
+        signature go as ``application/octet-stream``.
         """
         name = given or derived or ""
         guessed = mimetypes.guess_type(name)[0] if name else None
@@ -567,9 +571,12 @@ class UploadClient:
             return name, guessed
         sniffed = self._sniff_image(data)
         if sniffed is None:
-            return name or "image.bin", guessed or "application/octet-stream"
+            return name or "image.bin", "application/octet-stream"
         ext, mime_type = sniffed
-        return (given or f"image.{ext}"), mime_type
+        if given:
+            return given, mime_type
+        stem = Path(derived).stem if derived else ""
+        return f"{stem or 'image'}.{ext}", mime_type
 
     def _serialize_image(
         self,
@@ -580,7 +587,7 @@ class UploadClient:
 
         Args:
             image: Image in various formats
-            filename: Optional filename to send, used as-is
+            filename: Optional filename to send, as given (needs an image extension)
 
         Returns:
             Tuple of (file_data, filename, content_type)
@@ -622,14 +629,12 @@ class UploadClient:
                     format = image.format or "PNG"
                     if format.upper() == "JPEG":
                         image.save(buffer, format="JPEG", quality=95)
-                        filename = "image.jpg"
-                        content_type = "image/jpeg"
+                        default, content_type = "image.jpg", "image/jpeg"
                     else:
                         image.save(buffer, format="PNG")
-                        filename = "image.png"
-                        content_type = "image/png"
+                        default, content_type = "image.png", "image/png"
                     buffer.seek(0)
-                    return buffer.read(), filename, content_type
+                    return buffer.read(), filename or default, content_type
             except ImportError:
                 pass
 
