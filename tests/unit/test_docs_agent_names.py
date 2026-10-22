@@ -15,7 +15,8 @@ from .agent_catalog import RUNNABLE_AGENTS
 
 REPO = Path(__file__).resolve().parents[2]
 
-AGENT_ARG = re.compile(r"""agent\s*=\s*["']([A-Za-z]+)["']""")
+# ``agent="X"`` and annotated defaults (``agent: str = "X"``); not ``user_agent=``
+AGENT_ARG = re.compile(r"""\bagent\s*(?::[^=\n]+)?=\s*["']([^"'\s]+)["']""")
 
 
 def _sources():

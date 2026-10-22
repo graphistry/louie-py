@@ -13,7 +13,7 @@ Which agents you can use depends on your Louie deployment:
 
 - **Data source agents** (databases, Splunk, Kusto, OpenSearch, ...) query the connections configured for your Louie organization or server.
 - **Louie Desktop** does not include the SQL agents (Postgres, MySQL, MSSQL, BigQuery, CockroachDB), Spanner, Neptune, or TableAI. Use a Louie server (Louie Web or self-hosted) for those.
-- **Server features** such as web search and notebook editing are turned on by the server's administrator.
+- **Server features** such as web search, notebook editing, and maps (`KeplerAgent` needs a map tile source configured on the server) are turned on by the server's administrator.
 
 ## Agent Types
 

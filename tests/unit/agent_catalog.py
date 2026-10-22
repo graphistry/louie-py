@@ -19,7 +19,7 @@ AGENTS = {
     "GraphAgent",
     "GraphPassthroughAgent",
     "GraphUMAPPassthroughAgent",
-    "KeplerAgent",
+    "KeplerAgent",  # when the server configures a map tile source
     "Kusto",
     "KustoPassthrough",
     "MCPAgent",

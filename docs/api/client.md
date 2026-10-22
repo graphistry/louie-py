@@ -141,7 +141,7 @@ print(response.trace_events)    # returned server trace payloads
 print(response.terminal_error)  # final stream plumbing error, if any
 ```
 
-The current server does not put a `draft` flag on text elements. It identifies
+The server does not put a `draft` flag on text elements. It identifies
 the final answer through the root run's `final_answer` element ID; the client
 uses that pointer to keep `.text` final-oriented. `complete` describes whether
 an element is still streaming, not whether it is reasoning.

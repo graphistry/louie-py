@@ -14,7 +14,7 @@ The NotebookTool understands:
 - Markdown documentation
 - Output handling and display
 
-Reading notebooks, listing them, copying results between them, and searching their run history always work. Creating notebooks and adding, editing, or running cells require notebook editing to be enabled on your Louie server (it is off by default); without it, the agent answers that it can't make the change.
+Reading notebooks, listing them, copying results between them, and searching their run history always work. Creating notebooks and adding, editing, or running cells require notebook editing to be enabled on your Louie server (it is off by default); without it, the agent has no tools to make the change.
 
 ### Basic Usage
 
@@ -92,6 +92,13 @@ lui("""
 Execute:
 - All data loading cells
 - Skip visualization cells
+""", agent="NotebookTool")
+
+# Parameterized execution
+lui("""
+Run notebook with parameters:
+- date_range = "2024-01-01 to 2024-12-31"
+- include_details = True
 """, agent="NotebookTool")
 
 # Error handling

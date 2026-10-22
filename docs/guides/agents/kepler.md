@@ -2,6 +2,8 @@
 
 The Kepler agent creates powerful geospatial visualizations using Kepler.gl, enabling interactive exploration of location-based data with advanced mapping features.
 
+> **Availability:** requires a map tile source configured on the Louie server.
+
 ## Overview
 
 - **KeplerAgent** - AI-powered geospatial visualization from natural language descriptions

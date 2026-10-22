@@ -23,12 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the Snowflake and Athena agent guides: no Louie deployment runs those agents.
 - Notebook guide: the agent works on Louie notebooks, not Jupyter files. Creating, editing,
   and running cells requires notebook editing to be enabled on the server. Dropped the
-  examples no server supports (reordering cells, clearing outputs, widgets, exporting, and
-  scheduling).
+  examples no server supports: reordering cells, clearing outputs, widgets, exporting to
+  other formats, git preparation, scheduling, and CI/CD.
 - Web scraping guide: web search must be enabled on the server, and Firecrawl is its
-  premium provider. Dropped the click-interaction and raw-HTML/screenshot examples.
+  premium provider. Dropped what the web tools can't do: clicking through pages, waiting
+  for or scrolling dynamic content, screenshots, and rate-limit or user-agent control.
 - Agent guides note which agents Louie Desktop does not include (the SQL agents, Spanner,
-  Neptune, TableAI).
+  Neptune, TableAI) and that `KeplerAgent` needs a map tile source on the server.
 - New [Connecting: Web vs Desktop](docs/getting-started/connecting.md) page. Louie Desktop
   serves its API on `http://127.0.0.1:10013`, which nothing in the docs said — every
   `server_url` example targeted Louie Web, so desktop users had no address to point at.

@@ -204,9 +204,7 @@ Extract business listings:
 # JavaScript-rendered content
 lui("""
 Extract content from this React/Vue/Angular app (Firecrawl renders JavaScript):
-- Wait for dynamic loading
 - Capture AJAX-loaded data
-- Handle infinite scroll
 """)
 
 ```
@@ -227,6 +225,7 @@ Extract and clean:
 lui("""
 Extract content and convert to:
 - Markdown format
+- Clean HTML
 - Structured JSON
 - CSV for tables
 """)
@@ -336,6 +335,18 @@ Extract nested structure:
     - Products
       - Attributes
 Maintain relationships
+""")
+```
+
+### Raw Content
+
+```python
+# Full page capture
+lui("""
+Capture entire page:
+- HTML source
+- Rendered content
+- Resources (images, CSS)
 """)
 ```
 
