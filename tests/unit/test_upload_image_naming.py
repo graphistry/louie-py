@@ -81,6 +81,9 @@ class TestDerivedName:
             ("data.dat", "data.jpg"),
             ("shot.txt", "shot.jpg"),
             ("/tmp/screenshot-2026-10-22.bin", "screenshot-2026-10-22.jpg"),
+            ("archive.tar.gz", "archive.tar.jpg"),
+            ("name.", "name.jpg"),
+            ("", "image.jpg"),
         ],
     )
     def test_non_image_extension_is_corrected_keeping_stem(

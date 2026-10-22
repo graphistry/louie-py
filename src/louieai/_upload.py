@@ -575,7 +575,7 @@ class UploadClient:
         ext, mime_type = sniffed
         if given:
             return given, mime_type
-        stem = Path(derived).stem if derived else ""
+        stem = Path(derived).stem.rstrip(".") if derived else ""
         return f"{stem or 'image'}.{ext}", mime_type
 
     def _serialize_image(
