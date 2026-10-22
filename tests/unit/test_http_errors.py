@@ -225,11 +225,33 @@ class TestCallSitesSurfaceDetail:
             louie_client.upload_binary("hi", pdf, agent="UploadAgent")
 
 
-def test_add_cell_expired_jwt_refreshes_and_retries(louie_client):
+def _upload_dataframe(client):
+    return client.upload_dataframe("hi", pd.DataFrame({"a": [1]}))
+
+
+def _upload_image(client):
+    return client.upload_image("hi", io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16))
+
+
+def _upload_binary(client):
+    return client.upload_binary("hi", io.BytesIO(b"%PDF-1.4\n%%EOF\n"))
+
+
+@pytest.mark.parametrize(
+    ("call", "payload_marker"),
+    [
+        (lambda client: client.add_cell("", "hi"), None),
+        (_upload_dataframe, b"PAR1"),
+        (_upload_image, b"\x89PNG"),
+        (_upload_binary, b"%PDF-1.4"),
+    ],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_streamed_expired_jwt_refreshes_and_retries(louie_client, call, payload_marker):
     """A readable 401 body lets ``auto_retry_auth`` see the JWT error.
 
     Before #52 the streamed body was closed, so the expired-token refresh
-    on ``add_cell`` never triggered.
+    never triggered; uploads also lacked the ``auth_manager`` it looks up.
     """
     requests: list[httpx.Request] = []
 
@@ -249,10 +271,61 @@ def test_add_cell_expired_jwt_refreshes_and_retries(louie_client):
         side_effect=lambda: current.update(token=next(tokens))
     )
     with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
-        response = louie_client.add_cell("", "hi")
+        response = call(louie_client)
 
     assert len(requests) == 2
+    if payload_marker:  # resent intact (multipart boundaries differ)
+        assert all(payload_marker in r.content for r in requests)
     graphistry_client.refresh.assert_called_once()
     assert requests[0].headers["authorization"] == "Bearer old-token"
     assert requests[1].headers["authorization"] == "Bearer new-token"
     assert response.thread_id == "D_1"
+
+
+class _ReadOnlyFile:
+    """File-like with ``read()`` but no ``seek``: it can be read only once."""
+
+    def __init__(self, data: bytes):
+        self._data = data
+
+    def read(self) -> bytes:
+        data, self._data = self._data, b""
+        return data
+
+
+def _mid_stream(data: bytes) -> io.BytesIO:
+    stream = io.BytesIO(b"SKIPPED-PREFIX" + data)
+    stream.seek(len(b"SKIPPED-PREFIX"))
+    return stream
+
+
+@pytest.mark.parametrize(
+    "make_input",
+    [_ReadOnlyFile, _mid_stream],
+    ids=["no-seek reader", "stream not at position 0"],
+)
+@pytest.mark.parametrize("method", ["upload_binary", "upload_image"])
+def test_upload_retry_resends_identical_payload(louie_client, method, make_input):
+    """The retry must resend the bytes sent the first time, not re-read input."""
+    payload = (
+        b"%PDF-1.4\n%%EOF\n"
+        if method == "upload_binary"
+        else b"\x89PNG\r\n\x1a\n" + b"\x00" * 16
+    )
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if len(requests) == 1:
+            return _reply(401, {"detail": "JWT token expired"})
+        return _reply(
+            200, '{"type": "StreamingApiMessageStart", "dthread_id": "D_1"}\n'
+        )
+
+    with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
+        getattr(louie_client, method)("hi", make_input(payload))
+
+    assert len(requests) == 2
+    for request in requests:
+        assert payload in request.content
+        assert b"SKIPPED-PREFIX" not in request.content
