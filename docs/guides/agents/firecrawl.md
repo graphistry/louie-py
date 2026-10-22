@@ -81,7 +81,7 @@ lui("""
 Starting from the homepage, crawl:
 - All product categories
 - Extract products from each category
-- Limit to 50 pages total
+- Limit to 50 pages total (Firecrawl's maximum)
 """)
 
 # Documentation sites
@@ -231,7 +231,6 @@ Find and extract all:
 lui("""
 Scrape this site respectfully:
 - Only the pages needed for the question
-- Respect robots.txt
 """)
 ```
 
@@ -241,8 +240,7 @@ Scrape this site respectfully:
 # Robust extraction
 lui("""
 Extract data with fallbacks:
-- Primary selectors
-- Alternative selectors
+- Alternative wording or page sections when a field is missing
 - Default values for missing data
 - Error reporting
 """)

@@ -109,7 +109,7 @@ LouieAI provides specialized agents that learn and understand your data:
   - Generate complex queries from natural language using semantic understanding
 - Search & Analytics: Splunk, OpenSearchAgent, Kusto
 - Visualizations: GraphAgent, PerspectiveAgent, KeplerAgent, MermaidAgent
-- Direct Execution: PassthroughAgent variants for each database (no AI interpretation)
+- Direct Execution: Passthrough variants for each database (no AI interpretation), usually `<Name>PassthroughAgent`; Splunk and Kusto use `SplunkPassthrough` / `KustoPassthrough`
 
 ```python
 # Use the default conversational agent

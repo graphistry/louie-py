@@ -118,7 +118,7 @@ This reference provides technical details about all available LouieAI agents.
 - **Purpose**: Web search and page extraction, through the default `LouieAgent` (no `agent=`), when web search is enabled on the server
 - **Capabilities**:
   - Search and fetch pages as text and links
-  - Multi-page crawls (up to 50 pages)
+  - Multi-page crawls (Firecrawl caps a crawl at 50 pages)
   - Data extraction
 - **Output**: Structured web data
 

@@ -156,10 +156,10 @@ lui("Create Splunk queries to track model performance", agent="Splunk")
 - [PostgreSQL](postgresql.md) - Advanced SQL features, JSON support
 - [Splunk](splunk.md) - Security operations, log analysis
 - [BigQuery](bigquery.md) - Petabyte analytics, ML integration
-- [Snowflake](snowflake.md) - Enterprise data warehouse
+- [Snowflake](snowflake.md) - Enterprise data warehouse (not enabled on current servers)
 - [MySQL](mysql.md) - Web application databases
 - [OpenSearch](opensearch.md) - Search and log analytics
-- [Athena](athena.md), [CockroachDB](cockroachdb.md), [Kusto](kusto.md), [MSSQL](mssql.md), [Neptune](neptune.md), [Spanner](spanner.md)
+- [Athena](athena.md) (not enabled on current servers), [CockroachDB](cockroachdb.md), [Kusto](kusto.md), [MSSQL](mssql.md), [Neptune](neptune.md), [Spanner](spanner.md)
 
 **Visualization Agents:**
 - [Graph](graph.md) - Network visualization with Graphistry

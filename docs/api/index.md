@@ -71,7 +71,7 @@ LouieAI provides 40+ specialized agents with semantic understanding:
   - Agents learn your schema and build semantic models for intelligent query generation
   - Natural language queries leverage understanding of your business context
 - **Visualizations**: GraphAgent, KeplerAgent, PerspectiveAgent, MermaidAgent
-- **Direct Execution**: PassthroughAgent variants for each database
+- **Direct Execution**: Passthrough variants for each database (`<Name>PassthroughAgent`; `SplunkPassthrough` / `KustoPassthrough` for Splunk and Kusto)
 
 ```python
 # Default agent

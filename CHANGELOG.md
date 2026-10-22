@@ -23,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.ipynb` files) that `NotebookTool` does not do. It now covers what the agent does: list,
   read, and copy between Louie notebooks, and search run history. Creating and editing
   cells needs server-side enablement. The Web Scraping guide drops screenshots, raw HTML,
-  and page interaction, which the web tools don't support, and caps crawls at 50 pages.
+  and page interaction, which the web tools don't support, and notes Firecrawl's 50-page
+  crawl cap.
 - Snowflake and Athena guides warn that current servers accept these agent names (and their
   Passthrough variants) but do not enable the agents: a call returns no output and `lui.status` is `'failed'`.
 - New [Connecting: Web vs Desktop](docs/getting-started/connecting.md) page. Louie Desktop
@@ -63,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `plans/<task>/plan.md` convention still works.
 
 ### Internal
-- `tests/unit/test_docs_agent_names.py` fails if docs, notebook code cells, README, or
+- `tests/unit/test_docs_agent_names.py` fails if docs, notebook code and markdown cells, README, or
   `src` docstrings pass an agent name current servers reject (#52).
 - `tests/unit/test_packaging_hygiene.py` fails if internal material becomes tracked again
   or if `MANIFEST.in` loses its exclusions. Written after the fact — nothing had been
