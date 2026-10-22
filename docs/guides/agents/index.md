@@ -58,7 +58,7 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 ### Code & Notebook Agents
 - **CodeAgent** - AI-powered Python code generation with explanations
 - **CodePassthroughAgent** - Direct Python code execution without AI interpretation
-- **NotebookTool** - List, read, and copy between your Louie notebooks
+- **NotebookTool** - List, read, and copy between your Louie notebooks; edits and runs cells when the server enables notebook editing
 
 ### Data Visualization Agents
 - **GraphAgent** / **GraphPassthroughAgent** - Network graphs with Graphistry
@@ -97,7 +97,7 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 | Mermaid | `MermaidAgent` | Diagrams and flowcharts | Mermaid |
 | **Development** |
 | Code | `CodeAgent` | Python data processing | Python |
-| Notebook | `NotebookTool` | Find and reuse earlier Louie notebooks | Natural Language |
+| Notebook | `NotebookTool` | Reuse earlier Louie notebooks; edit cells when enabled | Natural Language |
 | TableAI | `TableAIAgent` | Intelligent data insights | Natural Language |
 | **Data Collection** |
 | Web pages | `LouieAgent` (default; needs web search enabled) | Web search, scraping | Natural Language |
@@ -174,6 +174,6 @@ lui("Create Splunk queries to track model performance", agent="Splunk")
 
 **Development Agents:**
 - [Code](code.md) - Python code generation
-- [Notebook](notebook.md) - Find and reuse earlier Louie notebooks
+- [Notebook](notebook.md) - Reuse earlier Louie notebooks; edit cells when enabled
 - [TableAI](tableai.md) - Intelligent data insights
 - [Web Scraping](firecrawl.md) - Via the default `LouieAgent` (Firecrawl and other providers)
