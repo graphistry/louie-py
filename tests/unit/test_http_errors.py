@@ -264,13 +264,21 @@ def test_streamed_expired_jwt_refreshes_and_retries(louie_client, call, payload_
         )
 
     graphistry_client = louie_client._auth_manager._graphistry_client
+    tokens = iter(["old-token", "new-token"])
+    current = {"token": next(tokens)}
+    graphistry_client.api_token = Mock(side_effect=lambda: current["token"])
+    graphistry_client.refresh = Mock(
+        side_effect=lambda: current.update(token=next(tokens))
+    )
     with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
         response = call(louie_client)
 
     assert len(requests) == 2
-    if payload_marker:  # rewound and resent (multipart boundaries differ)
+    if payload_marker:  # resent intact (multipart boundaries differ)
         assert all(payload_marker in r.content for r in requests)
     graphistry_client.refresh.assert_called_once()
+    assert requests[0].headers["authorization"] == "Bearer old-token"
+    assert requests[1].headers["authorization"] == "Bearer new-token"
     assert response.thread_id == "D_1"
 
 
