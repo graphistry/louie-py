@@ -492,7 +492,7 @@ print(lui.text)
   - `personal_key_id`, `personal_key_secret`: Service account auth
   - `api_key`: API key authentication
   - `token`: Direct bearer token (anonymous or Graphistry)
-  - `org_name`: Organization name (optional)
+  - `org_name`: Organization slug, as in Graphistry's `/o/<slug>/` URLs (optional)
   - `graphistry_server`: PyGraphistry server URL
   - `server_url`: Custom Louie server URL
 

@@ -9,6 +9,44 @@ import louieai
 from louieai._client import LouieClient
 from louieai.auth import AuthManager
 
+# The Graphistry server generates org slugs from the name typed when creating
+# an org, and from the username for personal orgs. Expected values below are
+# the server's output for each input; ``_to_slug`` must match it exactly.
+SLUGIFY_PARITY_CASES = [
+    # Already-generated slugs are left alone
+    ("my_org", "my_org", "underscores are kept (#53)"),
+    ("team_a-b", "team_a-b", "mixed _ and -"),
+    ("example-org", "example-org", "plain slug"),
+    ("alice1", "alice1", "personal slug with collision suffix"),
+    ("a__b", "a__b", "inner underscore runs are kept"),
+    # Display names
+    ("My Org", "my-org", "spaces become -"),
+    ("My Organization", "my-organization", "spaces become -"),
+    ("UPPERCASE ORG", "uppercase-org", "lowercased"),
+    ("My_Team Org", "my_team-org", "space to -, _ kept"),
+    ("Test_Org-123", "test_org-123", "lowercased, _ kept"),
+    ("Graphistry, Inc.", "graphistry-inc", "punctuation dropped"),
+    ("Org with Special@#$%", "org-with-special", "symbols dropped"),
+    ("rock&roll", "rockroll", "symbols dropped, not turned into -"),
+    ("a - b", "a-b", "runs of space and - collapse"),
+    ("  spaced  out  ", "spaced-out", "surrounding whitespace stripped"),
+    ("my_org\n", "my_org", "trailing newline stripped"),
+    ("--edge--", "edge", "leading/trailing - stripped"),
+    ("_private_", "private", "leading/trailing _ stripped"),
+    # Personal orgs: slug is generated from the username
+    ("JohnDoe", "johndoe", "username case is lowered"),
+    ("John.Doe", "johndoe", "dots dropped, not turned into -"),
+    ("john.doe@example.com", "johndoeexamplecom", "email-style username"),
+    ("a+b", "ab", "+ dropped"),
+    # Non-ASCII: transliterated where possible; header values must be ASCII
+    ("café", "cafe", "accents transliterated"),
+    ("Ünïcödé Örg", "unicode-org", "accents transliterated"),
+    ("\uff21\uff43\uff4d\uff45", "acme", "fullwidth letters normalized"),
+    ("foo\u2014bar", "foobar", "em dash dropped"),
+    ("ø", "", "no ASCII form: dropped"),
+    ("日本", "", "no ASCII form: dropped"),
+]
+
 
 class TestOrgAuthFlow:
     """Test organization authentication flow."""
@@ -94,14 +132,7 @@ class TestOrgAuthFlow:
 
     def test_org_slug_conversion(self):
         """Test that org names are properly converted to slug format."""
-        test_cases = [
-            ("My Organization", "my-organization"),
-            ("example-org", "example-org"),
-            ("Test_Org-123", "test-org-123"),
-            ("UPPERCASE ORG", "uppercase-org"),
-            ("Org with Special@#$%", "org-with-special"),
-        ]
-
+        test_cases = [(raw, slug) for raw, slug, _why in SLUGIFY_PARITY_CASES]
         mock_graphistry = MagicMock()
         mock_graphistry.api_token.return_value = "fake-token"
 
@@ -202,3 +233,130 @@ class TestOrgAuthFlow:
             assert headers["X-Graphistry-Org"] == "example-org", (
                 f"Wrong org in API headers: {headers.get('X-Graphistry-Org')}"
             )
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [(raw, slug) for raw, slug, _why in SLUGIFY_PARITY_CASES],
+    ids=[why for _raw, _slug, why in SLUGIFY_PARITY_CASES],
+)
+def test_to_slug_matches_server_slugify(raw, expected):
+    assert LouieClient._to_slug(raw) == expected
+
+
+@pytest.mark.parametrize("raw", [raw for raw, _slug, _why in SLUGIFY_PARITY_CASES])
+def test_to_slug_is_idempotent(raw):
+    """Slugs the server generated must pass through unchanged."""
+    once = LouieClient._to_slug(raw)
+    assert LouieClient._to_slug(once) == once
+
+
+# "SITE" is the slug the server gives its site-wide org; "Acme_Corp" stands in
+# for a slug an admin set directly. Neither is slugify() output, so
+# converting them would name a different org.
+@pytest.mark.parametrize("slug", ["my_org", "team_a-b", "SITE", "Acme_Corp"])
+def test_graphistry_client_slug_reaches_header_unchanged(slug, monkeypatch):
+    """#53: the default ``louie(graphistry_client=g)`` flow sends g's slug as-is."""
+    import graphistry
+
+    monkeypatch.delenv("GRAPHISTRY_ORG_NAME", raising=False)
+    g = graphistry.client()
+    g.session.org_name = slug
+    g.session.api_token = "fake-token"
+
+    lui = louieai.louie(graphistry_client=g, server_url="https://test.louie.ai")
+
+    assert lui._client._get_headers()["X-Graphistry-Org"] == slug
+
+
+def test_explicit_org_name_confirmed_by_graphistry_is_sent_as_is(monkeypatch):
+    """An explicit org_name equal to g's active slug is a real slug: no rewrite."""
+    import graphistry
+
+    monkeypatch.delenv("GRAPHISTRY_ORG_NAME", raising=False)
+    g = graphistry.client()
+    g.session.org_name = "SITE"
+    g.session.api_token = "fake-token"
+
+    lui = louieai.louie(
+        graphistry_client=g, org_name="SITE", server_url="https://test.louie.ai"
+    )
+
+    assert lui._client._get_headers()["X-Graphistry-Org"] == "SITE"
+
+
+def test_padded_confirmed_org_name_is_sent_trimmed(monkeypatch):
+    """A trailing newline (e.g. from an env file) must not turn SITE into site."""
+    import graphistry
+
+    monkeypatch.delenv("GRAPHISTRY_ORG_NAME", raising=False)
+    g = graphistry.client()
+    g.session.org_name = "SITE"
+    g.session.api_token = "fake-token"
+
+    lui = louieai.louie(
+        graphistry_client=g, org_name=" SITE\n", server_url="https://test.louie.ai"
+    )
+
+    assert lui._client._get_headers()["X-Graphistry-Org"] == "SITE"
+
+
+@pytest.mark.parametrize(
+    ("org_name", "active_slug", "expected"),
+    [
+        # A different value than g's active org: convert like the server would
+        ("My Org", "my-org", "my-org"),
+        ("JohnDoe", "other", "johndoe"),
+        # Unconfirmed values are always converted, even if they look like slugs
+        ("SITE", None, "site"),
+        # A non-ASCII active slug can't be sent in a header; don't send it
+        ("café", "café", "cafe"),
+    ],
+)
+def test_unconfirmed_org_name_is_converted(org_name, active_slug, expected):
+    mock_graphistry = MagicMock()
+    mock_graphistry.api_token.return_value = "fake-token"
+    mock_graphistry.org_name.return_value = active_slug
+
+    with patch("louieai.auth.GraphistryClient", return_value=mock_graphistry):
+        client = LouieClient(
+            personal_key_id="test_key",
+            personal_key_secret="test_secret",
+            org_name=org_name,
+            server_url="https://test.louie.ai",
+        )
+        assert client._get_headers()["X-Graphistry-Org"] == expected
+
+
+def test_org_name_lookup_failure_falls_back_to_conversion():
+    mock_graphistry = MagicMock()
+    mock_graphistry.api_token.return_value = "fake-token"
+    mock_graphistry.org_name.side_effect = RuntimeError("no session")
+
+    with patch("louieai.auth.GraphistryClient", return_value=mock_graphistry):
+        client = LouieClient(
+            personal_key_id="test_key",
+            personal_key_secret="test_secret",
+            org_name="My Org",
+            server_url="https://test.louie.ai",
+        )
+        assert client._get_headers()["X-Graphistry-Org"] == "my-org"
+
+
+@pytest.mark.parametrize("org_name", ["my_org", "John.Doe", "café", "My Org", "日本"])
+def test_org_header_is_sendable(org_name):
+    """The header must survive a real httpx request (non-ASCII values can't)."""
+    import httpx
+
+    seen = {}
+
+    def handler(request):
+        seen["org"] = request.headers.get("X-Graphistry-Org")
+        return httpx.Response(200, json={})
+
+    client = LouieClient(
+        token="fake-token", org_name=org_name, server_url="https://test.louie.ai"
+    )
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http:
+        http.get("https://test.louie.ai/api/x", headers=client._get_headers())
+    assert seen["org"] == client._to_slug(org_name)

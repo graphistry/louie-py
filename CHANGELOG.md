@@ -51,6 +51,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expired login tokens are now refreshed on `add_cell` (#52). Its refresh-and-retry check
   reads the 401 body for a JWT error, which was unreadable on this streamed call, so it
   failed instead of refreshing once and retrying.
+- Orgs whose slug contains `_` got `401 Could not validate credentials` on every request
+  (#53). The `X-Graphistry-Org` header rewrote `my_org` to `my-org`, naming an org that
+  doesn't exist. This includes the default `louie(graphistry_client=g)` flow, which
+  picks up the slug from the PyGraphistry client.
+  - The header now carries the org slug exactly when the Graphistry client confirms it
+    as its active org. That covers `graphistry_client=g` and credential logins with
+    `org_name=`. It also covers slugs that are not lowercase, such as an
+    admin-assigned `Acme_Corp`.
+  - Other values are converted the way the Graphistry server generates slugs.
+    Underscores are kept and accents are transliterated (`café` -> `cafe`).
+    Characters such as `.`, `@`, `&` and `'` are dropped rather than turned into `-`.
+    Personal-org usernames now map to the server's slug: `John.Doe` -> `johndoe`; it
+    used to be `john-doe`, which doesn't exist. Display names map as before:
+    `"My Org"` -> `my-org`.
+  - `org_name` is documented as the org slug (the ID in `/o/<slug>/` URLs), not a
+    display name.
 - README's custom-server example called `LouieClient(server_url=..., server=...)`. Neither
   half worked: `LouieClient` is not exported from `louieai`, and `server=` has been
   rejected with "use graphistry_server instead" since it was renamed. Replaced with the

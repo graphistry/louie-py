@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
@@ -24,6 +26,10 @@ from ._types import ShareMode, UserAgent
 from .auth import AuthManager, auto_retry_auth
 
 logger = logging.getLogger(__name__)
+
+# An org slug the server could hold that is also a valid HTTP header value:
+# the server's slug alphabet ([-\w]) restricted to ASCII.
+_HEADER_SAFE_SLUG = re.compile(r"[-\w]+", re.ASCII)
 
 
 @dataclass
@@ -371,7 +377,15 @@ class LouieClient:
             api_key: API key for direct authentication (legacy)
             personal_key_id: Personal key ID for service account authentication
             personal_key_secret: Personal key secret for service account authentication
-            org_name: Organization name - use username for personal orgs (optional)
+            org_name: Organization slug, the org's ID in Graphistry's URLs
+                (``/o/<slug>/``), e.g. ``"my_org"`` (optional). Logging in
+                with credentials requires the exact slug. With a
+                ``graphistry_client`` or ``token``, a display name or (for a
+                personal org) a username is converted the way the server
+                makes slugs: ``"My Org"`` -> ``"my-org"``, ``"John.Doe"`` ->
+                ``"johndoe"``. That guess can miss, e.g. a personal slug
+                with a numeric suffix (``"johndoe1"``); the exact slug
+                always works.
             api: API version (default: 3)
             anonymous: Use anonymous auth via /auth/anonymous (Louie Desktop only)
             anonymous_timeout: Timeout for /auth/anonymous in seconds
@@ -605,10 +619,8 @@ class LouieClient:
             self._auth_manager, "_credentials"
         ) and self._auth_manager._credentials.get("org_name"):
             org_name = self._auth_manager._credentials["org_name"]
-            # Convert to slug format (lowercase, replace special chars with hyphens)
             if org_name:  # Ensure org_name is not None
-                org_slug = self._to_slug(str(org_name))
-                headers["X-Graphistry-Org"] = org_slug
+                headers["X-Graphistry-Org"] = self._org_header_value(str(org_name))
 
         # Add traceparent for distributed tracing
         # Priority: explicit traceparent > OTel context > session trace
@@ -621,25 +633,60 @@ class LouieClient:
 
         return headers
 
-    def _to_slug(self, text: str) -> str:
-        """Convert text to slug format.
+    def _org_header_value(self, org_name: str) -> str:
+        """Pick the ``X-Graphistry-Org`` value for ``org_name``.
 
-        - Lowercase
-        - Replace spaces and special chars with hyphens
-        - Remove consecutive hyphens
-        - Strip leading/trailing hyphens
+        The server matches the header against org slugs exactly. If the
+        Graphistry client has already confirmed ``org_name`` as its active org
+        slug (``g.org_name()``), it is a real slug and goes out as-is. This
+        covers ``louie(graphistry_client=g)`` and logins with ``org_name=``,
+        which fail unless the value is an exact slug. Anything else is converted
+        with ``_to_slug``, matching how the server generates slugs.
         """
-        import re
+        confirmed = self._confirmed_org_slug()
+        if confirmed is not None and org_name.strip() == confirmed:
+            return confirmed
+        return self._to_slug(org_name)
 
-        # Convert to lowercase
-        slug = text.lower()
-        # Replace any non-alphanumeric character with hyphen
-        slug = re.sub(r"[^a-z0-9]+", "-", slug)
-        # Remove consecutive hyphens
-        slug = re.sub(r"-+", "-", slug)
-        # Strip leading/trailing hyphens
-        slug = slug.strip("-")
-        return slug
+    def _confirmed_org_slug(self) -> str | None:
+        """Active org slug reported by the Graphistry client, if header-safe."""
+        getter = getattr(self._auth_manager._graphistry_client, "org_name", None)
+        if not callable(getter):
+            return None
+        try:
+            value = getter()
+        except Exception:
+            return None
+        if isinstance(value, str) and _HEADER_SAFE_SLUG.fullmatch(value):
+            return value
+        return None
+
+    @staticmethod
+    def _to_slug(text: str) -> str:
+        """Convert an org name to a slug the way the Graphistry server does.
+
+        Same algorithm the server uses to generate org slugs from what users
+        type and personal-org slugs from usernames:
+
+        - Transliterate to ASCII (``café`` -> ``cafe``); drop what has no
+          ASCII form
+        - Lowercase
+        - Drop characters other than letters, digits, ``_``, ``-``, whitespace
+          (``John.Doe`` -> ``johndoe``, not ``john-doe``)
+        - Turn runs of whitespace and ``-`` into one ``-``
+        - Strip leading/trailing ``-`` and ``_``
+
+        Underscores inside are kept (``my_org`` stays ``my_org``, #53). The
+        result is idempotent, so slugs the server generated pass through
+        unchanged, and it is ASCII, as HTTP header values require.
+        """
+        value = (
+            unicodedata.normalize("NFKD", text)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+        )
+        value = re.sub(r"[^\w\s-]", "", value.lower())
+        return re.sub(r"[-\s]+", "-", value).strip("-_")
 
     @staticmethod
     def _decode_json_objects(response_text: str) -> list[dict[str, Any]]:

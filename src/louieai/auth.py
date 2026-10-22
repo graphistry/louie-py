@@ -92,7 +92,7 @@ class AuthManager:
             api_key: API key for direct authentication (legacy)
             personal_key_id: Personal key ID for service account authentication
             personal_key_secret: Personal key secret for service account authentication
-            org_name: Organization name (optional for all auth methods)
+            org_name: Organization slug (optional for all auth methods)
             api: API version (default: 3)
             graphistry_server: Graphistry server URL for direct authentication
             token: Optional pre-fetched bearer token (anonymous or Graphistry)
