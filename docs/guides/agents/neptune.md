@@ -2,6 +2,8 @@
 
 Access AWS Neptune graph database using Cypher queries.
 
+> **Availability:** not included in Louie Desktop; use a Louie server (Louie Web or self-hosted).
+
 ## Overview
 
 - **NeptuneAgent** - AI-powered natural language to Cypher

@@ -5,13 +5,21 @@ LouieAI provides 40+ specialized agents for different data sources and tasks. Ea
 - **AI-Assisted** (e.g., `PostgresAgent`) - Natural language to query language with semantic understanding
 - **Passthrough** (e.g., `PostgresPassthroughAgent`) - Direct query execution without AI interpretation
 
-The server validates agent names: an unknown name fails with `400 Bad Request` and the detail `Invalid agent '<name>'`. Most names end in `Agent`, but these do not: `Splunk` / `SplunkPassthrough`, `Kusto` / `KustoPassthrough`, and `NotebookTool`. (Older Louie servers used `SplunkAgent` / `KustoAgent`; if your server rejects the short name, try the older one.) A name the server knows but has not enabled is not rejected: the call returns no output and `lui.status` is `'failed'`.
+Agent names are exact and checked by the server: an unknown name fails with `400 Bad Request` and the detail `Invalid agent '<name>'`. Most names end in `Agent`; the exceptions are `Splunk` / `SplunkPassthrough`, `Kusto` / `KustoPassthrough`, and `NotebookTool`.
+
+## Availability
+
+Which agents you can use depends on your Louie deployment:
+
+- **Data source agents** (databases, Splunk, Kusto, OpenSearch, ...) query the connections configured for your Louie organization or server.
+- **Louie Desktop** does not include the SQL agents (Postgres, MySQL, MSSQL, BigQuery, CockroachDB), Spanner, Neptune, or TableAI. Use a Louie server (Louie Web or self-hosted) for those.
+- **Server features** such as web search and notebook editing are turned on by the server's administrator.
 
 ## Agent Types
 
 ### General Purpose Agents
 - **LouieAgent** (default) - General conversational AI for analysis and mixed tasks
-- **TextAgent** - Legacy alias of `LouieAgent`
+- **TextAgent** - Basic text processing and manipulation
 - **DoNothingAgent** - Testing agent that returns empty responses
 
 ### Database Query Agents with Semantic Layer
@@ -68,9 +76,7 @@ response = client.add_cell("", "SELECT * FROM events", agent="PostgresPassthroug
 |---|---|---|---|
 | **Cloud Data Warehouses** |
 | BigQuery | `BigQueryAgent` | Petabyte analytics, ML, geospatial | SQL |
-| Snowflake | `SnowflakeAgent` (not enabled on current servers, nor its Passthrough) | Enterprise analytics, time travel | SQL |
 | Databricks | `DatabricksAgent` | Unity Catalog, Delta Lake | SQL |
-| Athena | `AthenaAgent` (not enabled on current servers, nor its Passthrough) | Serverless S3 queries | SQL |
 | **Traditional Databases** |
 | PostgreSQL | `PostgresAgent` | OLTP/Analytics, JSON, advanced features | SQL |
 | MySQL | `MySQLAgent` | Web applications, performance optimization | SQL |
@@ -156,10 +162,9 @@ lui("Create Splunk queries to track model performance", agent="Splunk")
 - [PostgreSQL](postgresql.md) - Advanced SQL features, JSON support
 - [Splunk](splunk.md) - Security operations, log analysis
 - [BigQuery](bigquery.md) - Petabyte analytics, ML integration
-- [Snowflake](snowflake.md) - Enterprise data warehouse (not enabled on current servers)
 - [MySQL](mysql.md) - Web application databases
 - [OpenSearch](opensearch.md) - Search and log analytics
-- [Athena](athena.md) (not enabled on current servers), [CockroachDB](cockroachdb.md), [Kusto](kusto.md), [MSSQL](mssql.md), [Neptune](neptune.md), [Spanner](spanner.md)
+- [CockroachDB](cockroachdb.md), [Kusto](kusto.md), [MSSQL](mssql.md), [Neptune](neptune.md), [Spanner](spanner.md)
 
 **Visualization Agents:**
 - [Graph](graph.md) - Network visualization with Graphistry

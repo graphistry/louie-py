@@ -23,7 +23,6 @@ nav:
     - Agent Guides:
       - Overview: guides/agents/index.md
       - Database Agents:
-        - Athena: guides/agents/athena.md
         - BigQuery: guides/agents/bigquery.md
         - CockroachDB: guides/agents/cockroachdb.md
         - Databricks: guides/agents/databricks.md
@@ -33,7 +32,6 @@ nav:
         - Neptune: guides/agents/neptune.md
         - OpenSearch: guides/agents/opensearch.md
         - PostgreSQL: guides/agents/postgresql.md
-        - Snowflake: guides/agents/snowflake.md
         - Spanner: guides/agents/spanner.md
         - Splunk: guides/agents/splunk.md
       - Visualization:

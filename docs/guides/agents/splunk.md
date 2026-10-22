@@ -7,8 +7,6 @@ Access Splunk for log analysis with natural language or SPL queries.
 - **Splunk** - AI-powered natural language to SPL
 - **SplunkPassthrough** - Direct SPL execution
 
-> **Agent names:** these agents are named `Splunk` and `SplunkPassthrough`, without the usual `Agent` suffix. Older Louie servers used `SplunkAgent` / `SplunkPassthroughAgent`; current ones reject those with `400 Invalid agent`.
-
 ## Usage Examples
 
 ```python

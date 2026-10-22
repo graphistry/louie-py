@@ -4,25 +4,11 @@ This reference provides technical details about all available LouieAI agents.
 
 ## Database Agents
 
-### Athena
-- **Availability**: not enabled on current Louie servers (the agent names are accepted, but calls return no output)
-- **Purpose**: Query AWS Athena databases
-- **Capabilities**: SQL queries, partitioned data, S3-backed tables
-- **Authentication**: AWS credentials required
-- **Output**: Tabular data, query metadata
-
 ### BigQuery
 - **Purpose**: Query Google BigQuery datasets
 - **Capabilities**: Standard SQL, nested data, array functions
 - **Authentication**: GCP service account
 - **Output**: Tabular data, query statistics
-
-### Snowflake
-- **Availability**: not enabled on current Louie servers (the agent names are accepted, but calls return no output)
-- **Purpose**: Query Snowflake data warehouses
-- **Capabilities**: SQL queries, semi-structured data, time travel
-- **Authentication**: Username/password or key-pair
-- **Output**: Tabular data, query history
 
 ### PostgreSQL
 - **Purpose**: Query PostgreSQL databases

@@ -2,6 +2,8 @@
 
 Access Google Cloud BigQuery with natural language or direct SQL.
 
+> **Availability:** not included in Louie Desktop; use a Louie server (Louie Web or self-hosted).
+
 ## Overview
 
 - **BigQueryAgent** - AI-powered natural language to SQL

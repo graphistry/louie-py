@@ -7,8 +7,6 @@ Access Azure Data Explorer using KQL (Kusto Query Language).
 - **Kusto** - AI-powered natural language to KQL
 - **KustoPassthrough** - Direct KQL execution
 
-> **Agent names:** these agents are named `Kusto` and `KustoPassthrough`, without the usual `Agent` suffix. Older Louie servers used `KustoAgent` / `KustoPassthroughAgent`; current ones reject those with `400 Invalid agent`.
-
 ## Usage Examples
 
 ```python

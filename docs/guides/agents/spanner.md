@@ -2,6 +2,8 @@
 
 Access Google Cloud Spanner globally distributed databases.
 
+> **Availability:** not included in Louie Desktop; use a Louie server (Louie Web or self-hosted).
+
 ## Overview
 
 - **SpannerAgent** - AI-powered natural language to Spanner SQL

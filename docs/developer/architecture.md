@@ -46,7 +46,7 @@ response.elements = [
 
 ### Thread Management
 
-When you call `client.add_cell(thread_id, prompt, agent="SomeAgent")`:
+When you call `client.add_cell(thread_id, prompt, agent="PostgresAgent")`:
 
 1. **Authentication**: Retrieves JWT from PyGraphistry via `graphistry.api_token()`
 2. **Thread Resolution**: Creates new thread if `thread_id=""`, otherwise uses existing

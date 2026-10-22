@@ -1,7 +1,8 @@
-"""Docs must not recommend agent names the server rejects (issue #52).
+"""Docs and examples may only pass agent names a Louie server can run (#52).
 
-Current Louie servers answer these with ``400 Invalid agent '<name>'``. A page
-may still mention one as the *old* name, but never pass it as ``agent=``.
+Names come from ``agent_catalog.py``; a typo, a renamed agent (e.g. the old
+``SplunkAgent``), or a name the server accepts but never registers (e.g.
+``SnowflakeAgent``) fails here instead of with a 400 or an empty answer.
 """
 
 import json
@@ -10,17 +11,9 @@ from pathlib import Path
 
 import pytest
 
-REPO = Path(__file__).resolve().parents[2]
+from .agent_catalog import RUNNABLE_AGENTS
 
-REMOVED_AGENTS = {
-    "SplunkAgent": "Splunk",
-    "SplunkPassthroughAgent": "SplunkPassthrough",
-    "KustoAgent": "Kusto",
-    "KustoPassthroughAgent": "KustoPassthrough",
-    "NotebookAgent": "NotebookTool",
-    "FirecrawlAgent": "(omit agent=; LouieAgent routes web search)",
-    "UploadAgent": "UploadPassthroughAgent",
-}
+REPO = Path(__file__).resolve().parents[2]
 
 AGENT_ARG = re.compile(r"""agent\s*=\s*["']([A-Za-z]+)["']""")
 
@@ -48,11 +41,9 @@ def _code(path: Path) -> str:
 @pytest.mark.parametrize(
     "path", list(_sources()), ids=lambda p: str(p.relative_to(REPO))
 )
-def test_no_removed_agent_names_passed(path):
-    text = _code(path)
-    stale = {
-        name: REMOVED_AGENTS[name]
-        for name in AGENT_ARG.findall(text)
-        if name in REMOVED_AGENTS
-    }
-    assert not stale, f"{path.relative_to(REPO)} passes removed agent names: {stale}"
+def test_only_runnable_agent_names_passed(path):
+    unknown = sorted(set(AGENT_ARG.findall(_code(path))) - RUNNABLE_AGENTS)
+    assert not unknown, (
+        f"{path.relative_to(REPO)} passes agent names no Louie server runs: "
+        f"{unknown} (see tests/unit/agent_catalog.py)"
+    )

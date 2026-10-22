@@ -1,17 +1,18 @@
-# Web Scraping Guide (Firecrawl)
+# Firecrawl Web Scraping Guide
 
-When web search is enabled on your Louie server (it is off by default), Louie can search the web and extract content from pages, turning unstructured web content into structured data for analysis. Firecrawl is one of the providers behind this, when your server has it configured. Pages are fetched as text and links, so page metadata and form fields are not available, and there are no screenshots, raw HTML captures, or clicking through interactive page elements.
+Louie's web search tool searches the web and extracts content from pages, turning unstructured web content into structured data for analysis. Firecrawl is its premium provider, with free search and fetch providers as fallbacks.
 
 ## Overview
 
-There is no separate scraping agent to select: ask the default `LouieAgent` (no `agent=` argument), and it routes the request to its web search and fetch tools. Passing `agent="WebSearchTool"` does not work: that is a tool `LouieAgent` uses, not an agent you can call directly.
+- **WebSearchTool** - Web search, page scraping, and site crawling, used by `LouieAgent`
 
-> Older docs selected a `FirecrawlAgent` agent. Current servers reject that name with `400 Invalid agent 'FirecrawlAgent'`; drop the argument instead.
+Web search must be enabled on your Louie server; Firecrawl is used when the server has a Firecrawl API key configured. There is no separate agent to pass as `agent=`: ask `LouieAgent` (the default) and it calls the web search tool.
 
-Louie's web tools handle:
+## What it understands
+
 - Web page structure and content
 - Data extraction patterns
-- Multi-page crawling
+- Multi-page crawling (Firecrawl crawls up to 50 pages, 3 levels deep)
 - Content cleaning and formatting
 
 ### Basic Usage
@@ -81,7 +82,7 @@ lui("""
 Starting from the homepage, crawl:
 - All product categories
 - Extract products from each category
-- Limit to 50 pages total (Firecrawl's maximum)
+- Limit to 50 pages total
 """)
 
 # Documentation sites
@@ -104,6 +105,24 @@ Extract all tables from this page and convert to:
 - Include headers
 - Handle merged cells
 - Clean formatting
+""")
+
+# Form data
+lui("""
+Extract form fields and options:
+- Input field names and types
+- Dropdown options
+- Default values
+- Validation rules
+""")
+
+# Metadata extraction
+lui("""
+Extract page metadata:
+- Meta tags
+- Open Graph data
+- Schema.org markup
+- JSON-LD data
 """)
 ```
 
@@ -179,6 +198,19 @@ Extract business listings:
 
 ## Advanced Features
 
+### Dynamic Content
+
+```python
+# JavaScript-rendered content
+lui("""
+Extract content from this React/Vue/Angular app (Firecrawl renders JavaScript):
+- Wait for dynamic loading
+- Capture AJAX-loaded data
+- Handle infinite scroll
+""")
+
+```
+
 ### Data Cleaning
 
 ```python
@@ -227,10 +259,11 @@ Find and extract all:
 ### Respectful Scraping
 
 ```python
-# Polite crawling
+# Rate limiting
 lui("""
 Scrape this site respectfully:
 - Only the pages needed for the question
+- Handle rate limit responses
 """)
 ```
 
@@ -240,7 +273,8 @@ Scrape this site respectfully:
 # Robust extraction
 lui("""
 Extract data with fallbacks:
-- Alternative wording or page sections when a field is missing
+- Primary selectors
+- Alternative selectors
 - Default values for missing data
 - Error reporting
 """)

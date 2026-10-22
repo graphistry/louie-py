@@ -14,19 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   previously raised `TypeError` from `LouieClient`, so nothing that worked before changes.
 
 ### Documentation
-- Agent guides passed names current servers reject with `400 Invalid agent` (#52): Splunk
-  and Kusto agents are `Splunk` / `SplunkPassthrough` and `Kusto` / `KustoPassthrough` (no
-  `Agent` suffix), and `NotebookAgent` is `NotebookTool`. There is no `FirecrawlAgent`:
-  when web search is enabled on the server, the default `LouieAgent` routes to it. The
-  upload docstrings no longer offer the removed `UploadAgent`.
-- The Notebook guide described Jupyter automation (creating, running, and exporting
-  `.ipynb` files) that `NotebookTool` does not do. It now covers what the agent does: list,
-  read, and copy between Louie notebooks, and search run history. Creating and editing
-  cells needs server-side enablement. The Web Scraping guide drops screenshots, raw HTML,
-  and page interaction, which the web tools don't support, and notes Firecrawl's 50-page
-  crawl cap.
-- Snowflake and Athena guides warn that current servers accept these agent names (and their
-  Passthrough variants) but do not enable the agents: a call returns no output and `lui.status` is `'failed'`.
+- Agent guides used names Louie servers reject with `400 Invalid agent` (#52). **Upgrade
+  note:** update your code as well: `SplunkAgent` / `SplunkPassthroughAgent` are now `Splunk` /
+  `SplunkPassthrough`, `KustoAgent` / `KustoPassthroughAgent` are now `Kusto` /
+  `KustoPassthrough`, and `NotebookAgent` is now `NotebookTool`. `FirecrawlAgent` and
+  `UploadAgent` no longer exist: web scraping goes through `LouieAgent`'s web search tool,
+  and uploads use `UploadPassthroughAgent`.
+- Removed the Snowflake and Athena agent guides: no Louie deployment runs those agents.
+- Notebook guide: the agent works on Louie notebooks, not Jupyter files. Creating, editing,
+  and running cells requires notebook editing to be enabled on the server. Dropped the
+  examples no server supports (reordering cells, clearing outputs, widgets, exporting, and
+  scheduling).
+- Web scraping guide: web search must be enabled on the server, and Firecrawl is its
+  premium provider. Dropped the click-interaction and raw-HTML/screenshot examples.
+- Agent guides note which agents Louie Desktop does not include (the SQL agents, Spanner,
+  Neptune, TableAI).
 - New [Connecting: Web vs Desktop](docs/getting-started/connecting.md) page. Louie Desktop
   serves its API on `http://127.0.0.1:10013`, which nothing in the docs said — every
   `server_url` example targeted Louie Web, so desktop users had no address to point at.
@@ -45,14 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   problem (`Invalid agent 'X'`) was already closed, so `e.response.text` raised
   `StreamClosed` too. The `httpx.HTTPStatusError` message now carries a one-line
   `Server detail: ...` (at most 500 characters), and `e.response` stays readable.
-- Expired login tokens are now refreshed on `add_cell` and the upload calls (#52). Their
-  refresh-and-retry check reads the 401 body for a JWT error, which was unreadable on
-  these streamed calls; the upload calls also never reached the check, because their
-  `UploadClient` had no `auth_manager`. They failed instead of refreshing once and
-  resending. Image and binary uploads read your file object once and resend those same
-  bytes on retry, so a reader without `seek()` or a stream not at position 0 is resent
-  unchanged. (The Jupyter live-streaming
-  display has no retry and is unchanged.)
+- Expired login tokens are now refreshed on `add_cell` (#52). Its refresh-and-retry check
+  reads the 401 body for a JWT error, which was unreadable on this streamed call, so it
+  failed instead of refreshing once and retrying.
 - README's custom-server example called `LouieClient(server_url=..., server=...)`. Neither
   half worked: `LouieClient` is not exported from `louieai`, and `server=` has been
   rejected with "use graphistry_server instead" since it was renamed. Replaced with the
@@ -67,8 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `plans/<task>/plan.md` convention still works.
 
 ### Internal
-- `tests/unit/test_docs_agent_names.py` fails if docs, notebook code and markdown cells, README, or
-  `src` docstrings pass an agent name current servers reject (#52).
+- `tests/unit/agent_catalog.py` lists the agent names Louie servers run, and
+  `tests/unit/test_docs_agent_names.py` fails if docs, notebook cells, README, or `src`
+  docstrings pass any other name as `agent=` (#52).
 - `tests/unit/test_packaging_hygiene.py` fails if internal material becomes tracked again
   or if `MANIFEST.in` loses its exclusions. Written after the fact — nothing had been
   checking, which is why this shipped for a year.

@@ -2,6 +2,8 @@
 
 The TableAI agent provides intelligent table analysis and insights, automatically discovering patterns, anomalies, and relationships in tabular data.
 
+> **Availability:** not included in Louie Desktop; use a Louie server (Louie Web or self-hosted).
+
 ## Overview
 
 - **TableAIAgent** - AI-powered table analysis and insights generation

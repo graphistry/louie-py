@@ -9,7 +9,6 @@ For querying structured data in various database systems:
 - **BigQuery**: Google BigQuery analytics
 - **PostgreSQL/MySQL**: Traditional relational databases
 - **Splunk**: Log analysis and security investigations
-- Athena and Snowflake have guides, but current servers do not enable those agents
 
 ### Visualization Agents
 For creating visual representations of your data:

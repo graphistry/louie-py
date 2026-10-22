@@ -2,6 +2,8 @@
 
 Access CockroachDB distributed SQL databases.
 
+> **Availability:** not included in Louie Desktop; use a Louie server (Louie Web or self-hosted).
+
 ## Overview
 
 - **CockroachDBAgent** - AI-powered natural language to distributed SQL
