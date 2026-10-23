@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It was reachable only by constructing a `Cursor` around `louieai._client.LouieClient`,
   so documenting the desktop link override meant publishing a private import. Passing it
   previously raised `TypeError` from `LouieClient`, so nothing that worked before changes.
+- `upload_image(prompt, image, filename=...)` and the notebook forms
+  `lui(image, prompt, filename=...)` / `lui(prompt, image, filename=...)` accept
+  `filename=`, like `upload_binary` (#59). The name is sent as given, so include the
+  extension. `lui()` takes the image as a path, bytes, or PIL image; pass a bare file
+  object to `upload_image` directly.
 
 ### Documentation
 - Agent guides used names Louie servers reject with `400 Invalid agent` (#52). **Upgrade
@@ -62,11 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signature whenever the name has no image extension, for paths, bytes, and file objects
   alike: `screenshot.bin` holding a PNG is sent as `screenshot.png`, and a nameless stream
   as `image.png`. Bytes with no known image signature are sent as
-  `application/octet-stream` under their original name. `upload_image(prompt, image,
-  filename=...)` and the notebook forms `lui(image, prompt, filename=...)` /
-  `lui(prompt, image, filename=...)` also accept `filename=`, like `upload_binary`, sent
-  as given. `lui()` takes the image as a path, bytes, or PIL image; pass a bare file
-  object to `upload_image` directly.
+  `application/octet-stream` under their original name. The new `filename=` keyword is
+  listed under Added.
 - Orgs whose slug contains `_` got `401 Could not validate credentials` on every request
   (#53). The `X-Graphistry-Org` header rewrote `my_org` to `my-org`, naming an org that
   doesn't exist. This includes the default `louie(graphistry_client=g)` flow, which
