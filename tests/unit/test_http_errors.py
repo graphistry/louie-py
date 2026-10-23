@@ -286,6 +286,41 @@ def test_streamed_expired_jwt_refreshes_and_retries(louie_client, call, payload_
     assert response.thread_id == "D_1"
 
 
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda client: client.add_cell("", "hi"),
+        _upload_dataframe,
+        _upload_image,
+        _upload_binary,
+    ],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_persistent_expired_jwt_retries_exactly_once(louie_client, call):
+    """A 401 that survives the refresh is raised after one retry.
+
+    Two requests and one refresh: guards against ``@auto_retry_auth`` being
+    stacked on both a public upload method and ``_send_file``.
+    """
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(401, {"detail": "JWT token expired"})
+
+    graphistry_client = louie_client._auth_manager._graphistry_client
+    graphistry_client.api_token = Mock(return_value="tok")
+    graphistry_client.refresh = Mock()
+    with (
+        patch("httpx.Client", _client_factory(httpx.MockTransport(handler))),
+        pytest.raises(httpx.HTTPStatusError),
+    ):
+        call(louie_client)
+
+    assert len(requests) == 2
+    graphistry_client.refresh.assert_called_once()
+
+
 class _NoSeekReader:
     """File-like with ``read()`` but no ``seek``: it can be read only once."""
 
