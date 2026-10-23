@@ -144,7 +144,10 @@ class TestExplicitFilename:
         assert (filename, content_type) == ("chart-q3.png", "image/png")
 
     def test_kept_even_without_image_extension(self, upload_client):
-        """Verbatim, like upload_binary; the upload_image docstring says to include an extension."""
+        """Verbatim, like upload_binary.
+
+        The upload_image docstring asks callers to include an extension.
+        """
         _, filename, content_type = upload_client._serialize_image(PNG, "capture")
         assert filename == "capture"
         assert content_type == "image/png"  # type still from the signature
