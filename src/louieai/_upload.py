@@ -559,15 +559,16 @@ class UploadClient:
 
         The server routes uploads by filename extension and never inspects the
         bytes, so a wrong or missing extension leaves the image as opaque binary.
-        ``given`` (the caller's ``filename=``) is sent verbatim. ``derived`` (from
-        a path or a file object's ``.name``) keeps its stem but gets the
-        signature's extension when its own is not an image type. With neither,
-        the name is made up from the signature. Bytes with no known image
-        signature go as ``application/octet-stream``.
+        A non-empty ``given`` (the caller's ``filename=``; empty means unset) is
+        sent verbatim. ``derived`` (from a path or a file object's ``.name``)
+        keeps its stem but gets the signature's extension when its own is not an
+        image type. With neither, the name is ``image.<ext>`` from the signature.
+        Bytes with no known image signature keep their name (``image.bin`` when
+        there is none) and go as ``application/octet-stream``.
         """
         name = given or derived or ""
         guessed = mimetypes.guess_type(name)[0] if name else None
-        if name and guessed and guessed.startswith("image/"):
+        if guessed and guessed.startswith("image/"):
             return name, guessed
         sniffed = self._sniff_image(data)
         if sniffed is None:
@@ -575,6 +576,8 @@ class UploadClient:
         ext, mime_type = sniffed
         if given:
             return given, mime_type
+        # Path.stem keeps a trailing dot ("name." -> "name."); strip it so the
+        # result is "name.jpg", not "name..jpg".
         stem = Path(derived).stem.rstrip(".") if derived else ""
         return f"{stem or 'image'}.{ext}", mime_type
 
@@ -587,7 +590,7 @@ class UploadClient:
 
         Args:
             image: Image in various formats
-            filename: Optional filename to send, as given (needs an image extension)
+            filename: Optional filename to send verbatim; see ``_name_image``
 
         Returns:
             Tuple of (file_data, filename, content_type)
