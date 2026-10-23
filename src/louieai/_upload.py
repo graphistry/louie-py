@@ -560,7 +560,8 @@ class UploadClient:
         The server routes uploads by filename extension and never inspects the
         bytes, so a wrong or missing extension leaves the image as opaque binary.
         A non-empty ``given`` (the caller's ``filename=``; empty means unset) is
-        sent verbatim. ``derived`` (from a path or a file object's ``.name``)
+        sent verbatim; its content type comes from its image extension, else from
+        the byte signature. ``derived`` (from a path or a file object's ``.name``)
         keeps its stem but gets the signature's extension when its own is not an
         image type. With neither, the name is ``image.<ext>`` from the signature.
         Bytes with no known image signature keep their name (``image.bin`` when
