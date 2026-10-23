@@ -58,7 +58,8 @@ class TestNamelessStream:
 
 
 class TestDerivedName:
-    """A name from ``.name`` or a path is a hint; the signature wins."""
+    """A derived name with an image extension is trusted; otherwise the signature
+    picks the extension and the stem is kept."""
 
     def test_image_extension_is_kept(self, upload_client):
         stream = io.BytesIO(PNG)
@@ -143,7 +144,7 @@ class TestExplicitFilename:
         assert (filename, content_type) == ("chart-q3.png", "image/png")
 
     def test_kept_even_without_image_extension(self, upload_client):
-        """Verbatim, like upload_binary; the docstring says to include an extension."""
+        """Verbatim, like upload_binary; the upload_image docstring says to include an extension."""
         _, filename, content_type = upload_client._serialize_image(PNG, "capture")
         assert filename == "capture"
         assert content_type == "image/png"  # type still from the signature
@@ -175,6 +176,15 @@ class TestExplicitFilename:
         cursor(PNG, "describe", filename="shot.png")  # lui(image, prompt) form
         client.upload_image.assert_called_once()
         assert client.upload_image.call_args.kwargs["filename"] == "shot.png"
+
+    def test_cursor_forwards_filename_binary(self):
+        """The binary branch has the same contract (sibling of the image test)."""
+        from louieai.notebook.cursor import Cursor
+
+        client = Mock()
+        client.upload_binary.return_value = Mock(thread_id="D_1", elements=[])
+        Cursor(client=client)(b"%PDF-1.4\n", "summarize", filename="report.pdf")
+        assert client.upload_binary.call_args.kwargs["filename"] == "report.pdf"
 
     def test_client_wrapper_accepts_filename(self):
         from louieai._client import LouieClient
