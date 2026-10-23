@@ -428,7 +428,12 @@ class UploadClient:
         folder: str | None,
         session_trace_id: str | None,
     ) -> Response:
-        """POST serialized file bytes to the upload API and parse the stream."""
+        """POST serialized file bytes to the upload API and parse the stream.
+
+        Shared by ``upload_image`` and ``upload_binary``. ``auto_retry_auth``
+        re-runs this whole method with fresh headers, resending the same
+        already-serialized bytes.
+        """
         # Get headers with auth and tracing (fresh on each retry)
         headers = self._client._get_headers(session_trace_id=session_trace_id)
 
