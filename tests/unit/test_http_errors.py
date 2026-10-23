@@ -5,6 +5,10 @@ response: nothing is buffered until read, and once the ``client.stream(...)``
 block exits the body is gone (``httpx.StreamClosed``). With plain
 ``response.raise_for_status()`` that dropped the server's
 ``Invalid agent 'SplunkAgent'`` and users saw a bare ``400 Bad Request``.
+
+It also covers the expired-JWT refresh-and-retry path for streamed and upload
+calls (issue #56): the retry resends the original bytes, and non-JWT 401s and
+``token=`` auth are not retried.
 """
 
 import io
@@ -282,7 +286,7 @@ def test_streamed_expired_jwt_refreshes_and_retries(louie_client, call, payload_
     assert response.thread_id == "D_1"
 
 
-class _ReadOnlyFile:
+class _NoSeekReader:
     """File-like with ``read()`` but no ``seek``: it can be read only once."""
 
     def __init__(self, data: bytes):
@@ -301,7 +305,7 @@ def _mid_stream(data: bytes) -> io.BytesIO:
 
 @pytest.mark.parametrize(
     "make_input",
-    [_ReadOnlyFile, _mid_stream],
+    [_NoSeekReader, _mid_stream],
     ids=["no-seek reader", "stream not at position 0"],
 )
 @pytest.mark.parametrize("method", ["upload_binary", "upload_image"])
