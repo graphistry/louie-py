@@ -62,8 +62,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signature whenever the name has no image extension, for paths, bytes, and file objects
   alike: `screenshot.bin` holding a PNG is sent as `screenshot.png`, and a nameless stream
   as `image.png`. Bytes with no known image signature are sent as
-  `application/octet-stream` under their original name. `upload_image` and
-  `lui(..., image=...)` also accept `filename=`, like `upload_binary`, sent as given.
+  `application/octet-stream` under their original name. `upload_image(prompt, image,
+  filename=...)` and the notebook forms `lui(image, prompt, filename=...)` /
+  `lui(prompt, image, filename=...)` also accept `filename=`, like `upload_binary`, sent
+  as given. `lui()` takes the image as a path, bytes, or PIL image; pass a bare file
+  object to `upload_image` directly.
 - Orgs whose slug contains `_` got `401 Could not validate credentials` on every request
   (#53). The `X-Graphistry-Org` header rewrote `my_org` to `my-org`, naming an org that
   doesn't exist. This includes the default `louie(graphistry_client=g)` flow, which
