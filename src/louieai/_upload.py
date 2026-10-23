@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO
 
 if TYPE_CHECKING:
-    from ._client import Response
+    from ._client import LouieClient, Response
+    from .auth import AuthManager
 
 import httpx
 import pandas as pd
@@ -32,12 +33,12 @@ logger = logging.getLogger(__name__)
 class UploadClient:
     """Handles DataFrame uploads to Louie.ai via the new upload API."""
 
-    def __init__(self, client: Any):
+    def __init__(self, client: LouieClient):
         """Initialize with parent client for auth and settings."""
         self._client = client
 
     @property
-    def auth_manager(self) -> Any:
+    def auth_manager(self) -> AuthManager:
         """Parent client's auth manager, which ``@auto_retry_auth`` refreshes."""
         return self._client.auth_manager
 
