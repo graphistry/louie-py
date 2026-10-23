@@ -366,7 +366,9 @@ def test_upload_retry_resends_identical_payload(louie_client, method, make_input
         getattr(louie_client, method)("hi", make_input(payload))
 
     assert len(requests) == 2
-    # The multipart part the server routes on: name and type, not just bytes (#59)
+    # Pin the full part (name + type), not just bytes (#59). upload_binary is
+    # unchanged by #59: nameless streams still go as file.bin / octet-stream
+    # (bytes sniff to document.pdf); see #62.
     expected_part = (
         b'filename="file.bin"\r\nContent-Type: application/octet-stream'
         if method == "upload_binary"

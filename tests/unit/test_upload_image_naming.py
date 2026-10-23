@@ -58,8 +58,7 @@ class TestNamelessStream:
 
 
 class TestDerivedName:
-    """A derived name with an image extension is trusted; otherwise the signature
-    picks the extension and the stem is kept."""
+    """A derived name keeps an image extension; otherwise the signature picks one."""
 
     def test_image_extension_is_kept(self, upload_client):
         stream = io.BytesIO(PNG)
