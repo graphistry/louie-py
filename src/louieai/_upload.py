@@ -383,7 +383,8 @@ class UploadClient:
                 taken from the image's file signature only when it is not an
                 image extension. Raw bytes, nameless file objects and PIL
                 images are named `image.<ext>`, or `image.bin` when the bytes
-                have no known image signature.
+                have no known image signature. A PIL image is sent as PNG (JPEG
+                when its format is JPEG), whatever extension `filename` has.
 
         Returns:
             Response object containing AI analysis of the image

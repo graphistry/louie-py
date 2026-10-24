@@ -1336,7 +1336,8 @@ class LouieClient:
                 file object's name, with the extension taken from the image's
                 file signature only when it is not an image extension; else
                 `image.<ext>` (raw bytes, nameless file objects, PIL images),
-                or `image.bin` for bytes with no known image signature.
+                or `image.bin` for bytes with no known image signature. PIL
+                images are sent as PNG (JPEG when their format is JPEG).
             session_trace_id: Optional session trace ID for distributed tracing
                 correlation when OpenTelemetry is not available.
 

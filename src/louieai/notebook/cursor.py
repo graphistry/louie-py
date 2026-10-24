@@ -846,12 +846,14 @@ class Cursor:
                   file is passed)
                 - parsing_options: Dict of format-specific parsing configuration
                   (DataFrame only)
-                - filename: Name to send for an image or binary file, as given.
-                  Include the extension (for example "shot.png"); the server
-                  routes uploads by it. Defaults to the path or file object's
-                  name (an image whose extension is not an image type gets one
-                  from its file signature), or a generic name when it has none
-                  (`image.png`, `file.bin`).
+                - filename: Name to send for an image or binary file, as given
+                  (an empty string means unset). Include the extension (for
+                  example "shot.png"); the server routes uploads by it.
+                  Defaults to the path or file object's name (an image whose
+                  extension is not an image type gets one from its file
+                  signature). With no name, one is made from the content's
+                  file signature, for example `image.png`, `image.jpg`,
+                  `document.pdf` or `data.json`.
 
         Returns:
             Self (Cursor) for chaining and property access:
