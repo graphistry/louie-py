@@ -346,7 +346,7 @@ def _mid_stream(data: bytes) -> io.BytesIO:
 )
 @pytest.mark.parametrize("method", ["upload_binary", "upload_image"])
 def test_upload_retry_resends_identical_payload(louie_client, method, make_input):
-    """The retry must resend the bytes sent the first time, not re-read input."""
+    """The retry resends the bytes, part name and type sent the first time."""
     payload = (
         b"%PDF-1.4\n%%EOF\n"
         if method == "upload_binary"
@@ -378,6 +378,55 @@ def test_upload_retry_resends_identical_payload(louie_client, method, make_input
         assert payload in request.content
         assert b"SKIPPED-PREFIX" not in request.content
         assert expected_part in request.content
+
+
+def _named(data: bytes, name: str) -> io.BytesIO:
+    stream = io.BytesIO(data)
+    stream.name = name
+    return stream
+
+
+_JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 16
+
+
+@pytest.mark.parametrize(
+    ("make_input", "kwargs", "expected_part"),
+    [
+        (
+            lambda: io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16),
+            {"filename": "named.png"},
+            b'filename="named.png"\r\nContent-Type: image/png',
+        ),
+        (
+            lambda: _named(_JPEG, "/tmp/shot.bin"),
+            {},
+            b'filename="shot.jpg"\r\nContent-Type: image/jpeg',
+        ),
+        (
+            lambda: io.BytesIO(_JPEG),
+            {},
+            b'filename="image.jpg"\r\nContent-Type: image/jpeg',
+        ),
+    ],
+    ids=["explicit filename", "corrected extension", "nameless jpeg"],
+)
+def test_upload_image_part_name_on_the_wire(
+    louie_client, make_input, kwargs, expected_part
+):
+    """The multipart part carries the name and type chosen for the image (#59)."""
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(
+            200, '{"type": "StreamingApiMessageStart", "dthread_id": "D_1"}\n'
+        )
+
+    with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
+        louie_client.upload_image("hi", make_input(), **kwargs)
+
+    assert len(requests) == 1
+    assert expected_part in requests[0].content
 
 
 @pytest.mark.parametrize(
