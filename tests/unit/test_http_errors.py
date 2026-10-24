@@ -13,6 +13,7 @@ calls (issue #56): the retry resends the original bytes, and non-JWT 401s and
 
 import io
 import json
+import re
 from unittest.mock import Mock, patch
 
 import httpx
@@ -412,3 +413,88 @@ def test_token_auth_cannot_refresh_so_401_propagates(call):
     ):
         call(client)
     assert len(requests) == 1
+
+
+_TRACE_ID = "0af7651916cd43dd8448eb211c80319c"
+
+
+def _multipart(request: httpx.Request) -> tuple[dict[str, str], dict[str, tuple]]:
+    """Split a multipart body into text fields and (filename, type, bytes) files."""
+    boundary = request.headers["content-type"].split("boundary=")[1].encode()
+    fields: dict[str, str] = {}
+    files: dict[str, tuple] = {}
+    for part in request.content.split(b"--" + boundary)[1:-1]:
+        head, _, body = part[2:-2].partition(b"\r\n\r\n")
+        head_text = head.decode()
+        name = re.search(r'name="([^"]*)"', head_text).group(1)
+        filename = re.search(r'filename="([^"]*)"', head_text)
+        if filename:
+            ctype = re.search(r"Content-Type: (\S+)", head_text).group(1)
+            files[name] = (filename.group(1), ctype, body)
+        else:
+            fields[name] = body.decode()
+    return fields, files
+
+
+@pytest.mark.parametrize("thread_id", ["", "D_9"], ids=["new_thread", "existing"])
+@pytest.mark.parametrize(
+    ("method", "file_arg", "expected_file"),
+    [
+        (
+            "upload_image",
+            {"image": b"\x89PNG\r\n\x1a\n" + b"\x00" * 16},
+            ("image.png", "image/png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 16),
+        ),
+        (
+            "upload_binary",
+            {"file": b"%PDF-1.4\n%%EOF\n", "filename": "report.pdf"},
+            ("report.pdf", "application/pdf", b"%PDF-1.4\n%%EOF\n"),
+        ),
+    ],
+    ids=["upload_image", "upload_binary"],
+)
+def test_file_upload_forwards_every_argument_to_the_wire(
+    louie_client, method, file_arg, expected_file, thread_id
+):
+    """upload_image/upload_binary hand every argument through _send_file intact."""
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(
+            200, '{"type": "StreamingApiMessageStart", "dthread_id": "D_9"}\n'
+        )
+
+    with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
+        response = getattr(louie_client, method)(
+            prompt="Describe it",
+            thread_id=thread_id,
+            agent="CustomUploadAgent",
+            traces=True,
+            include_reasoning=True,
+            share_mode="Organization",
+            name="my-name",
+            folder="BOTS/run_1",
+            session_trace_id=_TRACE_ID,
+            **file_arg,
+        )
+
+    assert len(requests) == 1
+    request = requests[0]
+    assert request.url.path == "/api/chat_upload/"
+    assert request.headers["traceparent"].split("-")[1] == _TRACE_ID
+    fields, files = _multipart(request)
+    expected = {
+        "query": "Describe it",
+        "agent": "CustomUploadAgent",
+        "ignore_traces": "false",
+        "include_reasoning": "true",
+        "share_mode": "Organization",
+    }
+    if thread_id:
+        expected["dthread_id"] = thread_id
+    else:
+        expected.update(name="my-name", folder="BOTS/run_1")
+    assert fields == expected
+    assert files == {"files": expected_file}
+    assert response.thread_id == "D_9"
