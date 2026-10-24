@@ -51,6 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expired login tokens are now refreshed on `add_cell` (#52). Its refresh-and-retry check
   reads the 401 body for a JWT error, which was unreadable on this streamed call, so it
   failed instead of refreshing once and retrying.
+- Upload calls (`upload_dataframe`, `upload_image`, `upload_binary`) now refresh an expired
+  login token and retry once, like `add_cell` (#56). Their `@auto_retry_auth` decorator
+  looked up `self.auth_manager`, which `UploadClient` lacked, so every 401 was re-raised.
+  Image and binary uploads read your file object once and resend those same bytes on retry,
+  so a reader without `seek()` or a stream not at position 0 is resent unchanged.
 - Orgs whose slug contains `_` got `401 Could not validate credentials` on every request
   (#53). The `X-Graphistry-Org` header rewrote `my_org` to `my-org`, naming an org that
   doesn't exist. This includes the default `louie(graphistry_client=g)` flow, which

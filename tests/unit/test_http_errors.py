@@ -5,10 +5,15 @@ response: nothing is buffered until read, and once the ``client.stream(...)``
 block exits the body is gone (``httpx.StreamClosed``). With plain
 ``response.raise_for_status()`` that dropped the server's
 ``Invalid agent 'SplunkAgent'`` and users saw a bare ``400 Bad Request``.
+
+It also covers the expired-JWT refresh-and-retry path for streamed and upload
+calls (issue #56): the retry resends the original bytes, and non-JWT 401s and
+``token=`` auth are not retried.
 """
 
 import io
 import json
+import re
 from unittest.mock import Mock, patch
 
 import httpx
@@ -225,11 +230,33 @@ class TestCallSitesSurfaceDetail:
             louie_client.upload_binary("hi", pdf, agent="UploadAgent")
 
 
-def test_add_cell_expired_jwt_refreshes_and_retries(louie_client):
+def _upload_dataframe(client):
+    return client.upload_dataframe("hi", pd.DataFrame({"a": [1]}))
+
+
+def _upload_image(client):
+    return client.upload_image("hi", io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16))
+
+
+def _upload_binary(client):
+    return client.upload_binary("hi", io.BytesIO(b"%PDF-1.4\n%%EOF\n"))
+
+
+@pytest.mark.parametrize(
+    ("call", "payload_marker"),
+    [
+        (lambda client: client.add_cell("", "hi"), None),
+        (_upload_dataframe, b"PAR1"),
+        (_upload_image, b"\x89PNG"),
+        (_upload_binary, b"%PDF-1.4"),
+    ],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_streamed_expired_jwt_refreshes_and_retries(louie_client, call, payload_marker):
     """A readable 401 body lets ``auto_retry_auth`` see the JWT error.
 
     Before #52 the streamed body was closed, so the expired-token refresh
-    on ``add_cell`` never triggered.
+    never triggered; uploads also lacked the ``auth_manager`` it looks up.
     """
     requests: list[httpx.Request] = []
 
@@ -249,10 +276,225 @@ def test_add_cell_expired_jwt_refreshes_and_retries(louie_client):
         side_effect=lambda: current.update(token=next(tokens))
     )
     with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
-        response = louie_client.add_cell("", "hi")
+        response = call(louie_client)
 
     assert len(requests) == 2
+    if payload_marker:  # resent intact (multipart boundaries differ)
+        assert all(payload_marker in r.content for r in requests)
     graphistry_client.refresh.assert_called_once()
     assert requests[0].headers["authorization"] == "Bearer old-token"
     assert requests[1].headers["authorization"] == "Bearer new-token"
     assert response.thread_id == "D_1"
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda client: client.add_cell("", "hi"),
+        _upload_dataframe,
+        _upload_image,
+        _upload_binary,
+    ],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_persistent_expired_jwt_retries_exactly_once(louie_client, call):
+    """A 401 that survives the refresh is raised after one retry.
+
+    Two requests and one refresh: guards against ``@auto_retry_auth`` being
+    stacked on both a public upload method and ``_send_file``.
+    """
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(401, {"detail": "JWT token expired"})
+
+    graphistry_client = louie_client._auth_manager._graphistry_client
+    graphistry_client.api_token = Mock(return_value="tok")
+    graphistry_client.refresh = Mock()
+    with (
+        patch("httpx.Client", _client_factory(httpx.MockTransport(handler))),
+        pytest.raises(httpx.HTTPStatusError),
+    ):
+        call(louie_client)
+
+    assert len(requests) == 2
+    graphistry_client.refresh.assert_called_once()
+
+
+class _NoSeekReader:
+    """File-like with ``read()`` but no ``seek``: it can be read only once."""
+
+    def __init__(self, data: bytes):
+        self._data = data
+
+    def read(self) -> bytes:
+        data, self._data = self._data, b""
+        return data
+
+
+def _mid_stream(data: bytes) -> io.BytesIO:
+    stream = io.BytesIO(b"SKIPPED-PREFIX" + data)
+    stream.seek(len(b"SKIPPED-PREFIX"))
+    return stream
+
+
+@pytest.mark.parametrize(
+    "make_input",
+    [_NoSeekReader, _mid_stream],
+    ids=["no-seek reader", "stream not at position 0"],
+)
+@pytest.mark.parametrize("method", ["upload_binary", "upload_image"])
+def test_upload_retry_resends_identical_payload(louie_client, method, make_input):
+    """The retry must resend the bytes sent the first time, not re-read input."""
+    payload = (
+        b"%PDF-1.4\n%%EOF\n"
+        if method == "upload_binary"
+        else b"\x89PNG\r\n\x1a\n" + b"\x00" * 16
+    )
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if len(requests) == 1:
+            return _reply(401, {"detail": "JWT token expired"})
+        return _reply(
+            200, '{"type": "StreamingApiMessageStart", "dthread_id": "D_1"}\n'
+        )
+
+    with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
+        getattr(louie_client, method)("hi", make_input(payload))
+
+    assert len(requests) == 2
+    for request in requests:
+        assert payload in request.content
+        assert b"SKIPPED-PREFIX" not in request.content
+
+
+@pytest.mark.parametrize(
+    "call",
+    [lambda c: c.add_cell("", "hi"), _upload_dataframe, _upload_image, _upload_binary],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_non_jwt_401_is_not_retried(louie_client, call):
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(401, {"detail": "Could not validate credentials"})
+
+    graphistry_client = louie_client._auth_manager._graphistry_client
+    with (
+        patch("httpx.Client", _client_factory(httpx.MockTransport(handler))),
+        pytest.raises(httpx.HTTPStatusError, match="Could not validate credentials"),
+    ):
+        call(louie_client)
+    assert len(requests) == 1
+    graphistry_client.refresh.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "call",
+    [lambda c: c.add_cell("", "hi"), _upload_dataframe, _upload_image, _upload_binary],
+    ids=["add_cell", "upload_dataframe", "upload_image", "upload_binary"],
+)
+def test_token_auth_cannot_refresh_so_401_propagates(call):
+    """With ``token=`` there is nothing to refresh: one request, original 401."""
+    client = LouieClient(server_url="https://louie.test", token="fixed-token")
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(401, {"detail": "JWT token expired"})
+
+    with (
+        patch("httpx.Client", _client_factory(httpx.MockTransport(handler))),
+        pytest.raises(httpx.HTTPStatusError, match="JWT token expired"),
+    ):
+        call(client)
+    assert len(requests) == 1
+
+
+_TRACE_ID = "0af7651916cd43dd8448eb211c80319c"
+
+
+def _multipart(request: httpx.Request) -> tuple[dict[str, str], dict[str, tuple]]:
+    """Split a multipart body into text fields and (filename, type, bytes) files."""
+    boundary = request.headers["content-type"].split("boundary=")[1].encode()
+    fields: dict[str, str] = {}
+    files: dict[str, tuple] = {}
+    for part in request.content.split(b"--" + boundary)[1:-1]:
+        head, _, body = part[2:-2].partition(b"\r\n\r\n")
+        head_text = head.decode()
+        name = re.search(r'name="([^"]*)"', head_text).group(1)
+        filename = re.search(r'filename="([^"]*)"', head_text)
+        if filename:
+            ctype = re.search(r"Content-Type: (\S+)", head_text).group(1)
+            files[name] = (filename.group(1), ctype, body)
+        else:
+            fields[name] = body.decode()
+    return fields, files
+
+
+@pytest.mark.parametrize("thread_id", ["", "D_9"], ids=["new_thread", "existing"])
+@pytest.mark.parametrize(
+    ("method", "file_arg", "expected_file"),
+    [
+        (
+            "upload_image",
+            {"image": b"\x89PNG\r\n\x1a\n" + b"\x00" * 16},
+            ("image.png", "image/png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 16),
+        ),
+        (
+            "upload_binary",
+            {"file": b"%PDF-1.4\n%%EOF\n", "filename": "report.pdf"},
+            ("report.pdf", "application/pdf", b"%PDF-1.4\n%%EOF\n"),
+        ),
+    ],
+    ids=["upload_image", "upload_binary"],
+)
+def test_file_upload_forwards_every_argument_to_the_wire(
+    louie_client, method, file_arg, expected_file, thread_id
+):
+    """upload_image/upload_binary hand every argument through _send_file intact."""
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _reply(
+            200, '{"type": "StreamingApiMessageStart", "dthread_id": "D_9"}\n'
+        )
+
+    with patch("httpx.Client", _client_factory(httpx.MockTransport(handler))):
+        response = getattr(louie_client, method)(
+            prompt="Describe it",
+            thread_id=thread_id,
+            agent="CustomUploadAgent",
+            traces=True,
+            include_reasoning=True,
+            share_mode="Organization",
+            name="my-name",
+            folder="BOTS/run_1",
+            session_trace_id=_TRACE_ID,
+            **file_arg,
+        )
+
+    assert len(requests) == 1
+    request = requests[0]
+    assert request.url.path == "/api/chat_upload/"
+    assert request.headers["traceparent"].split("-")[1] == _TRACE_ID
+    fields, files = _multipart(request)
+    expected = {
+        "query": "Describe it",
+        "agent": "CustomUploadAgent",
+        "ignore_traces": "false",
+        "include_reasoning": "true",
+        "share_mode": "Organization",
+    }
+    if thread_id:
+        expected["dthread_id"] = thread_id
+    else:
+        expected.update(name="my-name", folder="BOTS/run_1")
+    assert fields == expected
+    assert files == {"files": expected_file}
+    assert response.thread_id == "D_9"
