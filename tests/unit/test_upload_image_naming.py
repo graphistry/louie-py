@@ -27,6 +27,8 @@ def upload_client():
 
 
 class TestNamelessStream:
+    """A stream with no name is named from its image signature."""
+
     @pytest.mark.parametrize(
         ("data", "expected"),
         [
@@ -47,8 +49,13 @@ class TestNamelessStream:
         as_stream = upload_client._serialize_image(io.BytesIO(PNG))
         assert as_bytes == as_stream
 
-    def test_unknown_signature_stays_binary(self, upload_client):
-        _, filename, content_type = upload_client._serialize_image(io.BytesIO(UNKNOWN))
+    @pytest.mark.parametrize(
+        "data",
+        [UNKNOWN, b"RIFF\x00\x00\x00\x00WAVEfmt ", b"\xff\xd8\x00" + b"\x00" * 16],
+        ids=["text", "riff-wave", "two-byte-jpeg-prefix"],
+    )
+    def test_unknown_signature_stays_binary(self, upload_client, data):
+        _, filename, content_type = upload_client._serialize_image(io.BytesIO(data))
         assert (filename, content_type) == ("image.bin", "application/octet-stream")
 
     def test_stream_is_rewound_for_the_caller(self, upload_client):
@@ -80,6 +87,7 @@ class TestDerivedName:
             ("blob.bin", "blob.jpg"),
             ("data.dat", "data.jpg"),
             ("shot.txt", "shot.jpg"),
+            ("shot.pdf", "shot.jpg"),
             ("/tmp/screenshot-2026-10-22.bin", "screenshot-2026-10-22.jpg"),
             ("archive.tar.gz", "archive.tar.jpg"),
             ("name.", "name.jpg"),
@@ -105,6 +113,12 @@ class TestDerivedName:
         _, filename, content_type = upload_client._serialize_image(stream)
         assert (filename, content_type) == (name, "application/octet-stream")
 
+    def test_empty_name_unknown_signature(self, upload_client):
+        stream = io.BytesIO(UNKNOWN)
+        stream.name = ""
+        _, filename, content_type = upload_client._serialize_image(stream)
+        assert (filename, content_type) == ("image.bin", "application/octet-stream")
+
     def test_integer_name_is_ignored(self, upload_client):
         """``open(fd).name`` can be an int."""
         stream = io.BytesIO(PNG)
@@ -117,6 +131,12 @@ class TestDerivedName:
         p.write_bytes(PNG)
         _, filename, content_type = upload_client._serialize_image(str(p))
         assert (filename, content_type) == ("capture.png", "image/png")
+
+    def test_path_without_extension(self, upload_client, tmp_path):
+        p = tmp_path / "upload"
+        p.write_bytes(PNG)
+        _, filename, content_type = upload_client._serialize_image(p)
+        assert (filename, content_type) == ("upload.png", "image/png")
 
     def test_path_object_unknown_signature(self, upload_client, tmp_path):
         p = tmp_path / "junk.txt"
@@ -158,6 +178,13 @@ class TestExplicitFilename:
         assert (filename, content_type) == ("tiny.png", "image/png")
         _, filename, _ = upload_client._serialize_image(img)
         assert filename == "image.png"
+
+    def test_pil_jpeg_default_name(self, upload_client):
+        Image = pytest.importorskip("PIL.Image")
+        img = Image.new("RGB", (2, 2))
+        img.format = "JPEG"
+        _, filename, content_type = upload_client._serialize_image(img)
+        assert (filename, content_type) == ("image.jpg", "image/jpeg")
 
     def test_kept_when_signature_unknown(self, upload_client):
         _, filename, content_type = upload_client._serialize_image(UNKNOWN, "x.dat")
