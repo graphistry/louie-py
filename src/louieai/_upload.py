@@ -378,8 +378,9 @@ class UploadClient:
             folder: Optional folder path for the thread (server support required)
             filename: Optional filename to send, as given. The server routes
                 uploads by extension, so include one (`.png`, `.jpg`, ...). By
-                default the name comes from the path or file object, with the
-                extension corrected from the image's file signature.
+                default the name comes from the path or file object
+                (`image.<ext>` for raw bytes); its extension is taken from the
+                image's file signature only when it is not an image extension.
 
         Returns:
             Response object containing AI analysis of the image
@@ -564,8 +565,9 @@ class UploadClient:
         the byte signature. ``derived`` (from a path or a file object's ``.name``)
         keeps its stem but gets the signature's extension when its own is not an
         image type. With neither, the name is ``image.<ext>`` from the signature.
-        Bytes with no known image signature keep their name (``image.bin`` when
-        there is none) and go as ``application/octet-stream``.
+        Bytes with no known image signature and no image extension keep their
+        name (``image.bin`` when there is none) and go as
+        ``application/octet-stream``.
         """
         name = given or derived or ""
         guessed = mimetypes.guess_type(name)[0] if name else None
