@@ -15,9 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `upload_image(prompt, image, filename=...)` and the notebook forms
   `lui(image, prompt, filename=...)` / `lui(prompt, image, filename=...)` accept
   `filename=`, like `upload_binary` (#59). The name is sent as given, so include the
-  extension. `lui()` takes the image as a path, bytes, PIL image, or a file object whose
-  name has an image extension; pass a nameless file object (such as `io.BytesIO`) to
-  `upload_image` directly.
+  extension. `lui()` takes the image as a `str` path, PNG/JPEG/GIF/BMP/WebP bytes, a PIL
+  image, or a file object named `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp` or `.webp`; pass
+  anything else, such as a `pathlib.Path` or a nameless `io.BytesIO`, to `upload_image`
+  directly.
 
 ### Documentation
 - Agent guides used names Louie servers reject with `400 Invalid agent` (#52). **Upgrade
@@ -68,8 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signature whenever the name it derives (from a path or file object, or `image` for raw
   bytes) has no image extension: `screenshot.bin` holding a PNG is sent as
   `screenshot.png`, and a nameless stream as `image.png`. A name passed as `filename=` is
-  never changed. Bytes with no known image signature are sent as
-  `application/octet-stream` under their own name, or `image.bin` when they have none.
+  never changed. Bytes with no known image signature keep their own name (`image.bin`
+  when they have none) and are sent as `application/octet-stream`, unless that name has
+  an image extension, whose image type is kept.
 - Orgs whose slug contains `_` got `401 Could not validate credentials` on every request
   (#53). The `X-Graphistry-Org` header rewrote `my_org` to `my-org`, naming an org that
   doesn't exist. This includes the default `louie(graphistry_client=g)` flow, which
