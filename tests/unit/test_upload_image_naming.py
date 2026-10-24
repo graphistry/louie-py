@@ -163,6 +163,19 @@ class TestExplicitFilename:
         _, filename, content_type = upload_client._serialize_image(UNKNOWN, "x.dat")
         assert (filename, content_type) == ("x.dat", "application/octet-stream")
 
+    def test_overrides_path_name(self, upload_client, tmp_path):
+        p = tmp_path / "capture.bin"
+        p.write_bytes(PNG)
+        _, filename, content_type = upload_client._serialize_image(p, "chart.png")
+        assert (filename, content_type) == ("chart.png", "image/png")
+
+    def test_empty_means_unset(self, upload_client):
+        """``filename=""`` falls back to the derived name, like ``None``."""
+        stream = io.BytesIO(PNG)
+        stream.name = "photo.jpg"
+        _, filename, content_type = upload_client._serialize_image(stream, "")
+        assert (filename, content_type) == ("photo.jpg", "image/jpeg")
+
     def test_upload_image_passes_filename_through(self, upload_client):
         upload_client._send_file = Mock()
         upload_client.upload_image("hi", io.BytesIO(PNG), filename="named.png")
@@ -196,3 +209,12 @@ class TestExplicitFilename:
         client.upload_image("hi", PNG, filename="named.png")
         kwargs = client._upload_client.upload_image.call_args.kwargs
         assert kwargs["filename"] == "named.png"
+
+    def test_client_wrapper_accepts_filename_binary(self):
+        from louieai._client import LouieClient
+
+        client = LouieClient(server_url="https://louie.test", graphistry_client=Mock())
+        client._upload_client = Mock()
+        client.upload_binary("hi", b"%PDF-1.4\n", filename="report.pdf")
+        kwargs = client._upload_client.upload_binary.call_args.kwargs
+        assert kwargs["filename"] == "report.pdf"
