@@ -848,8 +848,10 @@ class Cursor:
                   (DataFrame only)
                 - filename: Name to send for an image or binary file, as given.
                   Include the extension (for example "shot.png"); the server
-                  routes uploads by it. Defaults to the file's own name, or a
-                  name made from the image's file signature.
+                  routes uploads by it. Defaults to the path or file object's
+                  name (an image whose extension is not an image type gets one
+                  from its file signature), or a generic name when it has none
+                  (`image.png`, `file.bin`).
 
         Returns:
             Self (Cursor) for chaining and property access:

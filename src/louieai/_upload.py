@@ -376,11 +376,14 @@ class UploadClient:
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
             folder: Optional folder path for the thread (server support required)
-            filename: Optional filename to send, as given. The server routes
-                uploads by extension, so include one (`.png`, `.jpg`, ...). By
-                default the name comes from the path or file object
-                (`image.<ext>` for raw bytes); its extension is taken from the
-                image's file signature only when it is not an image extension.
+            filename: Optional filename to send, as given (an empty string
+                means unset). The server routes uploads by extension, so
+                include one (`.png`, `.jpg`, ...). By default the name comes
+                from the path or the file object's `.name`; its extension is
+                taken from the image's file signature only when it is not an
+                image extension. Raw bytes, nameless file objects and PIL
+                images are named `image.<ext>`, or `image.bin` when the bytes
+                have no known image signature.
 
         Returns:
             Response object containing AI analysis of the image

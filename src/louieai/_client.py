@@ -1331,10 +1331,12 @@ class LouieClient:
             share_mode: Visibility setting
             name: Optional thread name
             folder: Optional folder path for the thread (server support required)
-            filename: Optional filename to send, as given; include an image
-                extension. Default: from the path or file object (`image.<ext>`
-                for raw bytes); its extension is taken from the image's file
-                signature only when it is not an image extension.
+            filename: Optional filename to send, as given (empty means
+                unset); include an image extension. Default: the path's or
+                file object's name, with the extension taken from the image's
+                file signature only when it is not an image extension; else
+                `image.<ext>` (raw bytes, nameless file objects, PIL images),
+                or `image.bin` for bytes with no known image signature.
             session_trace_id: Optional session trace ID for distributed tracing
                 correlation when OpenTelemetry is not available.
 
