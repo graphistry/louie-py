@@ -17,8 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `filename=`, like `upload_binary` (#59). The name is sent as given, so include the
   extension. `lui()` takes the image as a `str` path, PNG/JPEG/GIF/BMP/WebP bytes, a PIL
   image, or a file object named `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp` or `.webp`; pass
-  anything else, such as a `pathlib.Path` or a nameless `io.BytesIO`, to `upload_image`
-  directly.
+  anything else, such as a `pathlib.Path` or a nameless `io.BytesIO`, to
+  `lui._client.upload_image` directly.
 
 ### Documentation
 - Agent guides used names Louie servers reject with `400 Invalid agent` (#52). **Upgrade
