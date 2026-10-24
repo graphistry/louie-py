@@ -35,6 +35,7 @@ class TestNamelessStream:
             (PNG, ("image.png", "image/png")),
             (JPEG, ("image.jpg", "image/jpeg")),
             (GIF, ("image.gif", "image/gif")),
+            (b"GIF87a" + b"\x00" * 16, ("image.gif", "image/gif")),
             (BMP, ("image.bmp", "image/bmp")),
             (WEBP, ("image.webp", "image/webp")),
         ],
@@ -51,8 +52,28 @@ class TestNamelessStream:
 
     @pytest.mark.parametrize(
         "data",
-        [UNKNOWN, b"RIFF\x00\x00\x00\x00WAVEfmt ", b"\xff\xd8\x00" + b"\x00" * 16],
-        ids=["text", "riff-wave", "two-byte-jpeg-prefix"],
+        [
+            UNKNOWN,
+            b"RIFF\x00\x00\x00\x00WAVEfmt ",
+            b"\xff\xd8\x00" + b"\x00" * 16,
+            b"\x89PNx" + b"\x00" * 16,
+            b"GIFx" + b"\x00" * 16,
+            b"Bx" + b"\x00" * 16,
+            b"RIFF\x00\x00\x00\x00WEBx" + b"\x00" * 16,
+            b"RIFF\x00\x00\x00\x00WAVEWEBP" + b"\x00" * 16,
+            b"XXXX\x00\x00\x00\x00WEBP" + b"\x00" * 16,
+        ],
+        ids=[
+            "text",
+            "riff-wave",
+            "two-byte-jpeg-prefix",
+            "png-prefix",
+            "gif-prefix",
+            "bmp-prefix",
+            "riff-webp-prefix",
+            "riff-webp-late",
+            "webp-without-riff",
+        ],
     )
     def test_unknown_signature_stays_binary(self, upload_client, data):
         _, filename, content_type = upload_client._serialize_image(io.BytesIO(data))
@@ -70,6 +91,12 @@ class TestDerivedName:
     def test_image_extension_is_kept(self, upload_client):
         stream = io.BytesIO(PNG)
         stream.name = "/photos/shot.png"
+        _, filename, content_type = upload_client._serialize_image(stream)
+        assert (filename, content_type) == ("shot.png", "image/png")
+
+    def test_image_extension_is_kept_for_unknown_bytes(self, upload_client):
+        stream = io.BytesIO(UNKNOWN)
+        stream.name = "shot.png"
         _, filename, content_type = upload_client._serialize_image(stream)
         assert (filename, content_type) == ("shot.png", "image/png")
 
