@@ -91,6 +91,7 @@ class TestDerivedName:
             ("/tmp/screenshot-2026-10-22.bin", "screenshot-2026-10-22.jpg"),
             ("archive.tar.gz", "archive.tar.jpg"),
             ("name.", "name.jpg"),
+            (".hidden", ".hidden.jpg"),
             ("", "image.jpg"),
         ],
     )
@@ -203,6 +204,52 @@ class TestExplicitFilename:
         _, filename, content_type = upload_client._serialize_image(stream, "")
         assert (filename, content_type) == ("photo.jpg", "image/jpeg")
 
+    @pytest.mark.parametrize(
+        "make", [lambda: PNG, lambda: io.BytesIO(PNG)], ids=["bytes", "stream"]
+    )
+    def test_empty_means_unset_nameless(self, upload_client, make):
+        assert upload_client._serialize_image(make(), "")[1:] == (
+            "image.png",
+            "image/png",
+        )
+
+    def test_pil_empty_filename_means_unset(self, upload_client):
+        Image = pytest.importorskip("PIL.Image")
+        img = Image.new("RGB", (2, 2))
+        assert upload_client._serialize_image(img, "")[1] == "image.png"
+        img.format = "JPEG"
+        assert upload_client._serialize_image(img, "")[1] == "image.jpg"
+
+    @pytest.mark.parametrize(
+        ("data", "given", "expected"),
+        [
+            (UNKNOWN, "x.png", ("x.png", "image/png")),
+            (PNG, "a.jpg", ("a.jpg", "image/jpeg")),
+        ],
+        ids=["unknown-bytes", "bytes-disagree"],
+    )
+    def test_given_image_extension_sets_type(
+        self, upload_client, data, given, expected
+    ):
+        assert upload_client._serialize_image(data, given)[1:] == expected
+
+    def test_given_beats_derived_stream_name(self, upload_client):
+        """A local name must not leak when the caller passes ``filename=``."""
+        stream = io.BytesIO(PNG)
+        stream.name = "/home/u/secret.bin"
+        assert upload_client._serialize_image(stream, "capture")[1:] == (
+            "capture",
+            "image/png",
+        )
+
+    def test_given_beats_derived_path_name(self, upload_client, tmp_path):
+        p = tmp_path / "secret.bin"
+        p.write_bytes(PNG)
+        assert upload_client._serialize_image(p, "capture")[1:] == (
+            "capture",
+            "image/png",
+        )
+
     def test_upload_image_passes_filename_through(self, upload_client):
         upload_client._send_file = Mock()
         upload_client.upload_image("hi", io.BytesIO(PNG), filename="named.png")
@@ -228,6 +275,19 @@ class TestExplicitFilename:
         Cursor(client=client)(b"%PDF-1.4\n", "summarize", filename="report.pdf")
         assert client.upload_binary.call_args.kwargs["filename"] == "report.pdf"
 
+    @pytest.mark.parametrize(
+        ("method", "data"), [("upload_image", PNG), ("upload_binary", b"%PDF-1.4\n")]
+    )
+    def test_cursor_without_filename_forwards_none(self, method, data):
+        from louieai.notebook.cursor import Cursor
+
+        client = Mock()
+        getattr(client, method).return_value = Mock(thread_id="D_1", elements=[])
+        Cursor(client=client)(data, "describe")
+        kwargs = getattr(client, method).call_args.kwargs
+        assert "filename" in kwargs
+        assert kwargs["filename"] is None
+
     def test_client_wrapper_accepts_filename(self):
         from louieai._client import LouieClient
 
@@ -245,3 +305,15 @@ class TestExplicitFilename:
         client.upload_binary("hi", b"%PDF-1.4\n", filename="report.pdf")
         kwargs = client._upload_client.upload_binary.call_args.kwargs
         assert kwargs["filename"] == "report.pdf"
+
+    @pytest.mark.parametrize(
+        ("method", "data"), [("upload_image", PNG), ("upload_binary", b"%PDF-1.4\n")]
+    )
+    def test_client_wrapper_keeps_name_and_filename_apart(self, method, data):
+        from louieai._client import LouieClient
+
+        client = LouieClient(server_url="https://louie.test", graphistry_client=Mock())
+        client._upload_client = Mock()
+        getattr(client, method)("hi", data, name="thread", filename="named.bin")
+        kwargs = getattr(client._upload_client, method).call_args.kwargs
+        assert (kwargs["name"], kwargs["filename"]) == ("thread", "named.bin")
