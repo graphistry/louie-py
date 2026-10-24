@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It was reachable only by constructing a `Cursor` around `louieai._client.LouieClient`,
   so documenting the desktop link override meant publishing a private import. Passing it
   previously raised `TypeError` from `LouieClient`, so nothing that worked before changes.
+- `upload_image(prompt, image, filename=...)` and the notebook forms
+  `lui(image, prompt, filename=...)` / `lui(prompt, image, filename=...)` accept
+  `filename=`, like `upload_binary` (#59). The name is sent as given, so include the
+  extension. `lui()` takes the image as a `str` path, PNG/JPEG/GIF/BMP/WebP bytes, a PIL
+  image, or a file object named `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp` or `.webp`; pass
+  anything else, such as a `pathlib.Path` or a nameless `io.BytesIO`, to
+  `lui._client.upload_image` directly.
 
 ### Documentation
 - Agent guides used names Louie servers reject with `400 Invalid agent` (#52). **Upgrade
@@ -56,6 +63,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   looked up `self.auth_manager`, which `UploadClient` lacked, so every 401 was re-raised.
   Image and binary uploads read your file object once and resend those same bytes on retry,
   so a reader without `seek()` or a stream not at position 0 is resent unchanged.
+- `upload_image` sent a file object without a name (such as `io.BytesIO`) as `image.bin`,
+  so the server kept it as opaque binary instead of an image (#59). The server routes
+  uploads by filename extension, so the client now takes the extension from the file
+  signature whenever the name it derives (from a path or file object, or `image` for raw
+  bytes) has no image extension: `screenshot.bin` holding a PNG is sent as
+  `screenshot.png`, and a nameless stream as `image.png`. A name passed as `filename=` is
+  never changed. Bytes with no known image signature keep their own name (`image.bin`
+  when they have none) and are sent as `application/octet-stream`, unless that name has
+  an image extension, whose image type is kept.
 - Orgs whose slug contains `_` got `401 Could not validate credentials` on every request
   (#53). The `X-Graphistry-Org` header rewrote `my_org` to `my-org`, naming an org that
   doesn't exist. This includes the default `louie(graphistry_client=g)` flow, which

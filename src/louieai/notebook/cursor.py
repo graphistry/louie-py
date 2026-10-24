@@ -837,10 +837,23 @@ class Cursor:
                 - "Private": Only you can see it
                 - "Organization": Visible to your organization
                 - "Public": Publicly accessible
-            **kwargs: Additional arguments for upload_dataframe() when df is provided:
+            **kwargs: Additional arguments, mostly for the upload made when a
+                DataFrame, image, or binary file is passed:
                 - format: "parquet" (default), "csv", "json", "jsonl", or "arrow"
-                - agent: "UploadPassthroughAgent" (default)
+                  (DataFrame only)
+                - agent: Agent for the query ("LouieAgent" by default;
+                  "UploadPassthroughAgent" when a DataFrame, image, or binary
+                  file is passed)
                 - parsing_options: Dict of format-specific parsing configuration
+                  (DataFrame only)
+                - filename: Name to send for an image or binary file, as given
+                  (an empty string means unset). Include the extension (for
+                  example "shot.png"); the server routes uploads by it.
+                  Defaults to the path or file object's name (an image whose
+                  extension is not an image type gets one from its file
+                  signature). With no name, one is made from the content's
+                  file signature, for example `image.png`, `image.jpg`,
+                  `document.pdf` or `data.json`.
 
         Returns:
             Self (Cursor) for chaining and property access:
@@ -1041,6 +1054,7 @@ class Cursor:
                     share_mode=use_share_mode,
                     name=self._name,
                     folder=self._folder,
+                    filename=kwargs.get("filename"),
                     session_trace_id=self._trace_id,
                 )
             elif actual_binary is not None:

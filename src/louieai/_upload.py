@@ -351,6 +351,7 @@ class UploadClient:
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
+        filename: str | None = None,
         session_trace_id: str | None = None,
     ) -> Response:
         """Upload an image with a natural language query for analysis.
@@ -375,6 +376,15 @@ class UploadClient:
             share_mode: Visibility - "Private" (default), "Organization", or "Public"
             name: Optional thread name (auto-generated from prompt if not provided)
             folder: Optional folder path for the thread (server support required)
+            filename: Optional filename to send, as given (an empty string
+                means unset). The server routes uploads by extension, so
+                include one (`.png`, `.jpg`, ...). By default the name comes
+                from the path or the file object's `.name`; its extension is
+                taken from the image's file signature only when it is not an
+                image extension. Raw bytes, nameless file objects and PIL
+                images are named `image.<ext>`, or `image.bin` when the bytes
+                have no known image signature. A PIL image is sent as PNG (JPEG
+                when its format is JPEG), whatever extension `filename` has.
 
         Returns:
             Response object containing AI analysis of the image
@@ -395,7 +405,7 @@ class UploadClient:
         """
         # Serialize once: the retry in _send_file resends these bytes rather
         # than re-reading the caller's file object, which may not rewind
-        file_data, filename, content_type = self._serialize_image(image)
+        file_data, filename, content_type = self._serialize_image(image, filename)
         return self._send_file(
             prompt,
             file_data,
@@ -532,14 +542,62 @@ class UploadClient:
             include_reasoning=include_reasoning,
         )
 
+    @staticmethod
+    def _sniff_image(data: bytes) -> tuple[str, str] | None:
+        """Return ``(extension, mime_type)`` from the file signature, or None."""
+        if data.startswith(b"\x89PNG"):
+            return "png", "image/png"
+        if data.startswith(b"\xff\xd8\xff"):
+            return "jpg", "image/jpeg"
+        if data.startswith(b"GIF8"):
+            return "gif", "image/gif"
+        if data.startswith(b"BM"):
+            return "bmp", "image/bmp"
+        if data.startswith(b"RIFF") and data[8:12] == b"WEBP":
+            return "webp", "image/webp"
+        return None
+
+    def _name_image(
+        self, data: bytes, given: str | None, derived: str | None
+    ) -> tuple[str, str]:
+        """Pick the multipart filename and content type for image bytes.
+
+        The server routes uploads by filename extension and never inspects the
+        bytes, so a wrong or missing extension leaves the image as opaque binary.
+        A non-empty ``given`` (the caller's ``filename=``; empty means unset) is
+        sent verbatim; its content type comes from its image extension, else from
+        the byte signature. ``derived`` (from a path or a file object's ``.name``)
+        keeps its stem but gets the signature's extension when its own is not an
+        image type. With neither, the name is ``image.<ext>`` from the signature.
+        Bytes with no known image signature and no image extension keep their
+        name (``image.bin`` when there is none) and go as
+        ``application/octet-stream``.
+        """
+        name = given or derived or ""
+        guessed = mimetypes.guess_type(name)[0] if name else None
+        if guessed and guessed.startswith("image/"):
+            return name, guessed
+        sniffed = self._sniff_image(data)
+        if sniffed is None:
+            return name or "image.bin", "application/octet-stream"
+        ext, mime_type = sniffed
+        if given:
+            return given, mime_type
+        # Path.stem keeps a trailing dot ("name." -> "name."); strip it so the
+        # result is "name.jpg", not "name..jpg".
+        stem = Path(derived).stem.rstrip(".") if derived else ""
+        return f"{stem or 'image'}.{ext}", mime_type
+
     def _serialize_image(
         self,
         image: str | bytes | BinaryIO | Any,
+        filename: str | None = None,
     ) -> tuple[bytes, str, str]:
         """Serialize image to bytes for upload.
 
         Args:
             image: Image in various formats
+            filename: Optional filename to send verbatim; see ``_name_image``
 
         Returns:
             Tuple of (file_data, filename, content_type)
@@ -549,46 +607,15 @@ class UploadClient:
             path = Path(image)
             if not path.exists():
                 raise FileNotFoundError(f"Image file not found: {path}")
-
-            # Detect MIME type
-            mime_type, _ = mimetypes.guess_type(str(path))
-            if not mime_type or not mime_type.startswith("image/"):
-                # Try to detect from content
-                with open(path, "rb") as f:
-                    header = f.read(12)
-                    if header.startswith(b"\x89PNG"):
-                        mime_type = "image/png"
-                    elif header.startswith(b"\xff\xd8\xff"):
-                        mime_type = "image/jpeg"
-                    elif header.startswith(b"GIF8"):
-                        mime_type = "image/gif"
-                    elif header.startswith(b"BM"):
-                        mime_type = "image/bmp"
-                    elif header.startswith(b"RIFF") and b"WEBP" in header:
-                        mime_type = "image/webp"
-                    else:
-                        mime_type = "application/octet-stream"
-
             with open(path, "rb") as f:
                 file_data = f.read()
-            filename = path.name
-            return file_data, filename, mime_type or "application/octet-stream"
+            name, mime_type = self._name_image(file_data, filename, path.name)
+            return file_data, name, mime_type
 
         # Handle bytes
         elif isinstance(image, bytes):
-            # Detect format from bytes
-            if image.startswith(b"\x89PNG"):
-                return image, "image.png", "image/png"
-            elif image.startswith(b"\xff\xd8\xff"):
-                return image, "image.jpg", "image/jpeg"
-            elif image.startswith(b"GIF8"):
-                return image, "image.gif", "image/gif"
-            elif image.startswith(b"BM"):
-                return image, "image.bmp", "image/bmp"
-            elif image.startswith(b"RIFF") and b"WEBP" in image[8:12]:
-                return image, "image.webp", "image/webp"
-            else:
-                return image, "image.bin", "application/octet-stream"
+            name, mime_type = self._name_image(image, filename, None)
+            return image, name, mime_type
 
         # Handle file-like objects
         elif hasattr(image, "read"):
@@ -596,30 +623,10 @@ class UploadClient:
             if hasattr(image, "seek"):
                 image.seek(0)  # Reset for potential reuse
 
-            # Try to get filename
-            filename = getattr(image, "name", "image.bin")
-            if isinstance(filename, str):
-                filename = os.path.basename(filename)
-            else:
-                filename = "image.bin"
-
-            # Detect MIME type
-            mime_type, _ = mimetypes.guess_type(filename)
-            if not mime_type:
-                # Detect from content
-                if file_data.startswith(b"\x89PNG"):
-                    mime_type = "image/png"
-                    filename = "image.png"
-                elif file_data.startswith(b"\xff\xd8\xff"):
-                    mime_type = "image/jpeg"
-                    filename = "image.jpg"
-                elif file_data.startswith(b"GIF8"):
-                    mime_type = "image/gif"
-                    filename = "image.gif"
-                else:
-                    mime_type = "application/octet-stream"
-
-            return file_data, filename, mime_type
+            derived = getattr(image, "name", None)
+            derived = os.path.basename(derived) if isinstance(derived, str) else None
+            name, mime_type = self._name_image(file_data, filename, derived)
+            return file_data, name, mime_type
 
         # Handle PIL Image
         else:
@@ -632,14 +639,12 @@ class UploadClient:
                     format = image.format or "PNG"
                     if format.upper() == "JPEG":
                         image.save(buffer, format="JPEG", quality=95)
-                        filename = "image.jpg"
-                        content_type = "image/jpeg"
+                        default, content_type = "image.jpg", "image/jpeg"
                     else:
                         image.save(buffer, format="PNG")
-                        filename = "image.png"
-                        content_type = "image/png"
+                        default, content_type = "image.png", "image/png"
                     buffer.seek(0)
-                    return buffer.read(), filename, content_type
+                    return buffer.read(), filename or default, content_type
             except ImportError:
                 pass
 

@@ -307,8 +307,8 @@ class TestUploadClientCoverage:
                 img_data
             )
 
-        # Should detect JPEG from content and set appropriate filename
-        assert filename == "image.jpg"
+        # Should detect JPEG from content and fix the extension, keeping the stem
+        assert filename == "unknown.jpg"
         assert content_type == "image/jpeg"
 
     def test_serialize_binary_with_word_document(self):

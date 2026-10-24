@@ -1317,6 +1317,7 @@ class LouieClient:
         share_mode: str = "Private",
         name: str | None = None,
         folder: str | None = None,
+        filename: str | None = None,
         session_trace_id: str | None = None,
     ) -> Response:
         """Upload an image with a natural language query for analysis.
@@ -1330,6 +1331,13 @@ class LouieClient:
             share_mode: Visibility setting
             name: Optional thread name
             folder: Optional folder path for the thread (server support required)
+            filename: Optional filename to send, as given (empty means
+                unset); include an image extension. Default: the path's or
+                file object's name, with the extension taken from the image's
+                file signature only when it is not an image extension; else
+                `image.<ext>` (raw bytes, nameless file objects, PIL images),
+                or `image.bin` for bytes with no known image signature. PIL
+                images are sent as PNG (JPEG when their format is JPEG).
             session_trace_id: Optional session trace ID for distributed tracing
                 correlation when OpenTelemetry is not available.
 
@@ -1351,6 +1359,7 @@ class LouieClient:
             share_mode=share_mode,
             name=name,
             folder=folder,
+            filename=filename,
             session_trace_id=session_trace_id,
         )
 
