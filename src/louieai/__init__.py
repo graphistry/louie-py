@@ -139,6 +139,10 @@ def louie(
               defaults to GRAPHISTRY_ORG_NAME, then the client's active org.
               See ``LouieClient`` for how display names and usernames are
               converted.
+            - default_org: Louie organization slug every query acts in;
+              ``lui(..., org="other-org")`` overrides it for one query.
+              Optional for now; logging in without it (and without
+              ``org_name``) is deprecated.
             - server_url: Louie server URL. Louie Web: "https://den.louie.ai"
               (default) or your enterprise URL. Louie Desktop:
               "http://127.0.0.1:10013"
@@ -174,6 +178,11 @@ def louie(
         ... )
         >>> lui("Analyze fraud patterns")  # Shared within organization
         >>> lui("Private analysis", share_mode="Private")  # Override for this query
+
+        >>> # Act in one organization, and in another for one query
+        >>> lui = louie(username="alice", password="<password>", default_org="my-org")
+        >>> lui("Summarize today's alerts")
+        >>> lui("Same for the other team", org="other-org")
 
         >>> # Custom timeouts for long-running agentic flows
         >>> lui = louie(

@@ -7,6 +7,7 @@ import logging
 import re
 import time
 import unicodedata
+import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
@@ -16,6 +17,7 @@ import pandas as pd
 import pyarrow as pa
 
 from ._http import raise_for_status
+from ._org import NO_ORG_DEPRECATION, current_request_org, uses_request_org
 from ._table_ai import (
     TableAIOverrides,
     collect_table_ai_kwargs,
@@ -355,6 +357,7 @@ class LouieClient:
         personal_key_id: str | None = None,
         personal_key_secret: str | None = None,
         org_name: str | None = None,
+        default_org: str | None = None,
         api: int = 3,
         server: str | None = None,
         anonymous: bool = False,
@@ -386,6 +389,11 @@ class LouieClient:
                 ``"johndoe"``. That guess can miss, e.g. a personal slug
                 with a numeric suffix (``"johndoe1"``); the exact slug
                 always works.
+            default_org: Louie organization slug that every request acts in,
+                sent as the ``X-Graphistry-Org`` header. A method's ``org=``
+                overrides it for one call. Optional for now: without it and
+                without ``org_name``, requests act in the organization the
+                server has active for you, which is deprecated.
             api: API version (default: 3)
             anonymous: Use anonymous auth via /auth/anonymous (Louie Desktop only)
             anonymous_timeout: Timeout for /auth/anonymous in seconds
@@ -420,6 +428,10 @@ class LouieClient:
                 graphistry_server="hub.graphistry.com"
             )
 
+            # Act in an organization, and in another one for one call
+            client = LouieClient(username="user", password="pass", default_org="my-org")
+            client.add_cell("", "Summarize alerts", org="other-org")
+
             # Use existing graphistry client
             g = graphistry.nodes(df)
             client = LouieClient(graphistry_client=g)
@@ -437,6 +449,8 @@ class LouieClient:
             )
         """
         self.server_url = server_url.rstrip("/")
+        self._default_org = default_org
+        self._warned_without_org = False
         self._timeout = timeout
         self._streaming_timeout = streaming_timeout
         self._client = httpx.Client(timeout=timeout)
@@ -537,15 +551,19 @@ class LouieClient:
         """Register authentication credentials (passthrough to graphistry).
 
         Args:
-            **kwargs: Same arguments as graphistry.register()
+            **kwargs: Same arguments as graphistry.register(), plus
+                ``default_org`` (see ``LouieClient``), which stays in Louie.
 
         Returns:
             Self for chaining
 
         Examples:
             client.register(username="user", password="pass")
-            client.register(api_key="key-123")
+            client.register(api_key="key-123", default_org="my-org")
         """
+        default_org = kwargs.pop("default_org", None)
+        if default_org is not None:
+            self._default_org = default_org
         self._auth_manager.register(**kwargs)
         return self
 
@@ -614,13 +632,9 @@ class LouieClient:
         token = self._auth_manager.get_token()
         headers = {"Authorization": f"Bearer {token}"}
 
-        # Add organization header if available
-        if hasattr(
-            self._auth_manager, "_credentials"
-        ) and self._auth_manager._credentials.get("org_name"):
-            org_name = self._auth_manager._credentials["org_name"]
-            if org_name:  # Ensure org_name is not None
-                headers["X-Graphistry-Org"] = self._org_header_value(str(org_name))
+        org_header = self._org_header()
+        if org_header is not None:
+            headers["X-Graphistry-Org"] = org_header
 
         # Add traceparent for distributed tracing
         # Priority: explicit traceparent > OTel context > session trace
@@ -632,6 +646,27 @@ class LouieClient:
                 headers["traceparent"] = tp
 
         return headers
+
+    def _org_header(self) -> str | None:
+        """``X-Graphistry-Org`` for this request: ``org=``, then ``default_org``, then
+        the login's ``org_name``. Without any, warn once that this is deprecated."""
+        org = current_request_org() or getattr(self, "_default_org", None)
+        if not org and hasattr(self._auth_manager, "_credentials"):
+            org = self._auth_manager._credentials.get("org_name")
+        if org:
+            return self._org_header_value(str(org))
+        self._warn_without_org()
+        return None
+
+    def _warn_without_org(self) -> None:
+        if getattr(self, "_warned_without_org", False):
+            return
+        if getattr(self._auth_manager, "is_anonymous", False) is True:
+            return  # an anonymous login has its one organization
+        self._warned_without_org = True
+        # FutureWarning, not DeprecationWarning: Python shows it by default, also when
+        # it is raised inside the library, as it is here.
+        warnings.warn(NO_ORG_DEPRECATION, FutureWarning, stacklevel=4)
 
     def _org_header_value(self, org_name: str) -> str:
         """Pick the ``X-Graphistry-Org`` value for ``org_name``.
@@ -857,6 +892,7 @@ class LouieClient:
             include_reasoning=include_reasoning,
         )
 
+    @uses_request_org
     def create_thread(
         self,
         name: str | None = None,
@@ -868,6 +904,7 @@ class LouieClient:
         include_reasoning: bool = False,
         share_mode: ShareMode = "Private",
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
+        org: str | None = None,
         **override_kwargs: Any,
     ) -> Thread:
         """Create a new conversation thread.
@@ -882,6 +919,7 @@ class LouieClient:
                 (default: False).
             share_mode: Visibility mode for initial message
             table_ai_overrides: Structured Table AI overrides applied to initial prompt
+            org: Organization slug this call acts in; overrides ``default_org``.
             **override_kwargs: Legacy Table AI override keyword arguments forwarded to
                 `add_cell` (e.g., `table_ai_semantic_mode`). Prefer
                 `table_ai_overrides`.
@@ -913,6 +951,7 @@ class LouieClient:
             # Return placeholder - actual thread created on first add_cell
             return Thread(id="", name=name, folder=folder)
 
+    @uses_request_org
     @auto_retry_auth
     def add_cell(
         self,
@@ -929,6 +968,7 @@ class LouieClient:
         table_ai_overrides: TableAIOverrides | Mapping[str, Any] | None = None,
         use_batch: bool | None = None,
         session_trace_id: str | None = None,
+        org: str | None = None,
         **legacy_overrides: Any,
     ) -> Response:
         """Add a cell (query) to a thread and get response.
@@ -949,6 +989,7 @@ class LouieClient:
                 singleshot when overrides are provided.
             session_trace_id: Optional session trace ID for distributed tracing
                 correlation when OpenTelemetry is not available.
+            org: Organization slug this call acts in; overrides ``default_org``.
             **legacy_overrides: Backwards-compatible Table AI keyword arguments like
                 ``table_ai_semantic_mode``. Prefer `table_ai_overrides`.
 
@@ -1142,9 +1183,15 @@ class LouieClient:
 
         return response
 
+    @uses_request_org
     @auto_retry_auth
     def list_threads(
-        self, page: int = 1, page_size: int = 20, *, folder: str | None = None
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        *,
+        folder: str | None = None,
+        org: str | None = None,
     ) -> list[Thread]:
         """List available threads.
 
@@ -1152,6 +1199,7 @@ class LouieClient:
             page: Page number (1-based)
             page_size: Number of items per page
             folder: Optional folder path to filter results (client-side)
+            org: Organization slug this call acts in; overrides ``default_org``.
 
         Returns:
             List of Thread objects
@@ -1200,12 +1248,14 @@ class LouieClient:
 
         return threads
 
+    @uses_request_org
     @auto_retry_auth
-    def get_thread(self, thread_id: str) -> Thread:
+    def get_thread(self, thread_id: str, *, org: str | None = None) -> Thread:
         """Get a specific thread by ID.
 
         Args:
             thread_id: Thread ID to retrieve
+            org: Organization slug this call acts in; overrides ``default_org``.
 
         Returns:
             Thread object
@@ -1217,12 +1267,14 @@ class LouieClient:
             folder=data.get("folder"),
         )
 
+    @uses_request_org
     @auto_retry_auth
-    def get_thread_by_name(self, name: str) -> Thread:
+    def get_thread_by_name(self, name: str, *, org: str | None = None) -> Thread:
         """Get a thread by name (server resolves exact/fuzzy matches).
 
         Args:
             name: Thread name to retrieve
+            org: Organization slug this call acts in; overrides ``default_org``.
 
         Returns:
             Thread object
@@ -1249,6 +1301,7 @@ class LouieClient:
             raise RuntimeError("Thread manifest response was not an object.")
         return cast(dict[str, Any], data)
 
+    @uses_request_org
     def upload_dataframe(
         self,
         prompt: str,
@@ -1264,6 +1317,7 @@ class LouieClient:
         folder: str | None = None,
         parsing_options: dict[str, Any] | None = None,
         session_trace_id: str | None = None,
+        org: str | None = None,
     ) -> Response:
         """Upload a DataFrame with a natural language query for AI analysis.
 
@@ -1280,6 +1334,7 @@ class LouieClient:
             parsing_options: Format-specific parsing options
             session_trace_id: Optional session trace ID for distributed tracing
                 correlation when OpenTelemetry is not available.
+            org: Organization slug this call acts in; overrides ``default_org``.
 
         Returns:
             Response object with analysis results
@@ -1305,6 +1360,7 @@ class LouieClient:
             session_trace_id=session_trace_id,
         )
 
+    @uses_request_org
     def upload_image(
         self,
         prompt: str,
@@ -1318,6 +1374,7 @@ class LouieClient:
         name: str | None = None,
         folder: str | None = None,
         session_trace_id: str | None = None,
+        org: str | None = None,
     ) -> Response:
         """Upload an image with a natural language query for analysis.
 
@@ -1332,6 +1389,7 @@ class LouieClient:
             folder: Optional folder path for the thread (server support required)
             session_trace_id: Optional session trace ID for distributed tracing
                 correlation when OpenTelemetry is not available.
+            org: Organization slug this call acts in; overrides ``default_org``.
 
         Returns:
             Response object with analysis results
@@ -1354,6 +1412,7 @@ class LouieClient:
             session_trace_id=session_trace_id,
         )
 
+    @uses_request_org
     def upload_binary(
         self,
         prompt: str,
@@ -1368,6 +1427,7 @@ class LouieClient:
         folder: str | None = None,
         filename: str | None = None,
         session_trace_id: str | None = None,
+        org: str | None = None,
     ) -> Response:
         """Upload a binary file with a natural language query for analysis.
 
@@ -1383,6 +1443,7 @@ class LouieClient:
             filename: Optional filename to use
             session_trace_id: Optional session trace ID for distributed tracing
                 correlation when OpenTelemetry is not available.
+            org: Organization slug this call acts in; overrides ``default_org``.
 
         Returns:
             Response object with analysis results
