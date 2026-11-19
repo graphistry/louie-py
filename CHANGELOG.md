@@ -8,10 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `default_org` at login (`louie(..., default_org="my-org")`, `LouieClient(default_org=...)`,
+  `register(default_org=...)`): every request acts in that organization, sent as the
+  `X-Graphistry-Org` header. `org=` on `lui(...)`, `add_cell`, `create_thread`,
+  `list_threads`, `get_thread`, `get_thread_by_name` and the upload methods overrides it
+  for that call, including the dataframe fetches the call makes. Louie servers before
+  0.19.2 honour the header too.
 - `louie()` accepts `frontend_url`, forwarded to the `Cursor` that controls `lui.url`.
   It was reachable only by constructing a `Cursor` around `louieai._client.LouieClient`,
   so documenting the desktop link override meant publishing a private import. Passing it
   previously raised `TypeError` from `LouieClient`, so nothing that worked before changes.
+
+### Deprecated
+- Logging in without `default_org` or `org_name`: requests then act in whichever
+  organization the server has active for you. The client warns once per client
+  (`FutureWarning`), and a future release will require an organization.
 
 ### Documentation
 - Agent guides used names Louie servers reject with `400 Invalid agent` (#52). **Upgrade

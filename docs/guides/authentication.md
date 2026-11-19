@@ -200,6 +200,27 @@ print(f"Bob's thread: {bob_response.thread_id}")
 - Session isolation 
 - Multi-server support
 
+## Choosing the Organization
+
+Pass `default_org` when you log in: every request then acts in that organization,
+sent as the `X-Graphistry-Org` header. `org=` on a call overrides it for that call.
+
+```python
+from louieai import louie
+
+lui = louie(username="alice", password="<password>", default_org="my-org")
+lui("Summarize today's alerts")                   # in my-org
+lui("Same for the other team", org="other-team")  # in other-team, this query only
+```
+
+`LouieClient` methods take the same `org=`, e.g.
+`client.add_cell("", "query", org="other-team")` or `client.list_threads(org="other-team")`.
+
+`default_org` is optional for now. A login with neither `default_org` nor `org_name`
+sends no header: the server then uses the organization it has active for you, which
+can change when you switch organizations elsewhere. That is deprecated, and the client
+warns once (`FutureWarning`). A future release will require an organization.
+
 ## Authentication Options Reference
 
 | Parameter | Type | Description | Example |
@@ -210,6 +231,7 @@ print(f"Bob's thread: {bob_response.thread_id}")
 | `personal_key_id` | str | Personal key ID for service accounts | `"pk_123..."` |
 | `personal_key_secret` | str | Personal key secret for service accounts | `"sk_123..."` |
 | `org_name` | str | Organization slug, as in Graphistry's `/o/<slug>/` URLs (optional) | `"my_org"` |
+| `default_org` | str | Louie organization slug every request acts in (optional for now) | `"my_org"` |
 | `graphistry_server` | str | Graphistry server URL | `"hub.graphistry.com"` |
 | `api` | int | API version (usually 3) | `3` |
 | `graphistry_client` | Any | Existing PyGraphistry client or plottable | `graphistry.client()` |

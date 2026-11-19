@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 
 from louieai._client import LouieClient, Response
+from louieai._org import uses_request_org
 from louieai._tracing import generate_trace_id
 from louieai._types import ShareMode, UserAgent
 
@@ -811,6 +812,7 @@ class Cursor:
         # Session-level trace ID for correlating requests when OTel is not available
         self._trace_id: str = _parent_trace_id or generate_trace_id()
 
+    @uses_request_org
     def __call__(
         self,
         prompt: str | pd.DataFrame,
@@ -819,6 +821,7 @@ class Cursor:
         traces: bool | None = None,
         include_reasoning: bool | None = None,
         share_mode: ShareMode | None = None,
+        org: str | None = None,
         **kwargs: Any,
     ) -> "Cursor":
         """Execute a query with implicit thread management and optional DataFrame.
@@ -837,6 +840,8 @@ class Cursor:
                 - "Private": Only you can see it
                 - "Organization": Visible to your organization
                 - "Public": Publicly accessible
+            org: Organization slug this query acts in; overrides the client's
+                ``default_org``.
             **kwargs: Additional arguments for upload_dataframe() when df is provided:
                 - format: "parquet" (default), "csv", "json", "jsonl", or "arrow"
                 - agent: "UploadPassthroughAgent" (default)
